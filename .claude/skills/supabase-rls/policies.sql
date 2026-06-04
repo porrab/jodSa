@@ -1,0 +1,5 @@
+-- [M1 owner isolation · M4 guest token] Canonical RLS policy templates for JodSa.
+-- STUB: the working policies live in db/migrations/ as drizzle-kit SQL files.
+-- Copy + adapt the Pattern A / Pattern B templates from SKILL.md per table.
+-- Every owned table: enable RLS + owner_select/insert/update/delete (auth.uid()).
+-- payment_sessions / session_slips: capability-token anon policies (Pattern B).

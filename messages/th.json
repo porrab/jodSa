@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "dashboard": "ภาพรวม",
+    "transactions": "รายการ",
+    "accounts": "บัญชี",
+    "recurring": "รายการประจำ",
+    "budgets": "งบประมาณ",
+    "settings": "ตั้งค่า",
+    "import": "อ่านสลิป"
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "signup": "สมัครสมาชิก",
+    "logout": "ออกจากระบบ",
+    "email": "อีเมล",
+    "password": "รหัสผ่าน",
+    "displayName": "ชื่อที่แสดง",
+    "loginTitle": "ยินดีต้อนรับกลับ",
+    "loginSubtitle": "เข้าสู่ระบบเพื่อดูรายการของคุณ",
+    "signupTitle": "สร้างบัญชีใหม่",
+    "signupSubtitle": "ฟรีและปลอดภัย ข้อมูลของคุณไม่ออกจากอุปกรณ์",
+    "orContinueWith": "หรือเข้าสู่ระบบด้วย",
+    "alreadyHaveAccount": "มีบัญชีอยู่แล้ว?",
+    "noAccount": "ยังไม่มีบัญชี?"
+  },
+  "transaction": {
+    "income": "รายรับ",
+    "expense": "รายจ่าย",
+    "transfer": "โอนเงิน",
+    "add": "เพิ่มรายการ",
+    "edit": "แก้ไขรายการ",
+    "amount": "จำนวนเงิน (บาท)",
+    "account": "บัญชี",
+    "toAccount": "บัญชีปลายทาง",
+    "category": "หมวดหมู่",
+    "counterparty": "ผู้รับ / ผู้โอน",
+    "date": "วันที่และเวลา",
+    "confirm": "ยืนยัน",
+    "noTransactions": "ยังไม่มีรายการ",
+    "addFirst": "เพิ่มรายการแรกของคุณ"
+  },
+  "account": {
+    "add": "เพิ่มบัญชี",
+    "edit": "แก้ไขบัญชี",
+    "name": "ชื่อบัญชี",
+    "bank": "ธนาคาร",
+    "balance": "ยอดเงิน",
+    "noAccounts": "ยังไม่มีบัญชี",
+    "addFirst": "เพิ่มบัญชีแรกของคุณ"
+  },
+  "common": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "loading": "กำลังโหลด...",
+    "error": "เกิดข้อผิดพลาด",
+    "success": "สำเร็จ",
+    "confirmDelete": "ยืนยันการลบ?",
+    "thisActionCannotBeUndone": "การกระทำนี้ไม่สามารถยกเลิกได้"
+  }
+}

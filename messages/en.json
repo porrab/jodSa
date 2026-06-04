@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "accounts": "Accounts",
+    "recurring": "Recurring",
+    "budgets": "Budgets",
+    "settings": "Settings",
+    "import": "Scan Slip"
+  },
+  "auth": {
+    "login": "Sign In",
+    "signup": "Sign Up",
+    "logout": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display Name",
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to see your transactions",
+    "signupTitle": "Create an account",
+    "signupSubtitle": "Free and private — your slip images never leave your device",
+    "orContinueWith": "Or continue with",
+    "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?"
+  },
+  "transaction": {
+    "income": "Income",
+    "expense": "Expense",
+    "transfer": "Transfer",
+    "add": "Add Transaction",
+    "edit": "Edit Transaction",
+    "amount": "Amount (THB)",
+    "account": "Account",
+    "toAccount": "To Account",
+    "category": "Category",
+    "counterparty": "Counterparty",
+    "date": "Date & Time",
+    "confirm": "Confirm",
+    "noTransactions": "No transactions yet",
+    "addFirst": "Add your first transaction"
+  },
+  "account": {
+    "add": "Add Account",
+    "edit": "Edit Account",
+    "name": "Account Name",
+    "bank": "Bank",
+    "balance": "Balance",
+    "noAccounts": "No accounts yet",
+    "addFirst": "Add your first account"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success",
+    "confirmDelete": "Confirm delete?",
+    "thisActionCannotBeUndone": "This action cannot be undone"
+  }
+}

@@ -1,0 +1,1 @@
+# Zod schemas (transaction, account, recurring, budget, guest-slip payload, ...). Validate every form + server payload.

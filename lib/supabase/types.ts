@@ -1,0 +1,232 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export interface Database {
+  public: {
+    Tables: {
+      users: {
+        Row: {
+          id: string
+          display_name: string | null
+          locale: string
+          theme: string
+        }
+        Insert: {
+          id: string
+          display_name?: string | null
+          locale?: string
+          theme?: string
+        }
+        Update: {
+          display_name?: string | null
+          locale?: string
+          theme?: string
+        }
+        Relationships: []
+      }
+      accounts: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          bank: string
+          qr_image_path: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          bank: string
+          qr_image_path?: string | null
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          bank?: string
+          qr_image_path?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          id: string
+          user_id: string
+          type: 'income' | 'expense' | 'transfer'
+          amount_satang: number
+          account_id: string
+          to_account_id: string | null
+          category: string | null
+          ref_code: string | null
+          bank_code: string | null
+          counterparty: string | null
+          datetime: string
+          group_id: string | null
+          recurring_rule_id: string | null
+          occurrence_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: 'income' | 'expense' | 'transfer'
+          amount_satang: number
+          account_id: string
+          to_account_id?: string | null
+          category?: string | null
+          ref_code?: string | null
+          bank_code?: string | null
+          counterparty?: string | null
+          datetime: string
+          group_id?: string | null
+          recurring_rule_id?: string | null
+          occurrence_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          type?: 'income' | 'expense' | 'transfer'
+          amount_satang?: number
+          account_id?: string
+          to_account_id?: string | null
+          category?: string | null
+          ref_code?: string | null
+          bank_code?: string | null
+          counterparty?: string | null
+          datetime?: string
+          group_id?: string | null
+        }
+        Relationships: []
+      }
+      groups: {
+        Row: { id: string; user_id: string; title: string; note: string | null }
+        Insert: { id?: string; user_id: string; title: string; note?: string | null }
+        Update: { title?: string; note?: string | null }
+        Relationships: []
+      }
+      recurring_rules: {
+        Row: {
+          id: string
+          user_id: string
+          type: 'income' | 'expense'
+          amount_satang: number
+          category: string | null
+          account_id: string
+          freq: 'weekly' | 'monthly' | 'yearly'
+          interval: number
+          by_weekday: number[] | null
+          start_date: string
+          end_date: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: 'income' | 'expense'
+          amount_satang: number
+          category?: string | null
+          account_id: string
+          freq: 'weekly' | 'monthly' | 'yearly'
+          interval?: number
+          by_weekday?: number[] | null
+          start_date: string
+          end_date?: string | null
+        }
+        Update: {
+          type?: 'income' | 'expense'
+          amount_satang?: number
+          category?: string | null
+          account_id?: string
+          freq?: 'weekly' | 'monthly' | 'yearly'
+          interval?: number
+          by_weekday?: number[] | null
+          start_date?: string
+          end_date?: string | null
+        }
+        Relationships: []
+      }
+      recurring_exceptions: {
+        Row: { id: string; rule_id: string; skipped_date: string }
+        Insert: { id?: string; rule_id: string; skipped_date: string }
+        Update: { [_ in never]: never }
+        Relationships: []
+      }
+      budgets: {
+        Row: {
+          id: string
+          user_id: string
+          period: 'day' | 'month'
+          scope: 'overall' | 'category'
+          category: string | null
+          amount_satang: number
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          period: 'day' | 'month'
+          scope: 'overall' | 'category'
+          category?: string | null
+          amount_satang: number
+        }
+        Update: {
+          period?: 'day' | 'month'
+          scope?: 'overall' | 'category'
+          category?: string | null
+          amount_satang?: number
+        }
+        Relationships: []
+      }
+      payment_sessions: {
+        Row: {
+          id: string
+          owner: string
+          account_id: string
+          title: string
+          target_amount_satang: number | null
+          status: 'open' | 'closed'
+          created_at: string
+        }
+        Insert: {
+          id: string
+          owner: string
+          account_id: string
+          title: string
+          target_amount_satang?: number | null
+          status?: 'open' | 'closed'
+          created_at?: string
+        }
+        Update: {
+          title?: string
+          target_amount_satang?: number | null
+          status?: 'open' | 'closed'
+        }
+        Relationships: []
+      }
+      session_slips: {
+        Row: {
+          id: string
+          session_id: string
+          amount_satang: number
+          ref_code: string | null
+          paid_at: string
+          confirmed: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          amount_satang: number
+          ref_code?: string | null
+          paid_at: string
+          confirmed?: boolean
+          created_at?: string
+        }
+        Update: {
+          confirmed?: boolean
+        }
+        Relationships: []
+      }
+    }
+    Views: { [_ in never]: never }
+    Functions: { [_ in never]: never }
+    Enums: { [_ in never]: never }
+    CompositeTypes: { [_ in never]: never }
+  }
+}
