@@ -16,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { createAccount, updateAccount, deleteAccount } from '@/app/actions/accounts'
 import { BANKS } from '@/lib/validators/account'
+import { formatTHB } from '@/lib/money'
 
 type Account = {
   id: string
@@ -75,10 +76,8 @@ function AccountForm({
 
 export default function AccountsClient({
   accounts,
-  formatTHB,
 }: {
   accounts: Account[]
-  formatTHB: (satang: number) => string
 }) {
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)

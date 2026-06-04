@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import TransactionForm from '@/components/transaction-form'
 import { deleteTransaction } from '@/app/actions/transactions'
+import { formatTHB } from '@/lib/money'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
@@ -26,11 +27,9 @@ const TYPE_BADGE: Record<string, { label: string; variant: 'default' | 'secondar
 export default function TransactionsClient({
   transactions,
   accounts,
-  formatTHB,
 }: {
   transactions: Transaction[]
   accounts: Account[]
-  formatTHB: (satang: number) => string
 }) {
   const [addOpen, setAddOpen] = useState(false)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))

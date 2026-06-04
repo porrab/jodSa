@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import TransactionsClient from './transactions-client'
-import { formatTHB } from '@/lib/money'
 
 export default async function TransactionsPage() {
   const supabase = await createClient()
@@ -20,7 +19,6 @@ export default async function TransactionsPage() {
       <TransactionsClient
         transactions={transactions ?? []}
         accounts={accounts ?? []}
-        formatTHB={formatTHB}
       />
     </div>
   )

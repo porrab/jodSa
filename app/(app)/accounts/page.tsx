@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { formatTHB, computeAccountBalance } from '@/lib/money'
+import { computeAccountBalance } from '@/lib/money'
 import AccountsClient from './accounts-client'
 
 export default async function AccountsPage() {
@@ -26,7 +26,7 @@ export default async function AccountsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">บัญชี</h1>
       </div>
-      <AccountsClient accounts={accountsWithBalance} formatTHB={formatTHB} />
+      <AccountsClient accounts={accountsWithBalance} />
     </div>
   )
 }
