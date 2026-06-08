@@ -112,9 +112,17 @@ export default function ImportClient({ displayName, accounts }: Props) {
           },
         })
 
+        // tesseract.js v5 loadImage() doesn't handle ImageData — convert to Blob via canvas
         const pixelData = new Uint8ClampedArray(preprocessed.buffer)
         const imageData = new ImageData(pixelData, preprocessed.width, preprocessed.height)
-        const { data: { text } } = await tWorker.recognize(imageData)
+        const canvas = document.createElement('canvas')
+        canvas.width = preprocessed.width
+        canvas.height = preprocessed.height
+        canvas.getContext('2d')!.putImageData(imageData, 0, 0)
+        const ocrBlob = await new Promise<Blob>((res, rej) =>
+          canvas.toBlob((b) => (b ? res(b) : rej(new Error('canvas.toBlob failed'))), 'image/png'),
+        )
+        const { data: { text } } = await tWorker.recognize(ocrBlob)
         await tWorker.terminate()
 
         setProgress({ label: 'ดึงข้อมูล...', percent: 95 })
