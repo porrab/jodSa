@@ -39,6 +39,17 @@ describe('extractAmount', () => {
     expect(r.value).toBe(75000)
   })
 
+  it('parses ยอดโอน label (เป๋าตัง / PromptPay wallet style)', () => {
+    const r = extractAmount('ยอดโอน 500.00')
+    expect(r.value).toBe(50000)
+    expect(r.confidence).toBeGreaterThanOrEqual(0.8)
+  })
+
+  it('parses ยอดชำระ label', () => {
+    const r = extractAmount('ยอดชำระ 1,200.00')
+    expect(r.value).toBe(120000)
+  })
+
   it('normalizes Thai digits ๕๐๐.๐๐', () => {
     const r = extractAmount('จำนวน ๕๐๐.๐๐')
     expect(r.value).toBe(50000)
@@ -91,6 +102,21 @@ describe('extractDateTime', () => {
     expect(r.value).toBeNull()
     expect(r.confidence).toBe(0)
   })
+
+  it('parses date with time on a separate line', () => {
+    const r = extractDateTime('15/05/67\n14:30')
+    expect(r.value).toMatch(/^2024-05-15T14:30:00\+07:00$/)
+  })
+
+  it('parses Thai-month date with time on a separate line', () => {
+    const r = extractDateTime('15 พ.ค. 2567\n14:30')
+    expect(r.value).toMatch(/^2024-05-15T14:30:00\+07:00$/)
+  })
+
+  it('parses time with period separator (HH.mm)', () => {
+    const r = extractDateTime('15/05/67 14.30')
+    expect(r.value).toMatch(/^2024-05-15T14:30:00\+07:00$/)
+  })
 })
 
 // ─── counterparty ────────────────────────────────────────────────────────────
@@ -111,6 +137,16 @@ describe('extractCounterparty', () => {
     const r = extractCounterparty('จำนวนเงิน 100.00 บาท')
     expect(r.value).toBeNull()
   })
+
+  it('extracts ผู้โอน (sender) label for income slips', () => {
+    const r = extractCounterparty('ผู้โอน: สมชาย ใจดี')
+    expect(r.value).toContain('สมชาย')
+  })
+
+  it('extracts ชื่อบัญชี (account name) label', () => {
+    const r = extractCounterparty('ชื่อบัญชี: นาย วิชาย มีดี')
+    expect(r.value).toContain('วิชาย')
+  })
 })
 
 // ─── bankCode ────────────────────────────────────────────────────────────────
@@ -129,6 +165,11 @@ describe('inferBankCode', () => {
   it('returns null for unknown bank', () => {
     expect(inferBankCode('PromptPay transfer').value).toBeNull()
   })
+
+  it('returns KTB when slip header is KTB but destination bank is TTB', () => {
+    const text = 'ธนาคารกรุงไทย\nโอนจาก: xxxxxx\nไปยัง: บัญชีธนาคารทหารไทยธนชาต (TTB)'
+    expect(inferBankCode(text).value).toBe('KTB')
+  })
 })
 
 // ─── QR ref extraction ───────────────────────────────────────────────────────
@@ -139,10 +180,15 @@ describe('extractRefCodeFromQR', () => {
     expect(r).toBe('12345678901234')
   })
 
-  it('handles EMVCo PromptPay format (tag 62)', () => {
-    // Simplified EMVCo with tag 62 bill reference
+  it('handles EMVCo PromptPay format (tag 62 sub-field 05)', () => {
+    // 62[05=total-len] 05[12=sub-len] [12-char ref]
     const r = extractRefCodeFromQR('0002010102122962050512345678901234END')
     expect(r).not.toBeNull()
+  })
+
+  it('returns null for EMVCo QR with no tag 62 reference label', () => {
+    // PromptPay static QR — no tag 62 sub-field 05; must not use account/phone as ref_code
+    expect(extractRefCodeFromQR('0002010102121234567890')).toBeNull()
   })
 
   it('returns null for empty string', () => {

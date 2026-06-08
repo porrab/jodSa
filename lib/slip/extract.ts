@@ -11,6 +11,7 @@ function parseBaht(s: string): number | null {
 
 const AMOUNT_PATTERNS: Array<[RegExp, number]> = [
   [/(?:จำนวนเงิน|จำนวน)\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.9],
+  [/(?:ยอดโอน|ยอดเงินที่โอน|เงินที่โอน|ยอดชำระ|ยอดที่ชำระ)\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.85],
   [/Amount\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.88],
   [/฿\s*([\d,]+\.?\d{0,2})/, 0.85],
   [/([\d,]+\.?\d{0,2})\s*(?:บาท|THB|Baht)/i, 0.82],
@@ -49,28 +50,44 @@ function buildISO(d: number, mo: number, y: number, h: number, min: number): str
   return `${y}-${p(mo)}-${p(d)}T${p(h)}:${p(min)}:00+07:00`
 }
 
+// Find HH:mm (or HH.mm) in up to 150 chars after `offset`.
+// This handles time printed on a separate line from the date.
+function findTimeAfter(text: string, offset: number): { h: number; min: number } | null {
+  const segment = text.substring(offset, offset + 150)
+  // Prefer colon separator; fall back to period (some banks use "09.30")
+  const m =
+    segment.match(/\b(\d{1,2}):(\d{2})\b/) ??
+    segment.match(/(?:^|\s)(\d{1,2})\.(\d{2})(?:\s|น|$)/)
+  if (!m) return null
+  const h = +m[1]
+  const min = +m[2]
+  return h <= 23 && min <= 59 ? { h, min } : null
+}
+
 export function extractDateTime(text: string): FieldConfidence<string> {
   const t = normalizeThaiDigits(text)
 
-  // dd/MM/yy or dd/MM/yyyy with optional HH:mm (KBank style)
-  const m1 = t.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{2}):(\d{2}))?/)
+  // dd/MM/yy or dd/MM/yyyy — time may be on same or next line (KBank style)
+  const m1 = t.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)
   if (m1) {
     const year = adjustYear(parseInt(m1[3].length === 2 ? '25' + m1[3] : m1[3]))
-    const iso = buildISO(+m1[1], +m1[2], year, +(m1[4] ?? 0), +(m1[5] ?? 0))
-    if (iso) return { value: iso, confidence: 0.85 }
+    const time = findTimeAfter(t, m1.index! + m1[0].length)
+    const iso = buildISO(+m1[1], +m1[2], year, time?.h ?? 0, time?.min ?? 0)
+    if (iso) return { value: iso, confidence: time ? 0.85 : 0.7 }
   }
 
-  // dd MMM (Thai) yyyy with optional HH:mm (SCB/KTB style)
+  // dd MMM (Thai) yyyy — time may be on same or next line (SCB/KTB style)
   const thKeys = Object.keys(THAI_MONTHS)
     .map((k) => k.replace(/\./g, '\\.'))
     .join('|')
-  const p2 = new RegExp(`(\\d{1,2})\\s+(${thKeys})\\s+(\\d{2,4})(?:\\s+(\\d{2}):(\\d{2}))?`)
+  const p2 = new RegExp(`(\\d{1,2})\\s+(${thKeys})\\s+(\\d{2,4})`)
   const m2 = t.match(p2)
   if (m2) {
     const month = THAI_MONTHS[m2[2]]
     const year = adjustYear(parseInt(m2[3]))
-    const iso = buildISO(+m2[1], month, year, +(m2[4] ?? 0), +(m2[5] ?? 0))
-    if (iso) return { value: iso, confidence: 0.88 }
+    const time = findTimeAfter(t, m2.index! + m2[0].length)
+    const iso = buildISO(+m2[1], month, year, time?.h ?? 0, time?.min ?? 0)
+    if (iso) return { value: iso, confidence: time ? 0.88 : 0.72 }
   }
 
   // dd-MM-yyyy HH:mm (BBL style)
@@ -88,6 +105,10 @@ const COUNTERPARTY_PATTERNS: Array<[RegExp, number]> = [
   [/(?:ผู้รับ|ชื่อผู้รับ|โอนไปยัง|ปลายทาง)\s*:?\s*([^\n\d฿]{3,60})/i, 0.8],
   [/(?:Recipient|Beneficiary|To)\s*:?\s*([A-Za-zก-๙\s]{3,60})/i, 0.75],
   [/(?:บัญชีปลายทาง|ผู้รับเงิน)\s*:?\s*([^\n\d฿]{3,60})/i, 0.7],
+  [/(?:ชื่อบัญชี|ชื่อเจ้าของบัญชี)\s*:?\s*([^\n\d฿]{3,60})/i, 0.72],
+  // Sender label — used for income slips where the payer's name is shown
+  [/(?:ผู้โอน|ชื่อผู้โอน)\s*:?\s*([^\n\d฿]{3,60})/i, 0.65],
+  [/(?:From|Sender)\s*:?\s*([A-Za-zก-๙\s]{3,60})/i, 0.65],
 ]
 
 export function extractCounterparty(text: string): FieldConfidence<string> {
@@ -114,8 +135,14 @@ const BANK_PATTERNS: Array<[RegExp, string]> = [
 ]
 
 export function inferBankCode(text: string): FieldConfidence<string> {
+  // Check the slip header first (~300 chars) so the issuing bank takes priority
+  // over any destination bank name that may appear later in the text (M2-8).
+  const header = text.substring(0, Math.min(300, text.length))
   for (const [pattern, code] of BANK_PATTERNS) {
-    if (pattern.test(text)) return { value: code, confidence: 0.9 }
+    if (pattern.test(header)) return { value: code, confidence: 0.95 }
+  }
+  for (const [pattern, code] of BANK_PATTERNS) {
+    if (pattern.test(text)) return { value: code, confidence: 0.75 }
   }
   return { value: null, confidence: 0 }
 }
@@ -123,17 +150,29 @@ export function inferBankCode(text: string): FieldConfidence<string> {
 export function extractRefCodeFromQR(qrData: string): string | null {
   if (!qrData) return null
 
-  // EMVCo PromptPay: tag 62 contains bill reference fields (05=bill ref, 06=customer ref)
+  // EMVCo PromptPay QR: only tag 62 sub-field 05 (Reference Label) is a
+  // per-transaction identifier. Account numbers and PromptPay IDs in other
+  // fields repeat across slips and must NOT be used as ref_code (M2-6).
+  // TLV format: 62[2-digit-total-len]...[05[2-digit-sub-len][value]]
   if (qrData.startsWith('000201')) {
-    const tag62 = qrData.match(/6205(\d{2})(\d+)/)
-    if (tag62) return tag62[2].substring(0, 50)
+    const tag62 = qrData.match(/62\d{2}05(\d{2})(\w{1,30})/)
+    if (tag62) {
+      const len = parseInt(tag62[1])
+      const val = tag62[2].substring(0, len)
+      if (val.length >= 6) return val
+    }
+    return null
   }
 
-  // Generic: take the longest numeric run ≥ 8 digits
+  // Non-EMVCo: prefer 15+ digit sequences (transaction refs);
+  // 10–12 digit sequences are typically account numbers that repeat.
   const nums = qrData.match(/\d{8,}/g)
-  if (nums) return nums.reduce((a, b) => (a.length >= b.length ? a : b))
-
-  return qrData.substring(0, 100)
+  if (!nums) return qrData.substring(0, 100)
+  const longRef = nums.find((n) => n.length >= 15)
+  if (longRef) return longRef
+  const medRef = nums.find((n) => n.length > 13)
+  if (medRef) return medRef
+  return null
 }
 
 export function extractFields(
@@ -151,7 +190,9 @@ export function extractFields(
     const ref = extractRefCodeFromQR(qrData)
     refCode = ref ? { value: ref, confidence: 0.95 } : { value: null, confidence: 0 }
   } else {
-    const m = ocrText.match(/(?:Ref|อ้างอิง|เลขที่อ้างอิง)\s*[:#]?\s*([\w-]{6,30})/i)
+    const m = ocrText.match(
+      /(?:Ref|อ้างอิง|เลขที่อ้างอิง|เลขรายการ|หมายเลขอ้างอิง|ยืนยันเลขที่)\s*[:#]?\s*([\w-]{6,30})/i,
+    )
     refCode = m ? { value: m[1], confidence: 0.5 } : { value: null, confidence: 0 }
   }
 

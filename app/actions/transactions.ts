@@ -60,7 +60,9 @@ export async function checkNullRefDedup(
   accountId: string,
   amountSatang: number,
   datetime: string,
-): Promise<{ duplicates: { id: string; datetime: string; counterparty: string | null }[] }> {
+): Promise<{
+  duplicates: { id: string; datetime: string; counterparty: string | null; ref_code: string | null }[]
+}> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -72,13 +74,14 @@ export async function checkNullRefDedup(
   const from = new Date(dt.getTime() - windowMs).toISOString()
   const to = new Date(dt.getTime() + windowMs).toISOString()
 
+  // No .is('ref_code', null) filter — catch duplicates even when the first
+  // import succeeded with QR (has ref_code) but a retry's QR decode failed (M2-7).
   const { data } = await supabase
     .from('transactions')
-    .select('id, datetime, counterparty')
+    .select('id, datetime, counterparty, ref_code')
     .eq('user_id', user.id)
     .eq('account_id', accountId)
     .eq('amount_satang', amountSatang)
-    .is('ref_code', null)
     .gte('datetime', from)
     .lte('datetime', to)
 

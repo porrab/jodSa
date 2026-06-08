@@ -5,6 +5,53 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M2] CHANGES NEEDED (re-review 3) — 2026-06-09
+**From**: pm-desk
+**Status**: OPEN
+
+### Items verified by OCR runner against real slip images
+
+- [ ] **(id: M2-11b)** เป๋าตัง AMOUNT_PATTERNS still incomplete. `ยอดชำระ` matches the prefix of `ยอดชำระทั้งหมด` but `\s*[฿:]?\s*` then expects a digit/฿, while `ทั้งหมด` is next → match fails. Same for `จำนวนเงินที่ชำระ` — `จำนวนเงิน` prefix matches but `ที่ชำระ` blocks digit capture. **Fixed =** Add `ยอดชำระทั้งหมด` and `จำนวนเงินที่ชำระ` as explicit entries in `AMOUNT_PATTERNS`. Confirm เป๋าตัง slips now show correct amount.
+
+- [ ] **(id: M2-8b)** TTB bank detection still wrong. `inferBankCode` iterates through `BANK_PATTERNS` in array order (SCB → KBANK → KTB → … → TTB). For a TTB→KBANK transfer, both `ttb` and `KBANK` appear in the first 300 chars, but KBANK is checked and matched before TTB — regardless of which appears earlier in the text. **Fixed =** Change the header scan to find the earliest text-position match, not the first array-order match. E.g., iterate patterns and track `(code, index)`, return the code with the lowest match index.
+
+- [ ] **(id: M2-9b)** Counterparty still null in manual test. M2-9 added `ผู้โอน`/`ชื่อโอน`/`ชื่อบัญชี` patterns. If names appear without a label (raw name line in slip layout), no pattern fires. **Fixed =** Re-run in real app (with preprocessing). If still null, add a positional heuristic (name line after account number) or confirm OCR text shows a label that current patterns cover.
+
+- [ ] **(id: M2-10b)** Datetime time component re-verify. `findTimeAfter` looks 150 chars after date match — correct approach. But Thai month abbreviations with spaces (`พ . ค .`) from low-quality OCR won't match the regex. **Fixed =** Add a pre-normalisation step that collapses spaces around dots in Thai month contexts: e.g. `text.replace(/([ก-๙])\s*\.\s*([ก-๙])/g, '$1.$2')`. Re-test with real app to confirm time is now correct.
+
+### Dev notes
+M2-11b and M2-8b are confirmed code bugs (visible from raw OCR text). M2-9b and M2-10b need re-testing in the real app with preprocessing pipeline active — the OCR runner used raw images (no preprocessing), so those results are unreliable. Fix M2-11b and M2-8b first.
+
+---
+
+## [M2] CHANGES NEEDED (re-review) — 2026-06-09
+**From**: pm-desk
+**Status**: OPEN
+
+### Closed from prior brief
+- [x] M2-2 — no image upload ✅
+- [x] M2-4 — soft-dedup warning ✅
+- [x] M2-5 — tesseract comment ✅
+
+### Items
+
+- [x] **(id: M2-6)** False positive ref_code duplicate — some never-imported slips trigger "รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)". **Fixed:** `extractRefCodeFromQR` now only uses EMVCo tag 62 sub-field 05 (Reference Label) for PromptPay QRs — account numbers and PromptPay IDs in other fields are no longer treated as ref_code. Non-EMVCo fallback now requires 15+ digit sequences (transaction refs), avoiding 10–12 digit account numbers. Test: EMVCo static QR without tag 62 now returns null.
+
+- [x] **(id: M2-7)** Dedup not reliable for readable-QR slips — 2nd import of same slip sometimes passes. **Fixed:** `checkNullRefDedup` now checks ALL same-amount-account-time transactions (removed `.is('ref_code', null)`). If the found duplicate has a `ref_code` (first import was via successful QR), the confirm form hard-blocks with "รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)" instead of showing a soft warning — so all retries after the first will fail.
+
+- [x] **(id: M2-8)** Bank detection wrong: KTB slip detected as TTB. **Fixed:** `inferBankCode` now checks the first 300 chars of OCR text (slip header) first with higher confidence (0.95), falling back to full-text at lower confidence (0.75). This prevents the destination bank name (TTB) mentioned in the body from overriding the issuing bank (KTB) in the header. Test added.
+
+- [x] **(id: M2-9)** Counterparty name (ชื่อผู้โอน/ผู้รับ) OCR'd correctly but not populated in confirm form. **Fixed:** Added `COUNTERPARTY_PATTERNS` entries for `ผู้โอน`, `ชื่อผู้โอน` (sender label — covers income slips) and `ชื่อบัญชี` / `ชื่อเจ้าของบัญชี` (account name label — covers KBank-style slips). The `SlipConfirmForm` pre-fill was already correct; the extraction patterns were missing. Tests added.
+
+- [x] **(id: M2-10)** Time value wrong in datetime input. **Fixed:** Extracted a `findTimeAfter()` helper that searches up to 150 chars after the date match for `HH:mm` or `HH.mm` (period separator). This handles time printed on a separate line from the date, which the old inline regex missed. Lower confidence (0.7/0.72) returned when no time is found so the field shows amber. Tests added for separate-line and period-separator cases.
+
+- [x] **(id: M2-11)** เป๋าตัง (PromptPay) amount extraction wrong. **Fixed:** Added `AMOUNT_PATTERNS` entry for `ยอดโอน|ยอดเงินที่โอน|เงินที่โอน|ยอดชำระ|ยอดที่ชำระ` at confidence 0.85, covering เป๋าตัง and other PromptPay wallet layouts that use these labels instead of `จำนวนเงิน`. Tests added.
+
+### Dev notes
+M2-6 and M2-7 are likely related (same QR field extraction bug). Fix M2-6 first — if the wrong QR field is being used as ref_code, fixing it will likely stabilise M2-7 as well. M2-8/M2-9/M2-10/M2-11 are independent extract.ts fixes. TrueMoney and Make by KBank are out-of-scope for this milestone.
+
+---
+
 ## [M2] CHANGES NEEDED — 2026-06-05
 **From**: pm-desk
 **Status**: OPEN

@@ -80,6 +80,13 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
         const { duplicates } = await checkNullRefDedup(acctId, amountSatang, dt)
         if (duplicates.length > 0) {
           const dup = duplicates[0]
+          // If the existing row has a ref_code, QR decode was reliable on first import —
+          // treat this as a hard duplicate even though this attempt's QR decode failed (M2-7).
+          if (dup.ref_code) {
+            setError('รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)')
+            setLoading(false)
+            return
+          }
           const when = new Date(dup.datetime).toLocaleString('th-TH', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
           })
