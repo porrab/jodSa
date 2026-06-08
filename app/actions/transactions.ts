@@ -55,3 +55,32 @@ export async function deleteTransaction(id: string) {
   revalidatePath('/dashboard')
   revalidatePath('/accounts')
 }
+
+export async function checkNullRefDedup(
+  accountId: string,
+  amountSatang: number,
+  datetime: string,
+): Promise<{ duplicates: { id: string; datetime: string; counterparty: string | null }[] }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { duplicates: [] }
+
+  const dt = new Date(datetime)
+  const windowMs = 5 * 60 * 1000
+  const from = new Date(dt.getTime() - windowMs).toISOString()
+  const to = new Date(dt.getTime() + windowMs).toISOString()
+
+  const { data } = await supabase
+    .from('transactions')
+    .select('id, datetime, counterparty')
+    .eq('user_id', user.id)
+    .eq('account_id', accountId)
+    .eq('amount_satang', amountSatang)
+    .is('ref_code', null)
+    .gte('datetime', from)
+    .lte('datetime', to)
+
+  return { duplicates: data ?? [] }
+}

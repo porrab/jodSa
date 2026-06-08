@@ -1,1 +1,33 @@
-// [M2 parse · M5 share-target] Share-target + manual upload landing → parse slip in worker → prefill confirm form.
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import AppNav from '@/components/app-nav'
+import ImportClient from './import-client'
+
+export const metadata = { title: 'นำเข้าสลิป — JodSa' }
+
+export default async function ImportPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const [{ data: profile }, { data: accounts }] = await Promise.all([
+    supabase.from('users').select('display_name').eq('id', user.id).single(),
+    supabase.from('accounts').select('id, name, bank').eq('user_id', user.id).order('created_at'),
+  ])
+
+  return (
+    <div className="flex min-h-svh">
+      <AppNav />
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto max-w-2xl p-4 md:p-6">
+          <ImportClient
+            displayName={profile?.display_name ?? null}
+            accounts={accounts ?? []}
+          />
+        </div>
+      </main>
+    </div>
+  )
+}

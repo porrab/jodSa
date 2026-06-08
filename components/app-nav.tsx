@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   CreditCard,
+  Upload,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button'
 const navItems = [
   { href: '/dashboard', label: 'ภาพรวม', icon: LayoutDashboard },
   { href: '/transactions', label: 'รายการ', icon: ArrowLeftRight },
+  { href: '/import', label: 'นำเข้า', icon: Upload },
   { href: '/accounts', label: 'บัญชี', icon: CreditCard },
 ]
 
