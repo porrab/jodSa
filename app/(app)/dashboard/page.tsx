@@ -64,7 +64,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">รายรับเดือนนี้</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+            <p className="text-xl font-semibold tabular-nums text-income">
               +{formatTHB(monthIncome)}
             </p>
           </CardContent>
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">รายจ่ายเดือนนี้</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold tabular-nums text-destructive">
+            <p className="text-xl font-semibold tabular-nums text-expense">
               -{formatTHB(monthExpense)}
             </p>
           </CardContent>

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,12 @@ const TYPE_LABELS: Record<TxType, string> = {
   income: 'รายรับ',
   expense: 'รายจ่าย',
   transfer: 'โอนเงิน',
+}
+
+const TYPE_ACTIVE_CLS: Record<TxType, string> = {
+  income:   'border-income/40 bg-income/15 text-income hover:bg-income/25',
+  expense:  'border-expense/40 bg-expense/15 text-expense hover:bg-expense/25',
+  transfer: 'border-transfer/40 bg-transfer/15 text-transfer hover:bg-transfer/25',
 }
 
 export default function TransactionForm({
@@ -85,10 +92,10 @@ export default function TransactionForm({
             <Button
               key={t}
               type="button"
-              variant={type === t ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setType(t)}
-              className="flex-1"
+              className={cn('flex-1', type === t && TYPE_ACTIVE_CLS[t])}
             >
               {TYPE_LABELS[t]}
             </Button>

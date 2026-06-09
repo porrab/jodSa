@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { AlertTriangle, ChevronLeft, Info } from 'lucide-react'
+import { AlertTriangle, ChevronLeft, Info, LockKeyhole } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -130,6 +130,12 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
           <h1 className="text-xl font-semibold">ยืนยันรายการ</h1>
           <p className="text-sm text-muted-foreground">ตรวจสอบและแก้ไขก่อนบันทึก</p>
         </div>
+      </div>
+
+      {/* Privacy promise — visible at the scan/confirm step */}
+      <div className="flex items-center gap-2 rounded-lg bg-primary/8 px-3 py-2 text-sm text-primary">
+        <LockKeyhole className="size-4 shrink-0" />
+        <span>อ่านบนเครื่องคุณ · ภาพไม่ถูกอัปโหลด</span>
       </div>
 
       {/* Low-confidence notice */}

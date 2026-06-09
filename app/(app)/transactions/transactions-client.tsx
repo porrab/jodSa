@@ -5,8 +5,8 @@ import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { th } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
@@ -18,10 +18,10 @@ import type { Database } from '@/lib/supabase/types'
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
 
-const TYPE_BADGE: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  income: { label: 'รายรับ', variant: 'default' },
-  expense: { label: 'รายจ่าย', variant: 'destructive' },
-  transfer: { label: 'โอนเงิน', variant: 'secondary' },
+const TYPE_STYLE: Record<string, { label: string; badgeCls: string; textCls: string; prefix: string }> = {
+  income:   { label: 'รายรับ',  badgeCls: 'border-income/30 bg-income/10 text-income',      textCls: 'text-income',   prefix: '+' },
+  expense:  { label: 'รายจ่าย', badgeCls: 'border-expense/30 bg-expense/10 text-expense',   textCls: 'text-expense',  prefix: '-' },
+  transfer: { label: 'โอนเงิน', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer', prefix: '' },
 }
 
 export default function TransactionsClient({
@@ -69,15 +69,18 @@ export default function TransactionsClient({
           {transactions.map((tx) => {
             const acct = accountMap[tx.account_id]
             const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-            const badge = TYPE_BADGE[tx.type] ?? TYPE_BADGE.expense
+            const style = TYPE_STYLE[tx.type] ?? TYPE_STYLE.expense
 
             return (
               <div key={tx.id} className="flex items-center gap-3 p-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={badge.variant} className="text-xs">
-                      {badge.label}
-                    </Badge>
+                    <span className={cn(
+                      'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
+                      style.badgeCls,
+                    )}>
+                      {style.label}
+                    </span>
                     {tx.category && (
                       <span className="text-xs text-muted-foreground">{tx.category}</span>
                     )}
@@ -91,12 +94,8 @@ export default function TransactionsClient({
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className={`font-semibold tabular-nums text-sm ${
-                    tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' :
-                    tx.type === 'expense' ? 'text-destructive' : ''
-                  }`}>
-                    {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                    {formatTHB(tx.amount_satang)}
+                  <p className={cn('font-semibold tabular-nums text-sm', style.textCls)}>
+                    {style.prefix}{formatTHB(tx.amount_satang)}
                   </p>
                 </div>
                 <Button
