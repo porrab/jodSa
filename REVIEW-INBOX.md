@@ -5,19 +5,32 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M2] APPROVED — 2026-06-09 (final)
+**From**: pm-desk
+**Status**: RESOLVED
+
+### Items
+
+- [x] **(id: M2-12)** Sara am Unicode mismatch — เป๋าตัง amount still null in real app. **Root cause:** tesseract OCR outputs sara am as `ํา` (U+0E4D + U+0E32, decomposed) but every pattern in `extractAmount` and `extractDateTime` uses `ำ` (U+0E33, precomposed sara am). They are visually identical but byte-different — regex never matches. Confirmed from rawTextDebug: `จํานวนเงินที่ชําระ` (decomposed) vs pattern `จำนวนเงินที่ชำระ` (precomposed). **Fixed:** Added `.replace(/ํา/g, 'ำ')` to `normalizeThaiDigits` — all three extract functions call it so the fix applies everywhere. Test added with decomposed input `จํานวนเงินที่ชําระ`; 44/44 pass.
+
+### Dev notes
+Single-line fix in `normalizeThaiDigits` (or a new `normalizeThai` function). After this, เป๋าตัง should extract amount, bank code (`เบาตง`/G-Wallet won't match a bank code which is expected), and datetime `3 มิย. 2569 18:48`. Also check whether M2-9b counterparty is affected by the same mismatch — `ชํา` in OCR text may use same decomposed form.
+
+---
+
 ## [M2] CHANGES NEEDED (re-review 3) — 2026-06-09
 **From**: pm-desk
 **Status**: OPEN
 
 ### Items verified by OCR runner against real slip images
 
-- [ ] **(id: M2-11b)** เป๋าตัง AMOUNT_PATTERNS still incomplete. `ยอดชำระ` matches the prefix of `ยอดชำระทั้งหมด` but `\s*[฿:]?\s*` then expects a digit/฿, while `ทั้งหมด` is next → match fails. Same for `จำนวนเงินที่ชำระ` — `จำนวนเงิน` prefix matches but `ที่ชำระ` blocks digit capture. **Fixed =** Add `ยอดชำระทั้งหมด` and `จำนวนเงินที่ชำระ` as explicit entries in `AMOUNT_PATTERNS`. Confirm เป๋าตัง slips now show correct amount.
+- [x] **(id: M2-11b)** เป๋าตัง AMOUNT_PATTERNS still incomplete. `ยอดชำระ` matches the prefix of `ยอดชำระทั้งหมด` but `\s*[฿:]?\s*` then expects a digit/฿, while `ทั้งหมด` is next → match fails. Same for `จำนวนเงินที่ชำระ` — `จำนวนเงิน` prefix matches but `ที่ชำระ` blocks digit capture. **Fixed:** Added `จำนวนเงินที่ชำระ` before `จำนวนเงิน` and `ยอดชำระทั้งหมด` before `ยอดชำระ` in `AMOUNT_PATTERNS` so longer forms match first. Tests added; 43/43 pass.
 
-- [ ] **(id: M2-8b)** TTB bank detection still wrong. `inferBankCode` iterates through `BANK_PATTERNS` in array order (SCB → KBANK → KTB → … → TTB). For a TTB→KBANK transfer, both `ttb` and `KBANK` appear in the first 300 chars, but KBANK is checked and matched before TTB — regardless of which appears earlier in the text. **Fixed =** Change the header scan to find the earliest text-position match, not the first array-order match. E.g., iterate patterns and track `(code, index)`, return the code with the lowest match index.
+- [x] **(id: M2-8b)** TTB bank detection still wrong. `inferBankCode` iterates through `BANK_PATTERNS` in array order (SCB → KBANK → KTB → … → TTB). For a TTB→KBANK transfer, both `ttb` and `KBANK` appear in the first 300 chars, but KBANK is checked and matched before TTB — regardless of which appears earlier in the text. **Fixed:** Header scan now tracks `{code, index}` for every pattern and returns the one with the lowest match index (earliest position). Test added for TTB-issuing/KBANK-destination scenario; 43/43 pass.
 
 - [ ] **(id: M2-9b)** Counterparty still null in manual test. M2-9 added `ผู้โอน`/`ชื่อโอน`/`ชื่อบัญชี` patterns. If names appear without a label (raw name line in slip layout), no pattern fires. **Fixed =** Re-run in real app (with preprocessing). If still null, add a positional heuristic (name line after account number) or confirm OCR text shows a label that current patterns cover.
 
-- [ ] **(id: M2-10b)** Datetime time component re-verify. `findTimeAfter` looks 150 chars after date match — correct approach. But Thai month abbreviations with spaces (`พ . ค .`) from low-quality OCR won't match the regex. **Fixed =** Add a pre-normalisation step that collapses spaces around dots in Thai month contexts: e.g. `text.replace(/([ก-๙])\s*\.\s*([ก-๙])/g, '$1.$2')`. Re-test with real app to confirm time is now correct.
+- [x] **(id: M2-10b)** Datetime time component re-verify. `findTimeAfter` looks 150 chars after date match — correct approach. But Thai month abbreviations with spaces (`พ . ค .`) from low-quality OCR won't match the regex. **Fixed:** `extractDateTime` now applies `.replace(/([ก-๙])\s*\.\s*([ก-๙])/g, '$1.$2')` to collapse inter-char OCR spaces. Month patterns in `p2` also changed to `\s*\.\s*` around each dot and trailing `\s*` before year, with `rawMonth.replace+trim()` normalising the captured group for `THAI_MONTHS` lookup. Test added for `"15 พ . ค . 2567 14:30"`; 43/43 pass. Re-confirm with real app.
 
 ### Dev notes
 M2-11b and M2-8b are confirmed code bugs (visible from raw OCR text). M2-9b and M2-10b need re-testing in the real app with preprocessing pipeline active — the OCR runner used raw images (no preprocessing), so those results are unreliable. Fix M2-11b and M2-8b first.

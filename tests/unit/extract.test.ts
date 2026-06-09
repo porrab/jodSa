@@ -50,9 +50,28 @@ describe('extractAmount', () => {
     expect(r.value).toBe(120000)
   })
 
+  it('parses ยอดชำระทั้งหมด label (เป๋าตัง full-form, M2-11b)', () => {
+    const r = extractAmount('ยอดชำระทั้งหมด 1,500.00')
+    expect(r.value).toBe(150000)
+    expect(r.confidence).toBeGreaterThanOrEqual(0.8)
+  })
+
+  it('parses จำนวนเงินที่ชำระ label (payment form full-form, M2-11b)', () => {
+    const r = extractAmount('จำนวนเงินที่ชำระ 800.00')
+    expect(r.value).toBe(80000)
+    expect(r.confidence).toBeGreaterThanOrEqual(0.85)
+  })
+
   it('normalizes Thai digits ๕๐๐.๐๐', () => {
     const r = extractAmount('จำนวน ๕๐๐.๐๐')
     expect(r.value).toBe(50000)
+  })
+
+  it('normalizes decomposed sara am (U+0E4D U+0E32) from Tesseract OCR (M2-12)', () => {
+    // Tesseract outputs ํา (decomposed) but patterns use ำ (precomposed U+0E33)
+    const decomposed = 'จํานวนเงินที่ชําระ 800.00' // ํา = ํา
+    const r = extractAmount(decomposed)
+    expect(r.value).toBe(80000)
   })
 
   it('converts 2-decimal baht string to satang (1.50 → 150)', () => {
@@ -117,6 +136,11 @@ describe('extractDateTime', () => {
     const r = extractDateTime('15/05/67 14.30')
     expect(r.value).toMatch(/^2024-05-15T14:30:00\+07:00$/)
   })
+
+  it('parses Thai month abbreviation with OCR-spaced dots "พ . ค ." (M2-10b)', () => {
+    const r = extractDateTime('15 พ . ค . 2567 14:30')
+    expect(r.value).toMatch(/^2024-05-15T14:30:00\+07:00$/)
+  })
 })
 
 // ─── counterparty ────────────────────────────────────────────────────────────
@@ -169,6 +193,11 @@ describe('inferBankCode', () => {
   it('returns KTB when slip header is KTB but destination bank is TTB', () => {
     const text = 'ธนาคารกรุงไทย\nโอนจาก: xxxxxx\nไปยัง: บัญชีธนาคารทหารไทยธนชาต (TTB)'
     expect(inferBankCode(text).value).toBe('KTB')
+  })
+
+  it('returns TTB when TTB appears at earlier position in header than KBANK destination (M2-8b)', () => {
+    const text = 'ธนาคารทหารไทยธนชาต\nโอนเงิน\nไปยัง KBANK xxx-x-xxxxx-x'
+    expect(inferBankCode(text).value).toBe('TTB')
   })
 })
 

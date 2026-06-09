@@ -1,7 +1,11 @@
 import type { FieldConfidence, ParsedSlip } from './types'
 
 function normalizeThaiDigits(s: string): string {
-  return s.replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50))
+  // Also normalise decomposed sara am (U+0E4D U+0E32) → precomposed (U+0E33).
+  // Tesseract outputs the decomposed form; every Thai pattern uses the precomposed form.
+  return s
+    .replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50))
+    .replace(/ํา/g, 'ำ')
 }
 
 function parseBaht(s: string): number | null {
@@ -10,8 +14,9 @@ function parseBaht(s: string): number | null {
 }
 
 const AMOUNT_PATTERNS: Array<[RegExp, number]> = [
-  [/(?:จำนวนเงิน|จำนวน)\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.9],
-  [/(?:ยอดโอน|ยอดเงินที่โอน|เงินที่โอน|ยอดชำระ|ยอดที่ชำระ)\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.85],
+  // longer forms must precede their prefix variants so the regex alternation matches correctly
+  [/(?:จำนวนเงินที่ชำระ|จำนวนเงิน|จำนวน)\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.9],
+  [/(?:ยอดชำระทั้งหมด|ยอดโอน|ยอดเงินที่โอน|เงินที่โอน|ยอดชำระ|ยอดที่ชำระ)\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.85],
   [/Amount\s*[฿:]?\s*([\d,]+\.?\d{0,2})/i, 0.88],
   [/฿\s*([\d,]+\.?\d{0,2})/, 0.85],
   [/([\d,]+\.?\d{0,2})\s*(?:บาท|THB|Baht)/i, 0.82],
@@ -65,7 +70,9 @@ function findTimeAfter(text: string, offset: number): { h: number; min: number }
 }
 
 export function extractDateTime(text: string): FieldConfidence<string> {
-  const t = normalizeThaiDigits(text)
+  // Collapse OCR-inserted spaces around dots in Thai abbreviations (M2-10b)
+  // e.g. "พ . ค ." → "พ.ค ." (inter-char); flexible month pattern handles trailing dot
+  const t = normalizeThaiDigits(text).replace(/([ก-๙])\s*\.\s*([ก-๙])/g, '$1.$2')
 
   // dd/MM/yy or dd/MM/yyyy — time may be on same or next line (KBank style)
   const m1 = t.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)
@@ -77,13 +84,17 @@ export function extractDateTime(text: string): FieldConfidence<string> {
   }
 
   // dd MMM (Thai) yyyy — time may be on same or next line (SCB/KTB style)
+  // Month patterns allow optional spaces around dots so "พ.ค ." from OCR still matches (M2-10b).
+  // The trailing \s* in each month alternative may consume the separator before the year,
+  // so \s* (not \s+) follows. rawMonth normalises the captured group for THAI_MONTHS lookup.
   const thKeys = Object.keys(THAI_MONTHS)
-    .map((k) => k.replace(/\./g, '\\.'))
+    .map((k) => k.replace(/\./g, '\\s*\\.\\s*'))
     .join('|')
-  const p2 = new RegExp(`(\\d{1,2})\\s+(${thKeys})\\s+(\\d{2,4})`)
+  const p2 = new RegExp(`(\\d{1,2})\\s+(${thKeys})\\s*(\\d{2,4})`)
   const m2 = t.match(p2)
   if (m2) {
-    const month = THAI_MONTHS[m2[2]]
+    const rawMonth = m2[2].replace(/\s*\.\s*/g, '.').trim()
+    const month = THAI_MONTHS[rawMonth]
     const year = adjustYear(parseInt(m2[3]))
     const time = findTimeAfter(t, m2.index! + m2[0].length)
     const iso = buildISO(+m2[1], month, year, time?.h ?? 0, time?.min ?? 0)
@@ -135,12 +146,17 @@ const BANK_PATTERNS: Array<[RegExp, string]> = [
 ]
 
 export function inferBankCode(text: string): FieldConfidence<string> {
-  // Check the slip header first (~300 chars) so the issuing bank takes priority
-  // over any destination bank name that may appear later in the text (M2-8).
   const header = text.substring(0, Math.min(300, text.length))
+  // Use earliest text-position match so the issuing bank (always first in the slip header)
+  // wins over a destination bank name that appears later in the same window (M2-8b).
+  let earliest: { code: string; index: number } | null = null
   for (const [pattern, code] of BANK_PATTERNS) {
-    if (pattern.test(header)) return { value: code, confidence: 0.95 }
+    const m = header.match(pattern)
+    if (m && m.index !== undefined) {
+      if (!earliest || m.index < earliest.index) earliest = { code, index: m.index }
+    }
   }
+  if (earliest) return { value: earliest.code, confidence: 0.95 }
   for (const [pattern, code] of BANK_PATTERNS) {
     if (pattern.test(text)) return { value: code, confidence: 0.75 }
   }
