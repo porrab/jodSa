@@ -1,7 +1,7 @@
 # REVIEW-INBOX
 
-Correction briefs from pm-desk. Newest on top.
-Dev session: work through OPEN items, mark each `[x]` and note what was done, then ask pm-desk for a re-review.
+Briefs from reviewer agents: correction briefs from pm-desk, E2E bug briefs from qa-lab (ids `QA-*`). Newest on top.
+Dev session: work through OPEN items, mark each `[x]` and note what was done, then ask the sender for a re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ---
 
