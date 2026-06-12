@@ -1,7 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { materializeOccurrences } from '@/lib/recurrence/materialize'
+import { currentMonthRange } from '@/lib/recurrence/range'
+import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import { formatTHB, computeAccountBalance } from '@/lib/money'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import BudgetBar from '@/components/budget-bar'
 import { startOfMonth, endOfMonth } from 'date-fns'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -13,15 +17,27 @@ export default async function DashboardPage() {
   const monthStart = startOfMonth(now).toISOString()
   const monthEnd = endOfMonth(now).toISOString()
 
-  const [{ data: accounts }, { data: allTx }, { data: monthTx }] = await Promise.all([
-    supabase.from('accounts').select('*').order('created_at'),
-    supabase.from('transactions').select('type, amount_satang, account_id, to_account_id'),
-    supabase
-      .from('transactions')
-      .select('type, amount_satang')
-      .gte('datetime', monthStart)
-      .lte('datetime', monthEnd),
-  ])
+  // Lazy-on-read: materialize due recurring occurrences for this month first.
+  const { from: matFrom, to: matTo } = currentMonthRange(now)
+  await materializeOccurrences(matFrom, matTo)
+
+  const [{ data: accounts }, { data: allTx }, { data: monthTx }, { data: budgets }] =
+    await Promise.all([
+      supabase.from('accounts').select('*').order('created_at'),
+      supabase.from('transactions').select('type, amount_satang, account_id, to_account_id'),
+      supabase
+        .from('transactions')
+        .select('type, amount_satang, category, datetime')
+        .gte('datetime', monthStart)
+        .lte('datetime', monthEnd),
+      supabase.from('budgets').select('*'),
+    ])
+
+  const monthExpenses = (monthTx ?? []).filter((t) => t.type === 'expense') as ExpenseRow[]
+  const budgetItems = ((budgets ?? []) as BudgetRow[])
+    .map((budget) => ({ budget, status: budgetStatus(budget, monthExpenses, now) }))
+    .sort((a, b) => (a.budget.scope === 'overall' ? -1 : 1))
+    .slice(0, 3)
 
   const totalBalance = (accounts ?? []).reduce(
     (sum, acct) =>
@@ -112,7 +128,25 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* M3: budgets +/- here */}
+      {/* Budgets summary */}
+      {budgetItems.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">งบประมาณ</h2>
+            <Link href="/budgets" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              ดูทั้งหมด <ArrowRight className="size-3" />
+            </Link>
+          </div>
+          <Card>
+            <CardContent className="space-y-4 py-4">
+              {budgetItems.map(({ budget, status }) => (
+                <BudgetBar key={budget.id} budget={budget} status={status} />
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* M5: Recharts charts here */}
     </div>
   )

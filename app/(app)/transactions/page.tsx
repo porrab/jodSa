@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { materializeOccurrences } from '@/lib/recurrence/materialize'
+import { currentMonthRange } from '@/lib/recurrence/range'
 import TransactionsClient from './transactions-client'
 
 export default async function TransactionsPage() {
   const supabase = await createClient()
+
+  // Lazy-on-read: create any due recurring occurrences for the current month
+  // before we list transactions.
+  const { from, to } = currentMonthRange()
+  await materializeOccurrences(from, to)
 
   const [{ data: transactions }, { data: accounts }] = await Promise.all([
     supabase

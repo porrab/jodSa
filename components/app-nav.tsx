@@ -8,6 +8,9 @@ import {
   CreditCard,
   Upload,
   LogOut,
+  PiggyBank,
+  Repeat,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -18,8 +21,15 @@ const navItems = [
   { href: '/dashboard', label: 'ภาพรวม', icon: LayoutDashboard },
   { href: '/transactions', label: 'รายการ', icon: ArrowLeftRight },
   { href: '/import', label: 'นำเข้า', icon: Upload },
+  { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
+  { href: '/recurring', label: 'รายการประจำ', icon: Repeat },
+  { href: '/groups', label: 'กลุ่ม/ทริป', icon: Users },
   { href: '/accounts', label: 'บัญชี', icon: CreditCard },
 ]
+
+// Bottom bar can't hold every item on a phone — show the daily-use subset.
+const MOBILE_HREFS = new Set(['/dashboard', '/transactions', '/import', '/budgets', '/accounts'])
+const mobileItems = navItems.filter((i) => MOBILE_HREFS.has(i.href))
 
 export default function AppNav() {
   const pathname = usePathname()
@@ -35,7 +45,7 @@ export default function AppNav() {
     <>
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background md:hidden">
-        {navItems.map(({ href, label, icon: Icon }) => (
+        {mobileItems.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
