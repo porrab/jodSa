@@ -55,6 +55,21 @@ export async function resetUserData(userId: string): Promise<void> {
   if (acctErr) throw new Error(`reset accounts failed: ${acctErr.message}`)
 }
 
+/**
+ * Full wipe for M3/M4 specs: clears the user's budgets, recurring rules
+ * (exceptions cascade), groups, then transactions + accounts. FK-safe order:
+ * transactions reference accounts/rules/groups, so they go first; accounts last.
+ */
+export async function resetAllUserData(userId: string): Promise<void> {
+  const a = adminClient()
+  // transactions first (they reference accounts/rules/groups); accounts last.
+  // recurring_exceptions cascade on rule delete (ON DELETE CASCADE on rule_id).
+  for (const table of ['transactions', 'recurring_rules', 'groups', 'budgets', 'accounts'] as const) {
+    const { error } = await a.from(table).delete().eq('user_id', userId)
+    if (error) throw new Error(`reset ${table} failed: ${error.message}`)
+  }
+}
+
 export async function deleteUserByEmail(email: string): Promise<void> {
   const user = await findUserByEmail(email)
   if (!user) return

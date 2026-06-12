@@ -1,0 +1,71 @@
+import { test, expect, type Page } from '@playwright/test'
+import { env, STORAGE_A } from './helpers/env'
+import { findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
+
+/**
+ * M3-S2 — Recurring rule materializes lazily on read; a deleted occurrence must
+ * not be recreated on the next read. Maps to M3-AC1 ("deleting an occurrence +
+ * re-reading does not recreate it") + lazy-on-read materialization.
+ *
+ * The date math is unit-covered (recurrence.test.ts). This spec proves the
+ * integration the unit tests can't: materialize-on-load and the skip/exception
+ * round-trip through the real UI — the only affordance a user has to remove a
+ * generated occurrence.
+ */
+
+const ACCT = 'QA-M3 บัญชีประจำ'
+const AMOUNT = '97' // distinctive amount so occurrence rows are easy to count
+const AMOUNT_TEXT = '฿97.00'
+
+test.use({ storageState: STORAGE_A })
+
+test.beforeAll(async () => {
+  const user = await findUserByEmail(env.userA.email)
+  if (!user) throw new Error(`test user missing: ${env.userA.email}`)
+  await resetAllUserData(user.id)
+  await seedAccount(user.id, ACCT, 'SCB') // becomes accounts[0] → default in the rule form
+})
+
+async function createWeeklyRule(page: Page, amountBaht: string, startDate: string): Promise<void> {
+  await page.goto('/recurring')
+  await page.getByRole('button', { name: 'เพิ่มรายการประจำ' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('จำนวนเงิน (บาท)').fill(amountBaht)
+  // freq Select defaults to รายเดือน (monthly) → switch to รายสัปดาห์ (weekly)
+  await dialog.getByRole('combobox').filter({ hasText: 'รายเดือน' }).click()
+  await page.getByRole('option', { name: 'รายสัปดาห์' }).click()
+  // type defaults to รายจ่าย, account defaults to accounts[0], interval to 1,
+  // weekday left empty → uses the start weekday
+  await dialog.getByLabel('วันเริ่ม').fill(startDate)
+  await dialog.getByRole('button', { name: 'บันทึก' }).click()
+  await expect(dialog).toBeHidden()
+}
+
+test('M3-S2 deleting a generated occurrence is not recreated on reload', async ({ page }) => {
+  // Start on the 1st of the current month so several weekly occurrences fall in
+  // the materialization window (current-month range).
+  const month = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }).slice(0, 7)
+  await createWeeklyRule(page, AMOUNT, `${month}-01`)
+
+  // Lazy-on-read: opening transactions materializes the due occurrences.
+  await page.goto('/transactions')
+  const rows = page.getByText(AMOUNT_TEXT)
+  await expect(rows.first()).toBeVisible()
+  const before = await rows.count()
+  expect(before, 'weekly rule should materialize multiple occurrences this month').toBeGreaterThanOrEqual(2)
+
+  // Delete one occurrence through the ONLY user affordance: the row's trash button.
+  // (The list doesn't optimistically update — it re-reads on navigation — so we
+  // wait for the success toast to know the delete server action has completed.)
+  page.once('dialog', (d) => d.accept()) // window.confirm("ลบรายการนี้?")
+  const firstRow = page.getByText(AMOUNT_TEXT).first().locator('xpath=ancestor::div[contains(@class,"p-3")][1]')
+  await firstRow.getByRole('button').click()
+  await expect(page.getByText('ลบรายการแล้ว')).toBeVisible()
+
+  // Re-read: materialize runs again on load. The deleted occurrence must stay
+  // gone — i.e. a recurring_exceptions row should have been written so lazy-on-read
+  // never recreates it (M3-AC1). If it reappears (count back to `before`), the
+  // delete path didn't record the skip and the occurrence was regenerated.
+  await page.goto('/transactions')
+  await expect(page.getByText(AMOUNT_TEXT)).toHaveCount(before - 1)
+})
