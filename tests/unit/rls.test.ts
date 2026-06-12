@@ -85,3 +85,133 @@ describe.skipIf(SKIP)('RLS isolation: user B cannot read user A data', () => {
     expect(found).toBeUndefined()
   })
 })
+
+describe.skipIf(SKIP)('M4 RLS: guest capability-token (Pattern B)', () => {
+  let host: ReturnType<typeof createClient<Database>>
+  let guest: ReturnType<typeof createClient<Database>>
+  let other: ReturnType<typeof createClient<Database>>
+  let hostId: string
+  let accountId: string
+  const openToken = `rls-test-open-${Date.now()}`
+  const closedToken = `rls-test-closed-${Date.now()}`
+
+  beforeAll(async () => {
+    host = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    // guest + other are bare anon clients — never signed in
+    guest = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    other = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+
+    const res = await host.auth.signInWithPassword({
+      email: USER_A_EMAIL!,
+      password: USER_A_PASS!,
+    })
+    if (res.error) throw new Error(`Host login failed: ${res.error.message}`)
+    hostId = res.data.user!.id
+
+    const { data: acct, error: acctErr } = await host
+      .from('accounts')
+      .insert({ user_id: hostId, name: 'M4 RLS Account', bank: 'SCB' })
+      .select('id')
+      .single()
+    if (acctErr) throw new Error(`Account insert failed: ${acctErr.message}`)
+    accountId = acct!.id
+
+    const { error: sessErr } = await host.from('payment_sessions').insert([
+      // status must be explicit: PostgREST bulk inserts null-fill keys missing
+      // from one row when another row provides them (DEFAULT is not applied).
+      { id: openToken, owner: hostId, account_id: accountId, title: 'Open session', status: 'open' },
+      { id: closedToken, owner: hostId, account_id: accountId, title: 'Closed session', status: 'closed' },
+    ])
+    if (sessErr) throw new Error(`Session insert failed: ${sessErr.message}`)
+  })
+
+  afterAll(async () => {
+    await host.from('payment_sessions').delete().in('id', [openToken, closedToken])
+    await host.from('accounts').delete().eq('id', accountId)
+    await host.auth.signOut()
+  })
+
+  it('anon can read an OPEN session by its token', async () => {
+    const { data, error } = await guest
+      .from('payment_sessions')
+      .select('id, title')
+      .eq('id', openToken)
+      .maybeSingle()
+    expect(error).toBeNull()
+    expect(data?.title).toBe('Open session')
+  })
+
+  it('anon cannot see a CLOSED session', async () => {
+    const { data, error } = await guest
+      .from('payment_sessions')
+      .select('id')
+      .eq('id', closedToken)
+      .maybeSingle()
+    expect(error).toBeNull()
+    expect(data).toBeNull()
+  })
+
+  it('anon can INSERT a slip into an OPEN session', async () => {
+    const { error } = await guest.from('session_slips').insert({
+      session_id: openToken,
+      amount_satang: 12345,
+      ref_code: `ref-${Date.now()}`,
+      paid_at: new Date().toISOString(),
+    })
+    expect(error).toBeNull()
+  })
+
+  it('anon INSERT into a CLOSED session is rejected', async () => {
+    const { error } = await guest.from('session_slips').insert({
+      session_id: closedToken,
+      amount_satang: 12345,
+      paid_at: new Date().toISOString(),
+    })
+    expect(error).not.toBeNull()
+  })
+
+  it('anon cannot SELECT session_slips — not even its own insert', async () => {
+    const { data, error } = await other
+      .from('session_slips')
+      .select('id')
+      .eq('session_id', openToken)
+    expect(error).toBeNull()
+    expect(data ?? []).toHaveLength(0)
+  })
+
+  it('host (owner) sees the guest slip', async () => {
+    const { data, error } = await host
+      .from('session_slips')
+      .select('id, amount_satang, confirmed')
+      .eq('session_id', openToken)
+    expect(error).toBeNull()
+    expect(data).toHaveLength(1)
+    expect(data![0].amount_satang).toBe(12345)
+    expect(data![0].confirmed).toBe(false)
+  })
+
+  it('user B cannot read A\'s sessions or slips', async () => {
+    const clientB = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    const res = await clientB.auth.signInWithPassword({
+      email: USER_B_EMAIL!,
+      password: USER_B_PASS!,
+    })
+    if (res.error) throw new Error(`User B login failed: ${res.error.message}`)
+
+    // anon_read policy is `to anon` only — authenticated B matches just
+    // owner_all, which excludes non-owners.
+    const { data: sessions } = await clientB
+      .from('payment_sessions')
+      .select('id')
+      .in('id', [openToken, closedToken])
+    expect(sessions ?? []).toHaveLength(0)
+
+    const { data: slips } = await clientB
+      .from('session_slips')
+      .select('id')
+      .eq('session_id', openToken)
+    expect(slips ?? []).toHaveLength(0)
+
+    await clientB.auth.signOut()
+  })
+})

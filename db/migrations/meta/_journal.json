@@ -15,6 +15,13 @@
       "when": 1749427200000,
       "tag": "0002_cascade_account_fkeys",
       "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781136000000,
+      "tag": "0003_bank_qr_storage",
+      "breakpoints": false
     }
   ]
 }

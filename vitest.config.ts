@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    // e2e specs are Playwright-only — vitest must not collect them
+    include: ['tests/unit/**/*.test.ts'],
   },
   resolve: {
     alias: { '@': resolve(__dirname, '.') },
