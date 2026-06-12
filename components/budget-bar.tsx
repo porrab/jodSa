@@ -1,5 +1,5 @@
+import { useTranslations } from 'next-intl'
 import { formatTHB } from '@/lib/money'
-import { PERIOD_LABELS } from '@/lib/validators/budget'
 import type { BudgetRow, BudgetStatus } from '@/lib/budget'
 
 export default function BudgetBar({
@@ -9,8 +9,9 @@ export default function BudgetBar({
   budget: BudgetRow
   status: BudgetStatus
 }) {
+  const t = useTranslations('budget')
   const label =
-    budget.scope === 'overall' ? 'ทั้งหมด' : (budget.category ?? 'ไม่ระบุหมวด')
+    budget.scope === 'overall' ? t('scopeOverall') : (budget.category ?? t('noCategory'))
 
   return (
     <div className="space-y-1.5">
@@ -18,7 +19,7 @@ export default function BudgetBar({
         <span className="font-medium">
           {label}
           <span className="ml-1.5 text-xs text-muted-foreground">
-            {PERIOD_LABELS[budget.period]}
+            {budget.period === 'month' ? t('periodMonth') : t('periodDay')}
           </span>
         </span>
         <span className="tabular-nums text-muted-foreground">
@@ -37,8 +38,8 @@ export default function BudgetBar({
 
       <p className={`text-xs tabular-nums ${status.over ? 'text-destructive' : 'text-muted-foreground'}`}>
         {status.over
-          ? `เกินงบ ${formatTHB(-status.remaining)}`
-          : `เหลือ ${formatTHB(status.remaining)}`}
+          ? t('overBy', { amount: formatTHB(-status.remaining) })
+          : t('remaining', { amount: formatTHB(status.remaining) })}
       </p>
     </div>
   )

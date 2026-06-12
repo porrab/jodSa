@@ -1,9 +1,11 @@
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import TransactionsClient from './transactions-client'
 
 export default async function TransactionsPage() {
+  const t = await getTranslations('transaction')
   const supabase = await createClient()
 
   // Lazy-on-read: create any due recurring occurrences for the current month
@@ -22,7 +24,7 @@ export default async function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">รายการ</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
       <TransactionsClient
         transactions={transactions ?? []}
         accounts={accounts ?? []}

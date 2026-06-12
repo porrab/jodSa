@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, PiggyBank } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,8 @@ function BudgetForm({
   action: typeof createBudget | typeof updateBudget
   onSuccess: () => void
 }) {
+  const t = useTranslations('budget')
+  const tc = useTranslations('common')
   const [period, setPeriod] = useState<'day' | 'month'>(defaultValues?.period ?? 'month')
   const [scope, setScope] = useState<'overall' | 'category'>(defaultValues?.scope ?? 'overall')
   const [category, setCategory] = useState(defaultValues?.category ?? '')
@@ -52,22 +55,22 @@ function BudgetForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>รอบ</Label>
+          <Label>{t('period')}</Label>
           <Select value={period} onValueChange={(v) => setPeriod(v as 'day' | 'month')}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="month">รายเดือน</SelectItem>
-              <SelectItem value="day">รายวัน</SelectItem>
+              <SelectItem value="month">{t('periodMonth')}</SelectItem>
+              <SelectItem value="day">{t('periodDay')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>ขอบเขต</Label>
+          <Label>{t('scope')}</Label>
           <Select value={scope} onValueChange={(v) => setScope(v as 'overall' | 'category')}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="overall">ทั้งหมด</SelectItem>
-              <SelectItem value="category">เฉพาะหมวด</SelectItem>
+              <SelectItem value="overall">{t('scopeOverall')}</SelectItem>
+              <SelectItem value="category">{t('scopeCategory')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -75,9 +78,9 @@ function BudgetForm({
 
       {scope === 'category' && (
         <div className="space-y-1.5">
-          <Label>หมวดหมู่</Label>
+          <Label>{t('category')}</Label>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger><SelectValue placeholder="เลือกหมวดหมู่" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
             <SelectContent>
               {CATEGORIES.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -88,7 +91,7 @@ function BudgetForm({
       )}
 
       <div className="space-y-1.5">
-        <Label htmlFor="amount">งบประมาณ (บาท)</Label>
+        <Label htmlFor="amount">{t('amountLabel')}</Label>
         <Input
           id="amount" name="amount" type="text" inputMode="decimal" required
           defaultValue={defaultValues ? (defaultValues.amount_satang / 100).toFixed(2) : ''}
@@ -98,23 +101,24 @@ function BudgetForm({
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? 'กำลังบันทึก...' : 'บันทึก'}
+        {isPending ? tc('saving') : tc('save')}
       </Button>
     </form>
   )
 }
 
 export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
+  const t = useTranslations('budget')
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
 
   async function handleDelete(id: string) {
-    if (!confirm('ลบงบประมาณนี้?')) return
+    if (!confirm(t('deleteConfirm'))) return
     try {
       await deleteBudget(id)
-      toast.success('ลบงบประมาณแล้ว')
+      toast.success(t('deleted'))
     } catch {
-      toast.error('ไม่สามารถลบได้')
+      toast.error(t('deleteFailed'))
     }
   }
 
@@ -122,10 +126,10 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
     <div className="space-y-4">
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />เพิ่มงบประมาณ</Button>
+          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
         </DialogTrigger>
         <DialogContent>
-          <DialogHeader><DialogTitle>เพิ่มงบประมาณ</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
           <BudgetForm action={createBudget} onSuccess={() => setAddOpen(false)} />
         </DialogContent>
       </Dialog>
@@ -133,8 +137,8 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
       {items.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           <PiggyBank className="mx-auto mb-2 size-6" />
-          <p>ยังไม่มีงบประมาณ</p>
-          <p className="text-sm mt-1">ตั้งงบรายเดือนหรือรายวัน แล้วดูยอดคงเหลือเทียบกับการใช้จริง</p>
+          <p>{t('empty')}</p>
+          <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -150,7 +154,7 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
                       <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>แก้ไขงบประมาณ</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
                       <BudgetForm
                         defaultValues={budget}
                         action={updateBudget}

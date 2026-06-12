@@ -21,19 +21,13 @@ export const recurringRuleSchema = z
 
 export type RecurringRuleInput = z.infer<typeof recurringRuleSchema>
 
-export const FREQ_LABELS: Record<'weekly' | 'monthly' | 'yearly', string> = {
-  weekly: 'รายสัปดาห์',
-  monthly: 'รายเดือน',
-  yearly: 'รายปี',
-}
-
-// ISO weekday Mon=1 .. Sun=7
-export const WEEKDAYS: { value: number; label: string }[] = [
-  { value: 1, label: 'จ.' },
-  { value: 2, label: 'อ.' },
-  { value: 3, label: 'พ.' },
-  { value: 4, label: 'พฤ.' },
-  { value: 5, label: 'ศ.' },
-  { value: 6, label: 'ส.' },
-  { value: 7, label: 'อา.' },
+// ISO weekday Mon=1 .. Sun=7 — labels come from i18n messages (recurring.wd1..wd7)
+export const WEEKDAYS: { value: number }[] = [
+  { value: 1 },
+  { value: 2 },
+  { value: 3 },
+  { value: 4 },
+  { value: 5 },
+  { value: 6 },
+  { value: 7 },
 ]

@@ -1,8 +1,10 @@
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import BudgetsClient, { type BudgetItem } from './budgets-client'
 
 export default async function BudgetsPage() {
+  const t = await getTranslations('budget')
   const supabase = await createClient()
 
   // This month's expenses cover both month- and day-period budgets (day ⊂ month).
@@ -31,8 +33,8 @@ export default async function BudgetsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">งบประมาณ</h1>
-        <p className="text-sm text-muted-foreground">ยอดใช้จริงเทียบกับงบ (เฉพาะรายจ่าย)</p>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
       <BudgetsClient items={items} />
     </div>

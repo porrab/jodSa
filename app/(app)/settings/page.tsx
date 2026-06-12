@@ -1,4 +1,16 @@
-// [M5] Settings: language, theme, display name, host-QR upload, account delete (cascade).
-export default function SettingsPage() {
-  return null
+import { getTranslations } from 'next-intl/server'
+import { createClient } from '@/lib/supabase/server'
+import SettingsClient from './settings-client'
+
+export default async function SettingsPage() {
+  const t = await getTranslations('settings')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
+      <SettingsClient email={user?.email ?? ''} />
+    </div>
+  )
 }

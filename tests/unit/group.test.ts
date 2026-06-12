@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupExpenseTotal, groupExpenseByCategory, type GroupMember } from '@/lib/group'
+import { groupExpenseTotal, groupExpenseByCategory, UNCATEGORIZED, type GroupMember } from '@/lib/group'
 
 const m = (type: GroupMember['type'], baht: number, category: string | null = null): GroupMember => ({
   type,
@@ -35,12 +35,12 @@ describe('groupExpenseByCategory', () => {
       m('expense', 100, 'food'),
       m('expense', 900, 'transport'),
       m('transfer', 1000, 'transport'), // excluded
-      m('expense', 50, null), // null → ไม่ระบุหมวด
+      m('expense', 50, null), // null → UNCATEGORIZED sentinel
     ]
     expect(groupExpenseByCategory(members)).toEqual([
       ['transport', 90_000],
       ['food', 50_000],
-      ['ไม่ระบุหมวด', 5_000],
+      [UNCATEGORIZED, 5_000],
     ])
   })
 })

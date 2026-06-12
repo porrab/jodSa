@@ -11,27 +11,33 @@ import {
   PiggyBank,
   Repeat,
   Users,
+  HandCoins,
+  Settings,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { href: '/dashboard', label: 'ภาพรวม', icon: LayoutDashboard },
-  { href: '/transactions', label: 'รายการ', icon: ArrowLeftRight },
-  { href: '/import', label: 'นำเข้า', icon: Upload },
-  { href: '/budgets', label: 'งบประมาณ', icon: PiggyBank },
-  { href: '/recurring', label: 'รายการประจำ', icon: Repeat },
-  { href: '/groups', label: 'กลุ่ม/ทริป', icon: Users },
-  { href: '/accounts', label: 'บัญชี', icon: CreditCard },
-]
+  { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
+  { href: '/transactions', key: 'transactions', icon: ArrowLeftRight },
+  { href: '/import', key: 'import', icon: Upload },
+  { href: '/budgets', key: 'budgets', icon: PiggyBank },
+  { href: '/recurring', key: 'recurring', icon: Repeat },
+  { href: '/groups', key: 'groups', icon: Users },
+  { href: '/sessions', key: 'sessions', icon: HandCoins },
+  { href: '/accounts', key: 'accounts', icon: CreditCard },
+  { href: '/settings', key: 'settings', icon: Settings },
+] as const
 
 // Bottom bar can't hold every item on a phone — show the daily-use subset.
-const MOBILE_HREFS = new Set(['/dashboard', '/transactions', '/import', '/budgets', '/accounts'])
+const MOBILE_HREFS = new Set(['/dashboard', '/transactions', '/import', '/budgets', '/accounts', '/settings'])
 const mobileItems = navItems.filter((i) => MOBILE_HREFS.has(i.href))
 
 export default function AppNav() {
+  const t = useTranslations('nav')
   const pathname = usePathname()
   const router = useRouter()
 
@@ -45,7 +51,7 @@ export default function AppNav() {
     <>
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background md:hidden">
-        {mobileItems.map(({ href, label, icon: Icon }) => (
+        {mobileItems.map(({ href, key, icon: Icon }) => (
           <Link
             key={href}
             href={href}
@@ -57,7 +63,7 @@ export default function AppNav() {
             )}
           >
             <Icon className="size-5" />
-            <span>{label}</span>
+            <span>{t(key)}</span>
           </Link>
         ))}
       </nav>
@@ -68,7 +74,7 @@ export default function AppNav() {
           <span className="text-lg font-bold">JodSa</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map(({ href, label, icon: Icon }) => (
+          {navItems.map(({ href, key, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -80,13 +86,13 @@ export default function AppNav() {
               )}
             >
               <Icon className="size-4" />
-              {label}
+              {t(key)}
             </Link>
           ))}
         </nav>
         <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start gap-3 text-muted-foreground">
           <LogOut className="size-4" />
-          ออกจากระบบ
+          {t('logout')}
         </Button>
       </aside>
     </>

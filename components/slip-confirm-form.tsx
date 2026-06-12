@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { AlertTriangle, ChevronLeft, Info, LockKeyhole } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,11 +34,12 @@ interface Props {
 const LOW_CONFIDENCE = 0.7
 
 function ConfidenceBadge({ confidence }: { confidence: number }) {
+  const t = useTranslations('slip')
   if (confidence >= LOW_CONFIDENCE) return null
   return (
     <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
       <AlertTriangle className="size-2.5" />
-      ความมั่นใจต่ำ
+      {t('lowConfidence')}
     </span>
   )
 }
@@ -48,6 +50,8 @@ function toDatetimeLocal(iso: string): string {
 }
 
 export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: Props) {
+  const t = useTranslations('slip')
+  const locale = useLocale()
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
@@ -83,14 +87,14 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
           // If the existing row has a ref_code, QR decode was reliable on first import —
           // treat this as a hard duplicate even though this attempt's QR decode failed (M2-7).
           if (dup.ref_code) {
-            setError('รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)')
+            setError(t('hardDuplicate'))
             setLoading(false)
             return
           }
-          const when = new Date(dup.datetime).toLocaleString('th-TH', {
+          const when = new Date(dup.datetime).toLocaleString(locale === 'th' ? 'th-TH' : 'en-GB', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
           })
-          setDupWarning(`พบรายการที่คล้ายกัน: ${dup.counterparty ?? 'ไม่ระบุชื่อ'} เมื่อ ${when}`)
+          setDupWarning(t('softDuplicate', { who: dup.counterparty ?? t('unnamed'), when }))
           setPendingFormData(formData)
           setLoading(false)
           return
@@ -127,22 +131,22 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
           <ChevronLeft className="size-4" />
         </Button>
         <div>
-          <h1 className="text-xl font-semibold">ยืนยันรายการ</h1>
-          <p className="text-sm text-muted-foreground">ตรวจสอบและแก้ไขก่อนบันทึก</p>
+          <h1 className="text-xl font-semibold">{t('confirmTitle')}</h1>
+          <p className="text-sm text-muted-foreground">{t('confirmSubtitle')}</p>
         </div>
       </div>
 
       {/* Privacy promise — visible at the scan/confirm step */}
       <div className="flex items-center gap-2 rounded-lg bg-primary/8 px-3 py-2 text-sm text-primary">
         <LockKeyhole className="size-4 shrink-0" />
-        <span>อ่านบนเครื่องคุณ · ภาพไม่ถูกอัปโหลด</span>
+        <span>{t('privacyBadge')}</span>
       </div>
 
       {/* Low-confidence notice */}
       {[slip.amount, slip.datetime, slip.counterparty].some((f) => f.confidence < LOW_CONFIDENCE) && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
           <Info className="mt-0.5 size-4 shrink-0" />
-          <span>บางช่องมีความมั่นใจต่ำ — กรุณาตรวจสอบ</span>
+          <span>{t('lowConfidenceNotice')}</span>
         </div>
       )}
 
@@ -151,10 +155,10 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
           <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{dupWarning}</p>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setDupWarning(null)}>
-              ยกเลิก
+              {t('cancel')}
             </Button>
             <Button size="sm" onClick={confirmDuplicate} disabled={loading}>
-              บันทึกต่อ
+              {t('saveAnyway')}
             </Button>
           </div>
         </div>
@@ -176,14 +180,14 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
 
         {/* Type */}
         <div className="space-y-1.5">
-          <Label>ประเภท</Label>
+          <Label>{t('type')}</Label>
           <Select value={type} onValueChange={(v) => setType(v as 'income' | 'expense')}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="income">รายรับ</SelectItem>
-              <SelectItem value="expense">รายจ่าย</SelectItem>
+              <SelectItem value="income">{t('income')}</SelectItem>
+              <SelectItem value="expense">{t('expense')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -191,7 +195,7 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
         {/* Amount */}
         <div className="space-y-1.5">
           <Label>
-            จำนวนเงิน (บาท)
+            {t('amountLabel')}
             <ConfidenceBadge confidence={slip.amount.confidence} />
           </Label>
           <Input
@@ -207,9 +211,9 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
 
         {/* Account */}
         <div className="space-y-1.5">
-          <Label>บัญชี</Label>
+          <Label>{t('account')}</Label>
           {accounts.length === 0 ? (
-            <p className="text-sm text-destructive">ยังไม่มีบัญชี — กรุณาเพิ่มบัญชีก่อน</p>
+            <p className="text-sm text-destructive">{t('noAccounts')}</p>
           ) : (
             <Select value={accountId} onValueChange={setAccountId}>
               <SelectTrigger>
@@ -228,10 +232,10 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
 
         {/* Category */}
         <div className="space-y-1.5">
-          <Label>หมวดหมู่</Label>
+          <Label>{t('category')}</Label>
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger>
-              <SelectValue placeholder="เลือกหมวดหมู่ (ไม่บังคับ)" />
+              <SelectValue placeholder={t('selectCategoryOptional')} />
             </SelectTrigger>
             <SelectContent>
               {CATEGORIES.map((c) => (
@@ -246,13 +250,13 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
         {/* Counterparty */}
         <div className="space-y-1.5">
           <Label>
-            {type === 'income' ? 'ผู้โอน' : 'ผู้รับ'}
+            {type === 'income' ? t('sender') : t('receiver')}
             <ConfidenceBadge confidence={slip.counterparty.confidence} />
           </Label>
           <Input
             name="counterparty"
             defaultValue={slip.counterparty.value ?? ''}
-            placeholder="ชื่อผู้โอน/ผู้รับ"
+            placeholder={t('counterpartyPlaceholder')}
             className={slip.counterparty.confidence < LOW_CONFIDENCE && slip.counterparty.value ? 'border-amber-400' : ''}
           />
         </div>
@@ -260,7 +264,7 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
         {/* Datetime */}
         <div className="space-y-1.5">
           <Label>
-            วัน/เวลา
+            {t('datetime')}
             <ConfidenceBadge confidence={slip.datetime.confidence} />
           </Label>
           <Input
@@ -275,7 +279,7 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
         {/* Ref code (read-only display) */}
         {slip.refCode.value && (
           <div className="space-y-1.5">
-            <Label className="text-muted-foreground">Ref (จาก QR)</Label>
+            <Label className="text-muted-foreground">{t('refFromQr')}</Label>
             <Input value={slip.refCode.value} readOnly className="font-mono text-xs text-muted-foreground" />
           </div>
         )}
@@ -295,7 +299,7 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
           className="w-full"
           disabled={loading || accounts.length === 0 || !datetimeISO}
         >
-          {loading ? 'กำลังบันทึก...' : 'ยืนยันและบันทึก'}
+          {loading ? t('saving') : t('confirmAndSave')}
         </Button>
       </form>
     </div>

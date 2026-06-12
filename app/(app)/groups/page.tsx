@@ -1,8 +1,10 @@
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { groupExpenseTotal } from '@/lib/group'
 import GroupsClient, { type GroupItem } from './groups-client'
 
 export default async function GroupsPage() {
+  const t = await getTranslations('group')
   const supabase = await createClient()
 
   const [{ data: groups }, { data: txs }] = await Promise.all([
@@ -24,8 +26,8 @@ export default async function GroupsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">กลุ่ม / ทริป</h1>
-        <p className="text-sm text-muted-foreground">จัดกลุ่มรายการแล้วดูยอดรวมและรายละเอียด</p>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
       <GroupsClient groups={items} />
     </div>

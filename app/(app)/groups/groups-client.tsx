@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Users, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,8 @@ function GroupForm({
   action: typeof createGroup | typeof updateGroup
   onSuccess: () => void
 }) {
+  const t = useTranslations('group')
+  const tc = useTranslations('common')
   const [state, formAction, isPending] = useActionState(
     async (prev: { error: string }, fd: FormData) => {
       const result = await action(prev, fd)
@@ -45,32 +48,33 @@ function GroupForm({
     <form action={formAction} className="space-y-4">
       {defaultValues?.id && <input type="hidden" name="id" value={defaultValues.id} />}
       <div className="space-y-1.5">
-        <Label htmlFor="title">ชื่อกลุ่ม/ทริป</Label>
-        <Input id="title" name="title" required defaultValue={defaultValues?.title} placeholder="เช่น ทริปเชียงใหม่" />
+        <Label htmlFor="title">{t('name')}</Label>
+        <Input id="title" name="title" required defaultValue={defaultValues?.title} placeholder={t('namePlaceholder')} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="note">บันทึก (ไม่บังคับ)</Label>
-        <Input id="note" name="note" defaultValue={defaultValues?.note ?? ''} placeholder="รายละเอียด" />
+        <Label htmlFor="note">{t('noteOptional')}</Label>
+        <Input id="note" name="note" defaultValue={defaultValues?.note ?? ''} placeholder={t('notePlaceholder')} />
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? 'กำลังบันทึก...' : 'บันทึก'}
+        {isPending ? tc('saving') : tc('save')}
       </Button>
     </form>
   )
 }
 
 export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
+  const t = useTranslations('group')
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
 
   async function handleDelete(id: string) {
-    if (!confirm('ลบกลุ่มนี้? รายการที่อยู่ในกลุ่มจะไม่ถูกลบ แต่จะถูกนำออกจากกลุ่ม')) return
+    if (!confirm(t('deleteConfirm'))) return
     try {
       await deleteGroup(id)
-      toast.success('ลบกลุ่มแล้ว')
+      toast.success(t('deleted'))
     } catch {
-      toast.error('ไม่สามารถลบได้')
+      toast.error(t('deleteFailed'))
     }
   }
 
@@ -78,10 +82,10 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
     <div className="space-y-4">
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />เพิ่มกลุ่ม</Button>
+          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
         </DialogTrigger>
         <DialogContent>
-          <DialogHeader><DialogTitle>เพิ่มกลุ่ม/ทริป</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('addTitle')}</DialogTitle></DialogHeader>
           <GroupForm action={createGroup} onSuccess={() => setAddOpen(false)} />
         </DialogContent>
       </Dialog>
@@ -89,8 +93,8 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
       {groups.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           <Users className="mx-auto mb-2 size-6" />
-          <p>ยังไม่มีกลุ่ม</p>
-          <p className="text-sm mt-1">จัดกลุ่มรายการเป็นทริปหรือโปรเจกต์ แล้วดูยอดรวม</p>
+          <p>{t('empty')}</p>
+          <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -105,7 +109,7 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
                   {g.note && <p className="truncate text-xs text-muted-foreground">{g.note}</p>}
                   <p className="mt-1 text-sm tabular-nums text-expense">
                     {formatTHB(g.spent)}
-                    <span className="ml-1.5 text-xs text-muted-foreground">{g.count} รายการ</span>
+                    <span className="ml-1.5 text-xs text-muted-foreground">{t('itemCount', { count: g.count })}</span>
                   </p>
                 </Link>
                 <div className="flex flex-col gap-1">
@@ -114,7 +118,7 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
                       <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>แก้ไขกลุ่ม</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
                       <GroupForm
                         defaultValues={{ id: g.id, title: g.title, note: g.note }}
                         action={updateGroup}

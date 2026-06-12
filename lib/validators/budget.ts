@@ -13,8 +13,3 @@ export const budgetSchema = z
   })
 
 export type BudgetInput = z.infer<typeof budgetSchema>
-
-export const PERIOD_LABELS: Record<'day' | 'month', string> = {
-  day: 'รายวัน',
-  month: 'รายเดือน',
-}

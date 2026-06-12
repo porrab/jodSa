@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -11,17 +12,10 @@ import {
 } from '@/components/ui/select'
 import { createTransaction } from '@/app/actions/transactions'
 import { CATEGORIES } from '@/lib/validators/transaction'
-import { formatTHBCompact } from '@/lib/money'
 import type { Database } from '@/lib/supabase/types'
 
 type Account = Database['public']['Tables']['accounts']['Row']
 type TxType = 'income' | 'expense' | 'transfer'
-
-const TYPE_LABELS: Record<TxType, string> = {
-  income: 'รายรับ',
-  expense: 'รายจ่าย',
-  transfer: 'โอนเงิน',
-}
 
 const TYPE_ACTIVE_CLS: Record<TxType, string> = {
   income:   'border-income/40 bg-income/15 text-income hover:bg-income/25',
@@ -48,6 +42,7 @@ export default function TransactionForm({
     bank_code: string
   }>
 }) {
+  const t = useTranslations('transaction')
   const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
   const [accountId, setAccountId] = useState(defaultValues?.account_id ?? '')
   const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
@@ -72,7 +67,7 @@ export default function TransactionForm({
       }
       const result = await createTransaction(prev, fd)
       if (!result.error) {
-        toast.success('บันทึกรายการแล้ว')
+        toast.success(t('saved'))
         onSuccess?.()
       } else {
         toast.error(result.error)
@@ -86,18 +81,18 @@ export default function TransactionForm({
     <form action={formAction} className="space-y-4">
       {/* Type */}
       <div className="space-y-1">
-        <Label>ประเภท</Label>
+        <Label>{t('type')}</Label>
         <div className="flex gap-2">
-          {(['income', 'expense', 'transfer'] as const).map((t) => (
+          {(['income', 'expense', 'transfer'] as const).map((ty) => (
             <Button
-              key={t}
+              key={ty}
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setType(t)}
-              className={cn('flex-1', type === t && TYPE_ACTIVE_CLS[t])}
+              onClick={() => setType(ty)}
+              className={cn('flex-1', type === ty && TYPE_ACTIVE_CLS[ty])}
             >
-              {TYPE_LABELS[t]}
+              {t(ty)}
             </Button>
           ))}
         </div>
@@ -105,7 +100,7 @@ export default function TransactionForm({
 
       {/* Amount */}
       <div className="space-y-1">
-        <Label htmlFor="amount">จำนวนเงิน (บาท)</Label>
+        <Label htmlFor="amount">{t('amount')}</Label>
         <Input
           id="amount"
           name="amount"
@@ -119,10 +114,10 @@ export default function TransactionForm({
 
       {/* Account */}
       <div className="space-y-1">
-        <Label>{type === 'transfer' ? 'บัญชีต้นทาง' : 'บัญชี'}</Label>
+        <Label>{type === 'transfer' ? t('fromAccount') : t('account')}</Label>
         <Select value={accountId} onValueChange={setAccountId} required>
           <SelectTrigger>
-            <SelectValue placeholder="เลือกบัญชี" />
+            <SelectValue placeholder={t('selectAccount')} />
           </SelectTrigger>
           <SelectContent>
             {accounts.map((a) => (
@@ -137,10 +132,10 @@ export default function TransactionForm({
       {/* To account (transfer only) */}
       {type === 'transfer' && (
         <div className="space-y-1">
-          <Label>บัญชีปลายทาง</Label>
+          <Label>{t('toAccount')}</Label>
           <Select value={toAccountId} onValueChange={setToAccountId} required>
             <SelectTrigger>
-              <SelectValue placeholder="เลือกบัญชีปลายทาง" />
+              <SelectValue placeholder={t('selectToAccount')} />
             </SelectTrigger>
             <SelectContent>
               {accounts
@@ -158,10 +153,10 @@ export default function TransactionForm({
       {/* Category (non-transfer) */}
       {type !== 'transfer' && (
         <div className="space-y-1">
-          <Label>หมวดหมู่ (ไม่บังคับ)</Label>
+          <Label>{t('categoryOptional')}</Label>
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger>
-              <SelectValue placeholder="เลือกหมวดหมู่" />
+              <SelectValue placeholder={t('selectCategory')} />
             </SelectTrigger>
             <SelectContent>
               {CATEGORIES.map((c) => (
@@ -175,11 +170,11 @@ export default function TransactionForm({
       {/* Counterparty (non-transfer) */}
       {type !== 'transfer' && (
         <div className="space-y-1">
-          <Label htmlFor="counterparty">ผู้รับ / ผู้โอน (ไม่บังคับ)</Label>
+          <Label htmlFor="counterparty">{t('counterpartyOptional')}</Label>
           <Input
             id="counterparty"
             name="counterparty"
-            placeholder="ชื่อร้านค้า / บุคคล"
+            placeholder={t('counterpartyPlaceholder')}
             defaultValue={defaultValues?.counterparty}
           />
         </div>
@@ -187,7 +182,7 @@ export default function TransactionForm({
 
       {/* Datetime */}
       <div className="space-y-1">
-        <Label htmlFor="datetime">วันที่และเวลา</Label>
+        <Label htmlFor="datetime">{t('date')}</Label>
         <Input
           id="datetime"
           name="datetime"
@@ -200,7 +195,7 @@ export default function TransactionForm({
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? 'กำลังบันทึก...' : 'บันทึกรายการ'}
+        {isPending ? t('saving') : t('save')}
       </Button>
     </form>
   )

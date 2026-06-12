@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Sans_Thai } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages } from 'next-intl/server'
+import { getLocale, getMessages } from 'next-intl/server'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
 import Providers from '@/components/providers'
@@ -30,10 +30,10 @@ export const viewport: Viewport = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const messages = await getMessages()
+  const [locale, messages] = await Promise.all([getLocale(), getMessages()])
 
   return (
-    <html lang="th" suppressHydrationWarning className={ibmPlexSansThai.variable}>
+    <html lang={locale} suppressHydrationWarning className={ibmPlexSansThai.variable}>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>

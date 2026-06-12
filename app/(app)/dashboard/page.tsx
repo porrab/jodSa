@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
@@ -6,11 +7,14 @@ import { formatTHB, computeAccountBalance } from '@/lib/money'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import BudgetBar from '@/components/budget-bar'
-import { startOfMonth, endOfMonth } from 'date-fns'
+import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
+import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
 export default async function DashboardPage() {
+  const t = await getTranslations('dashboard')
   const supabase = await createClient()
 
   const now = new Date()
@@ -21,7 +25,9 @@ export default async function DashboardPage() {
   const { from: matFrom, to: matTo } = currentMonthRange(now)
   await materializeOccurrences(matFrom, matTo)
 
-  const [{ data: accounts }, { data: allTx }, { data: monthTx }, { data: budgets }] =
+  const chartStart = startOfMonth(subMonths(now, 5))
+
+  const [{ data: accounts }, { data: allTx }, { data: monthTx }, { data: budgets }, { data: chartTx }] =
     await Promise.all([
       supabase.from('accounts').select('*').order('created_at'),
       supabase.from('transactions').select('type, amount_satang, account_id, to_account_id'),
@@ -31,12 +37,30 @@ export default async function DashboardPage() {
         .gte('datetime', monthStart)
         .lte('datetime', monthEnd),
       supabase.from('budgets').select('*'),
+      supabase
+        .from('transactions')
+        .select('type, amount_satang, datetime')
+        .in('type', ['income', 'expense'])
+        .gte('datetime', chartStart.toISOString())
+        .lte('datetime', monthEnd),
     ])
+
+  const chartSeries: MonthlyPoint[] = Array.from({ length: 6 }, (_, i) => {
+    const month = format(subMonths(now, 5 - i), 'yyyy-MM')
+    return { month, income: 0, expense: 0 }
+  })
+  const byMonth = new Map(chartSeries.map((p) => [p.month, p]))
+  for (const tx of chartTx ?? []) {
+    const point = byMonth.get(format(new Date(tx.datetime), 'yyyy-MM'))
+    if (!point) continue
+    if (tx.type === 'income') point.income += tx.amount_satang
+    else point.expense += tx.amount_satang
+  }
 
   const monthExpenses = (monthTx ?? []).filter((t) => t.type === 'expense') as ExpenseRow[]
   const budgetItems = ((budgets ?? []) as BudgetRow[])
     .map((budget) => ({ budget, status: budgetStatus(budget, monthExpenses, now) }))
-    .sort((a, b) => (a.budget.scope === 'overall' ? -1 : 1))
+    .sort((a) => (a.budget.scope === 'overall' ? -1 : 1))
     .slice(0, 3)
 
   const totalBalance = (accounts ?? []).reduce(
@@ -59,12 +83,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">ภาพรวม</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       {/* Net balance */}
       <Card>
         <CardHeader className="pb-1">
-          <CardTitle className="text-sm font-medium text-muted-foreground">ยอดรวมทุกบัญชี</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t('totalBalance')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className={`text-3xl font-bold tabular-nums ${totalBalance < 0 ? 'text-destructive' : ''}`}>
@@ -77,7 +101,7 @@ export default async function DashboardPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">รายรับเดือนนี้</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('monthIncome')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-semibold tabular-nums text-income">
@@ -87,7 +111,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">รายจ่ายเดือนนี้</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('monthExpense')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-semibold tabular-nums text-expense">
@@ -101,9 +125,9 @@ export default async function DashboardPage() {
       {(accounts ?? []).length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">บัญชี</h2>
+            <h2 className="font-semibold">{t('accounts')}</h2>
             <Link href="/accounts" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              ดูทั้งหมด <ArrowRight className="size-3" />
+              {t('viewAll')} <ArrowRight className="size-3" />
             </Link>
           </div>
           <div className="rounded-lg border divide-y">
@@ -132,9 +156,9 @@ export default async function DashboardPage() {
       {budgetItems.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">งบประมาณ</h2>
+            <h2 className="font-semibold">{t('budgets')}</h2>
             <Link href="/budgets" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              ดูทั้งหมด <ArrowRight className="size-3" />
+              {t('viewAll')} <ArrowRight className="size-3" />
             </Link>
           </div>
           <Card>
@@ -147,7 +171,15 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* M5: Recharts charts here */}
+      {/* Income vs expense — last 6 months (Recharts, lazy client chunk) */}
+      <div>
+        <h2 className="mb-3 font-semibold">{t('chart6m')}</h2>
+        <Card>
+          <CardContent className="pt-4">
+            <LazyIncomeExpenseChart data={chartSeries} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
