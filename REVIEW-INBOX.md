@@ -7,14 +7,17 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ## [M3] E2E RED — 2026-06-12
 **From**: qa-lab
-**Status**: OPEN
+**Status**: RESOLVED (fix verified by qa-lab re-test 2026-06-12)
 
 ### Items
 
-- [ ] **(id: QA-M3-1)** major — Deleting a single generated recurring occurrence does not stick: it is **recreated on the next page load**. Repro: create a weekly recurring rule whose occurrences fall in the current month (`tests/e2e/m3-recurring.spec.ts`, M3-S2) → open `/transactions` (5 occurrences materialize) → delete one with its trash button (confirm the "ลบรายการนี้?" prompt) → reload `/transactions`. Expected: 4 occurrences remain (the deleted one stays gone — M3-AC1 "deleting an occurrence + re-reading does not recreate it"). Actual: the deleted occurrence reappears (back to 5). Confirmed on two consecutive runs. Evidence: `qa-lab/projects/jodsa/runs/M3-run-2026-06-12.md`; trace `tests/e2e/.results/m3-recurring-M3-S2-deletin-80960--is-not-recreated-on-reload-chromium/trace.zip`.
+- [x] **(id: QA-M3-1)** major — Deleting a single generated recurring occurrence does not stick: it is **recreated on the next page load**. Repro: create a weekly recurring rule whose occurrences fall in the current month (`tests/e2e/m3-recurring.spec.ts`, M3-S2) → open `/transactions` (5 occurrences materialize) → delete one with its trash button (confirm the "ลบรายการนี้?" prompt) → reload `/transactions`. Expected: 4 occurrences remain (the deleted one stays gone — M3-AC1 "deleting an occurrence + re-reading does not recreate it"). Actual: the deleted occurrence reappears (back to 5). Confirmed on two consecutive runs. Evidence: `qa-lab/projects/jodsa/runs/M3-run-2026-06-12.md`; trace `tests/e2e/.results/m3-recurring-M3-S2-deletin-80960--is-not-recreated-on-reload-chromium/trace.zip`.
 
 ### Dev notes
 Suspected cause (not asserted — for your triage): the transactions trash button calls `deleteTransaction(id)` (`app/actions/transactions.ts:50`), a plain row delete that writes no `recurring_exceptions` row. On the next load, `materializeOccurrences` (`lib/recurrence/materialize.ts`) finds no exception and no existing row for that date and re-inserts it. The action that does the right thing — `skipOccurrence(ruleId, occurrenceDate, txId)` (`app/actions/recurring.ts:88`), which deletes the row **and** records the exception — appears to be defined but never imported/called from any UI (grep found only its declaration). So a user has no way to permanently remove one occurrence of a rule. The recurrence engine and `skipOccurrence` themselves look correct in isolation; this is a UI-wiring gap. This is the path the M3 review verified by code inspection but noted had "No browser smoke test." Once wired, qa-lab will re-run M3-S2 (it becomes a regression scenario).
+
+**Dev fix (2026-06-12):** `handleDelete` in `transactions-client.tsx` now branches — a materialized occurrence (`recurring_rule_id` + `occurrence_date` both set) goes through `skipOccurrence` (delete + exception) with the "ข้ามรายการประจำนี้?" prompt; manual transactions still use `deleteTransaction`. `skipOccurrence` also revalidates `/accounts`.
+**qa-lab re-test (2026-06-12):** ✅ verified. M3-S2 green on isolated re-run and full M3 suite (3/3). Evidence: `qa-lab/projects/jodsa/runs/M3-retest-2026-06-12.md`. Standing regression guard in `tests/e2e/m3-recurring.spec.ts`.
 
 ---
 

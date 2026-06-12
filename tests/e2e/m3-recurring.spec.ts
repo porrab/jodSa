@@ -57,10 +57,11 @@ test('M3-S2 deleting a generated occurrence is not recreated on reload', async (
   // Delete one occurrence through the ONLY user affordance: the row's trash button.
   // (The list doesn't optimistically update — it re-reads on navigation — so we
   // wait for the success toast to know the delete server action has completed.)
-  page.once('dialog', (d) => d.accept()) // window.confirm("ลบรายการนี้?")
+  page.once('dialog', (d) => d.accept()) // confirm "ข้ามรายการประจำนี้?" (occurrence skip)
   const firstRow = page.getByText(AMOUNT_TEXT).first().locator('xpath=ancestor::div[contains(@class,"p-3")][1]')
   await firstRow.getByRole('button').click()
-  await expect(page.getByText('ลบรายการแล้ว')).toBeVisible()
+  // an occurrence is skipped (delete + exception), not plainly deleted — distinct toast
+  await expect(page.getByText('ข้ามรายการประจำแล้ว')).toBeVisible()
 
   // Re-read: materialize runs again on load. The deleted occurrence must stay
   // gone — i.e. a recurring_exceptions row should have been written so lazy-on-read
