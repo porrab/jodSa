@@ -79,6 +79,16 @@ describe('extractAmount', () => {
     expect(r.value).toBe(150)
   })
 
+  it('joins large-integer + superscript decimal split by newline (QA-M2-1 TTB bill)', () => {
+    const r = extractAmount('30\n.00\nค่าธรรมเนียม 0.00')
+    expect(r.value).toBe(3000)
+  })
+
+  it('joins large-integer + superscript decimal split by space (QA-M2-1 TTB bill space variant)', () => {
+    const r = extractAmount('30 .00\nค่าธรรมเนียม 0.00')
+    expect(r.value).toBe(3000)
+  })
+
   it('returns null when no amount found', () => {
     const r = extractAmount('ธนาคารไทยพาณิชย์ โอนเงิน')
     expect(r.value).toBeNull()
@@ -170,6 +180,37 @@ describe('extractCounterparty', () => {
   it('extracts ชื่อบัญชี (account name) label', () => {
     const r = extractCounterparty('ชื่อบัญชี: นาย วิชาย มีดี')
     expect(r.value).toContain('วิชาย')
+  })
+
+  it('extracts bare name before masked PromptPay phone with blank line (QA-M2-2 KBank make real OCR)', () => {
+    // Real OCR: blank line + uppercase X between name and mask
+    const r = extractCounterparty('โชติสิริ บุญเต็ม\n\nXXX-XXX-1535')
+    expect(r.value).toBe('โชติสิริ บุญเต็ม')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.65)
+  })
+
+  it('extracts bare name before masked PromptPay phone single newline (QA-M2-2 variant)', () => {
+    const r = extractCounterparty('โชติสิริ บุญเต็ม\nxxx-xxx-1535')
+    expect(r.value).toBe('โชติสิริ บุญเต็ม')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.65)
+  })
+
+  it('extracts bare name before nat-ID mask with OCR = separator (QA-M2-2 KBank make slip 2 real OCR)', () => {
+    // Real OCR: blank line + uppercase X + "=" misread for first dash
+    const r = extractCounterparty('นางปราณี แสงตระการ\n\nX=XXXX-XXXX5-94-0')
+    expect(r.value).toBe('นางปราณี แสงตระการ')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.65)
+  })
+
+  it('extracts bare name before nat-ID mask standard dash (QA-M2-2 KBank make slip 2 standard)', () => {
+    const r = extractCounterparty('นางปราณี แสงตระการ\nx-xxxx-xxxx5-94-0')
+    expect(r.value).toBe('นางปราณี แสงตระการ')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.65)
+  })
+
+  it('does NOT capture sender name before bank account mask xxx-x-xNNNN-x (QA-M2-2 negative)', () => {
+    const r = extractCounterparty('สมชาย ใจดี\nxxx-x-x5678-x')
+    expect(r.value).toBeNull()
   })
 })
 

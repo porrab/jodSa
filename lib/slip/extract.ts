@@ -25,7 +25,7 @@ const AMOUNT_PATTERNS: Array<[RegExp, number]> = [
 ]
 
 export function extractAmount(text: string): FieldConfidence<number> {
-  const t = normalizeThaiDigits(text)
+  const t = normalizeThaiDigits(text).replace(/\b(\d{1,6})\s+\.(\d{2})\b/g, '$1.$2')
   for (const [pattern, confidence] of AMOUNT_PATTERNS) {
     const match = t.match(pattern)
     if (match?.[1]) {
@@ -117,6 +117,10 @@ const COUNTERPARTY_PATTERNS: Array<[RegExp, number]> = [
   [/(?:Recipient|Beneficiary|To)\s*:?\s*([A-Za-zก-๙\s]{3,60})/i, 0.75],
   [/(?:บัญชีปลายทาง|ผู้รับเงิน)\s*:?\s*([^\n\d฿]{3,60})/i, 0.7],
   [/(?:ชื่อบัญชี|ชื่อเจ้าของบัญชี)\s*:?\s*([^\n\d฿]{3,60})/i, 0.72],
+  // K+ bare-name line before masked PromptPay phone (xxx-xxx-NNNN) or national-ID (x-xxxx-xxxxN-NN-N).
+  // OCR may insert a blank line between name and mask (\n{1,3}); first nat-ID separator sometimes
+  // misread as "=" (e.g. X=XXXX instead of X-XXXX).
+  [/([^\n\d฿:]{3,60})\n{1,3}(?:[xX]{3}[-–][xX]{3}[-–]\d{3,4}|[xX][=\-–][xX]{4}[-–][xX]{3,4}\d[-–]\d{2}[-–]\d)\b/, 0.68],
   // Sender label — used for income slips where the payer's name is shown
   [/(?:ผู้โอน|ชื่อผู้โอน)\s*:?\s*([^\n\d฿]{3,60})/i, 0.65],
   [/(?:From|Sender)\s*:?\s*([A-Za-zก-๙\s]{3,60})/i, 0.65],
