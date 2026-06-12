@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
-import { th } from 'date-fns/locale'
+import { th, enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,16 +13,17 @@ import {
 } from '@/components/ui/dialog'
 import TransactionForm from '@/components/transaction-form'
 import { deleteTransaction } from '@/app/actions/transactions'
+import { skipOccurrence } from '@/app/actions/recurring'
 import { formatTHB } from '@/lib/money'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
 
-const TYPE_STYLE: Record<string, { label: string; badgeCls: string; textCls: string; prefix: string }> = {
-  income:   { label: 'รายรับ',  badgeCls: 'border-income/30 bg-income/10 text-income',      textCls: 'text-income',   prefix: '+' },
-  expense:  { label: 'รายจ่าย', badgeCls: 'border-expense/30 bg-expense/10 text-expense',   textCls: 'text-expense',  prefix: '-' },
-  transfer: { label: 'โอนเงิน', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer', prefix: '' },
+const TYPE_STYLE: Record<string, { key: string; badgeCls: string; textCls: string; prefix: string }> = {
+  income:   { key: 'income',   badgeCls: 'border-income/30 bg-income/10 text-income',       textCls: 'text-income',   prefix: '+' },
+  expense:  { key: 'expense',  badgeCls: 'border-expense/30 bg-expense/10 text-expense',    textCls: 'text-expense',  prefix: '-' },
+  transfer: { key: 'transfer', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer', prefix: '' },
 }
 
 export default function TransactionsClient({
@@ -31,16 +33,27 @@ export default function TransactionsClient({
   transactions: Transaction[]
   accounts: Account[]
 }) {
+  const t = useTranslations('transaction')
+  const locale = useLocale()
+  const dateLocale = locale === 'th' ? th : enUS
   const [addOpen, setAddOpen] = useState(false)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
 
-  async function handleDelete(id: string) {
-    if (!confirm('ลบรายการนี้?')) return
+  async function handleDelete(tx: Transaction) {
+    // A materialized recurring occurrence must be skipped (delete + exception
+    // row), or the lazy-on-read materializer will recreate it on next load.
+    const isOccurrence = tx.recurring_rule_id != null && tx.occurrence_date != null
+    const msg = isOccurrence ? t('skipOccurrenceConfirm') : t('deleteConfirm')
+    if (!confirm(msg)) return
     try {
-      await deleteTransaction(id)
-      toast.success('ลบรายการแล้ว')
+      if (isOccurrence) {
+        await skipOccurrence(tx.recurring_rule_id!, tx.occurrence_date!, tx.id)
+      } else {
+        await deleteTransaction(tx.id)
+      }
+      toast.success(isOccurrence ? t('occurrenceSkipped') : t('deleted'))
     } catch {
-      toast.error('ไม่สามารถลบรายการได้')
+      toast.error(t('actionFailed'))
     }
   }
 
@@ -48,10 +61,10 @@ export default function TransactionsClient({
     <div className="space-y-4">
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />เพิ่มรายการ</Button>
+          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
         </DialogTrigger>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>เพิ่มรายการใหม่</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
           <TransactionForm
             accounts={accounts}
             onSuccess={() => setAddOpen(false)}
@@ -61,8 +74,8 @@ export default function TransactionsClient({
 
       {transactions.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          <p>ยังไม่มีรายการ</p>
-          <p className="text-sm mt-1">เพิ่มรายการแรกของคุณ</p>
+          <p>{t('noTransactions')}</p>
+          <p className="text-sm mt-1">{t('addFirst')}</p>
         </div>
       ) : (
         <div className="rounded-lg border divide-y">
@@ -79,7 +92,7 @@ export default function TransactionsClient({
                       'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
                       style.badgeCls,
                     )}>
-                      {style.label}
+                      {t(style.key)}
                     </span>
                     {tx.category && (
                       <span className="text-xs text-muted-foreground">{tx.category}</span>
@@ -89,7 +102,7 @@ export default function TransactionsClient({
                     {tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : acct?.name ?? '—')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(tx.datetime), 'd MMM yyyy HH:mm', { locale: th })}
+                    {format(new Date(tx.datetime), 'd MMM yyyy HH:mm', { locale: dateLocale })}
                     {acct && <> · {acct.name}</>}
                   </p>
                 </div>
@@ -101,7 +114,7 @@ export default function TransactionsClient({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => handleDelete(tx.id)}
+                  onClick={() => handleDelete(tx)}
                   className="shrink-0 text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="size-3.5" />

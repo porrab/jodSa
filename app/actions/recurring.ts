@@ -95,4 +95,5 @@ export async function skipOccurrence(ruleId: string, occurrenceDate: string, txI
   revalidatePath('/recurring')
   revalidatePath('/transactions')
   revalidatePath('/dashboard')
+  revalidatePath('/accounts')
 }
