@@ -32,6 +32,24 @@ Three issues found while testing the deployed app on a phone. FIELD-1 and FIELD-
 ### Dev notes
 Fix order: FIELD-1 first (one-line padding change, unblocks saving on mobile for QR slips — the highest-impact defect). FIELD-3 is a small, self-contained `useState` initializer change. FIELD-2 needs the OCR text before the pattern can be written — gather that artifact in parallel. FIELD-1 and FIELD-3 are pm-desk re-reviewable from code + a mobile screenshot; FIELD-2's fix should also get a qa-lab E2E pass on the affected bank's slip.
 
+### pm-desk re-review (2026-06-13)
+Code-verified all three changes against the build tree (commit `5ebecfa`), not taken on report alone:
+- FIELD-1: `pb-24 md:pb-6` on both inner containers (`app/(app)/layout.tsx:14`, `app/import/page.tsx:24`) — `pb-24` = 96px clears the ~56–60px fixed nav, `md:pb-6` resets on desktop. ✔ correct.
+- FIELD-3: lazy initializer at `components/slip-confirm-form.tsx:60-64` matches `slip.bankCode.value?.toLowerCase()` against `account.bank.toLowerCase()`, falls back to `accounts[0]`, stays user-overridable. ✔ correct.
+- FIELD-2 part 1: `extractCounterparty` now runs `normalizeThaiDigits(text)` first (`lib/slip/extract.ts:130-132`). ✔ parity achieved.
+
+Verdicts:
+- **FIELD-3 → APPROVED** (deterministic; verifiable from code).
+- **FIELD-2 part 1 → verified**; item stays OPEN for parts 2–3 (pattern + real-OCR test) pending the artifact.
+- **FIELD-1 → code correct, NOT yet closed.** It's a visual/layout fix, so it needs evidence at the rendered-mobile altitude before sign-off (P6). The right gate is a mobile-viewport E2E, not a one-off manual phone screenshot.
+
+(The dev also fixed PWA installability outside this brief: `ddd0350` manifest URL `/manifest.json`→`/manifest.webmanifest`, `fe8fd82` real 192/512 icons replacing 1×1 placeholders — both were installability blockers. Out of this brief's scope; noted for the record.)
+
+### qa-lab handoff (FIELD-1 + FIELD-2)
+qa-lab owns the slip corpus + E2E harness, so route these to it. Both run against the local/branch build with the `5ebecfa` fix — **no Vercel deploy needed**.
+- **(QA-FIELD-1)** mobile-viewport E2E (e.g. 390×844): import a **readable-QR** slip → reach the confirm form → assert the `w-full` submit button is inside the viewport and clickable (its bounding box does not intersect the `fixed bottom-0` nav), then save end-to-end. Stronger and repeatable vs a phone screenshot, and becomes a standing regression guard against nav occlusion. Also worth a non-QR control slip (shorter form) so the test pins the QR-only height delta. → clears FIELD-1.
+- **(QA-FIELD-2)** run the corpus through the confirm flow on a local `next build && next start`; the `rawTextDebug` panel renders on non-prod. Identify which bank(s) yield an **empty counterparty**, capture the **raw OCR text** for each failing slip, and file it (OCR text + bank name) — a `QA-FIELD-2` note here or straight to dev. Dev adds the `COUNTERPARTY_PATTERNS` entry + a unit test from the real string; qa-lab re-runs E2E to confirm the name pre-fills. FIELD-2 stays OPEN until that round is green.
+
 ---
 
 ## [M3] E2E RED — 2026-06-12
