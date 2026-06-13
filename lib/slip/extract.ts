@@ -127,8 +127,11 @@ const COUNTERPARTY_PATTERNS: Array<[RegExp, number]> = [
 ]
 
 export function extractCounterparty(text: string): FieldConfidence<string> {
+  // Normalize like extractAmount/extractDateTime so decomposed sara-am and Thai digits
+  // in labels/names don't break matching (parity fix, same class as M2-12).
+  const t = normalizeThaiDigits(text)
   for (const [pattern, confidence] of COUNTERPARTY_PATTERNS) {
-    const match = text.match(pattern)
+    const match = t.match(pattern)
     if (match?.[1]) {
       const name = match[1].trim().replace(/\s+/g, ' ')
       if (name.length >= 3) return { value: name, confidence }

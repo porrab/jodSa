@@ -20,7 +20,8 @@ export default async function ImportPage() {
     <div className="flex min-h-svh">
       <AppNav />
       <main className="flex-1 overflow-auto">
-        <div className="container mx-auto max-w-2xl p-4 md:p-6">
+        {/* pb-24 on mobile clears the fixed bottom nav so the slip Save button stays tappable */}
+        <div className="container mx-auto max-w-2xl p-4 pb-24 md:p-6 md:pb-6">
           <ImportClient
             displayName={profile?.display_name ?? null}
             accounts={accounts ?? []}

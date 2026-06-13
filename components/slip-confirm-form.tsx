@@ -54,7 +54,14 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
   const locale = useLocale()
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
+  // Pre-select the account whose bank matches the slip's detected bank (case-insensitive,
+  // since account.bank is e.g. "KBank" while inferBankCode emits "KBANK"); fall back to the
+  // first account when there's no match or no detected bank. User can still override.
+  const [accountId, setAccountId] = useState(() => {
+    const code = slip.bankCode.value?.toLowerCase()
+    const matched = code ? accounts.find((a) => a.bank.toLowerCase() === code) : undefined
+    return (matched ?? accounts[0])?.id ?? ''
+  })
   const [category, setCategory] = useState('')
   const [datetimeLocal, setDatetimeLocal] = useState(
     slip.datetime.value ? toDatetimeLocal(slip.datetime.value) : '',
