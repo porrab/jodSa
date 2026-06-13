@@ -22,6 +22,19 @@ Re-ran `tests/e2e/field-2-counterparty-capture.spec.ts` against the FIELD-2 part
 - **KTB จ่ายบิล** empty is an accepted known-limitation (biller `TUNGNGERN (กบตามสั่ง)`, no anchor) — consistent with the bill-payment biller deferral.
 - When 2a/2b close, `field-2-counterparty-capture.spec.ts` converts from capture to the standing per-slip regression assertion (recipient substring + party correctness).
 
+### pm-desk scoping verdict (2026-06-13) — QA-FIELD-2a/2b
+qa-lab asked pm-desk to scope the bill-payment biller. Decision, splitting 2a into its two distinct problems:
+
+1. **Biller-NAME auto-fill on bill payments → SCOPED OUT** (accepted known-limitation, manual entry), for **both TTB and KTB** bills. Rationale: billers are id-based (`(NNNN…)`, no name mask/label anchor); at production stakes auto-filling every biller name isn't required, and chasing it invites more wrong captures. Consistent with the already-accepted KTB-bill (`TUNGNGERN`) deferral.
+
+2. **The misleading SENDER-as-counterparty on bills is NOT scoped out — REQUIRED fix.** Showing the payer's own name as the counterparty is a correctness defect (wrong-but-plausible is worse than empty). **Fix that also honours (1):** make `TTB_POSITIONAL` require **≥2 mask matches** before it fires — transfers have two blocks (sender+recipient → last = recipient ✓), bills have one (sender only) → the fallback must **not** fire and the field falls through to **empty** (the accepted known-limitation state, same as KTB bill). This is conservative by design: auto-fill only when both parties are visible, erring to empty rather than wrong. Add a unit test: a single-mask (bill) input returns `null` from the positional fallback.
+
+3. **`cleanCounterparty` latin-junk leak → should-fix** (lower priority once (2) suppresses the bill captures where `Ub`/`pp UNE` were observed, but transfers could also carry latin junk). Strip a leading run of latin letters/glyphs up to the first Thai char when the captured name is Thai.
+
+4. **QA-FIELD-2b (Paotang anchor) → minor, fix-if-cheap.** Loosen the `G-Wallet ID:` anchor to tolerate OCR variants (qa-lab's `G-?Wallet\s*[I!1l][D0]`). Paotang merchant is already lowest-confidence (0.5) — **not a blocker** for FIELD-2 closure if it stays best-effort.
+
+**FIELD-2 closure bar:** transfers pre-fill recipient (✅ done) · bills no longer show a wrong name (item 2, REQUIRED) · biller-NAME auto-fill accepted out-of-scope · Paotang-mangled merchant may remain best-effort. Dev owns 2a item-2 (+ recommended item-3); qa-lab re-runs `field-2-counterparty-capture.spec.ts` and confirms the close (QA-* item).
+
 ---
 
 ## [FIELD] qa-lab E2E — 2026-06-13
