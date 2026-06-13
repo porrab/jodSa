@@ -1,5 +1,5 @@
 import 'server-only'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import { generateOccurrenceDates } from './recurrence'
 import type { Database } from '@/lib/supabase/types'
 
@@ -18,9 +18,7 @@ type TxInsert = Database['public']['Tables']['transactions']['Insert']
  */
 export async function materializeOccurrences(from: string, to: string): Promise<void> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) return
 
   const { data: rules } = await supabase

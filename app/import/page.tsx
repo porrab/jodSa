@@ -1,16 +1,15 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import AppNav from '@/components/app-nav'
 import ImportClient from './import-client'
 
 export const metadata = { title: 'นำเข้าสลิป — JodSa' }
 
 export default async function ImportPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
+
+  const supabase = await createClient()
 
   const [{ data: profile }, { data: accounts }] = await Promise.all([
     supabase.from('users').select('display_name').eq('id', user.id).single(),

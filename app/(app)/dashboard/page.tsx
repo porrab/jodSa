@@ -21,29 +21,40 @@ export default async function DashboardPage() {
   const monthStart = startOfMonth(now).toISOString()
   const monthEnd = endOfMonth(now).toISOString()
 
-  // Lazy-on-read: materialize due recurring occurrences for this month first.
+  const chartStart = startOfMonth(subMonths(now, 5))
+
+  // accounts + budgets don't depend on recurring materialization, so fetch them
+  // concurrently with it instead of waiting behind it.
+  const independent = Promise.all([
+    supabase.from('accounts').select('*').order('created_at'),
+    supabase.from('budgets').select('*'),
+  ])
+
+  // Lazy-on-read: the transaction reads below count materialized occurrences
+  // (real rows), so they must wait until materialization has written them.
   const { from: matFrom, to: matTo } = currentMonthRange(now)
   await materializeOccurrences(matFrom, matTo)
 
-  const chartStart = startOfMonth(subMonths(now, 5))
-
-  const [{ data: accounts }, { data: allTx }, { data: monthTx }, { data: budgets }, { data: chartTx }] =
-    await Promise.all([
-      supabase.from('accounts').select('*').order('created_at'),
+  const [
+    [{ data: accounts }, { data: budgets }],
+    [{ data: allTx }, { data: monthTx }, { data: chartTx }],
+  ] = await Promise.all([
+    independent,
+    Promise.all([
       supabase.from('transactions').select('type, amount_satang, account_id, to_account_id'),
       supabase
         .from('transactions')
         .select('type, amount_satang, category, datetime')
         .gte('datetime', monthStart)
         .lte('datetime', monthEnd),
-      supabase.from('budgets').select('*'),
       supabase
         .from('transactions')
         .select('type, amount_satang, datetime')
         .in('type', ['income', 'expense'])
         .gte('datetime', chartStart.toISOString())
         .lte('datetime', monthEnd),
-    ])
+    ]),
+  ])
 
   const chartSeries: MonthlyPoint[] = Array.from({ length: 6 }, (_, i) => {
     const month = format(subMonths(now, 5 - i), 'yyyy-MM')
