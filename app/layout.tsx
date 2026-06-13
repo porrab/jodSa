@@ -16,7 +16,7 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 export const metadata: Metadata = {
   title: 'JodSa',
   description: 'บันทึกการเงินส่วนตัว — อ่านสลิปธนาคารไทยบนอุปกรณ์ของคุณ',
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest',  
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'JodSa' },
 }
 
