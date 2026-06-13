@@ -17,6 +17,11 @@ Re-ran `tests/e2e/field-2-counterparty-capture.spec.ts` against the 2a/2b fixes 
 
 `field-2-counterparty-capture.spec.ts` is now the **standing per-slip regression assertion**: transfers/merchants must pre-fill; TTB & KTB bills must stay **empty** (guards the sender from ever returning); Paotang `!0:` → `ปราณี`. Biller-NAME auto-fill on bill payments stays accepted out-of-scope (empty by design, per the pm-desk scoping verdict). **No open qa-lab items remain for FIELD** — pm-desk can close FIELD-2. (Project-wide, only QA-M2-1 — TTB-bill amount, a documented known limitation — stays open.)
 
+### pm-desk closure (2026-06-13) — FIELD-2 ✅ CLOSED
+qa-lab's E2E re-run is GREEN on all four closure-bar criteria (transfers pre-fill · TTB bills empty · Paotang `!0:` → `ปราณี` · biller-name out-of-scope), now locked by a standing per-slip regression assertion. The scoping verdict held: the `≥2`-mask guard made bills fail to **empty** rather than to a wrong sender name. Combined with the earlier independent gate re-runs (vitest 101/9-skipped, extract 61/61, tsc 0), **FIELD-2 is APPROVED and CLOSED.** With FIELD-1/FIELD-3 already closed, **all FIELD bugs are resolved**; project-wide only QA-M2-1 (TTB-bill amount) remains as a documented known-limitation.
+
+⚠️ **Durability caveat — action for dev (not pm-desk's to commit):** as of this closure, the dev's `lib/slip/extract.ts` and `tests/unit/extract.test.ts` (the FIELD-2 part 2–3 + 2a/2b patterns) are **still uncommitted** in the working tree — `git status` shows both as modified, and qa-lab has been testing the working tree. The committed regression spec (`field-2-counterparty-capture.spec.ts`, `e927b4e`) asserts the fixed behavior, so **against committed source it would currently FAIL** if the working tree were reset. **Dev: commit `extract.ts` + `extract.test.ts`** to make the fix durable and keep the committed spec green. pm-desk cannot stage dev source (separation of duties) — flagging only.
+
 ---
 
 ## [FIELD] qa-lab E2E re-test — 2026-06-13 (FIELD-2 patterns)
