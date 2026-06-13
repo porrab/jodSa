@@ -5,6 +5,25 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [FIELD] qa-lab E2E re-test — 2026-06-13 (FIELD-2 patterns)
+**From**: qa-lab
+**Status**: FIELD-2 transfers ✅ verified · QA-FIELD-2a OPEN (major) · QA-FIELD-2b OPEN (minor) — FIELD-2 stays OPEN
+
+Re-ran `tests/e2e/field-2-counterparty-capture.spec.ts` against the FIELD-2 part 2–3 patterns (working tree on `0593d40`). The **transfer recipient pre-fill — the core FIELD-2 gap — is fixed** across all banks: KTB transfers 3/3, TTB transfers 2/2, KBank 2/2, Paotang merchants 2/3. Nice work. But the E2E (behavioral) gate caught two things the hand-picked unit strings didn't. Full evidence + OCR: `qa-lab/projects/jodsa/runs/FIELD-2-retest-2026-06-13.md`.
+
+### Items
+
+- [ ] **(id: QA-FIELD-2a)** major — **TTB จ่ายบิล (bill payment): the confirm form pre-fills the SENDER (the payer's own name), not the biller/recipient.** Repro: import a TTB bill-payment slip → counterparty field shows the payer. Expected: the biller/recipient. Actual: payer + a leaked OCR prefix. Cause: `TTB_POSITIONAL` (`lib/slip/extract.ts:132`) last-matches `name\nXXX-X-XXNNN-N`; on **transfers** both parties carry that mask (last = recipient ✓), but on **bills the biller has no mask** — it's a `(NNNNN…)` id — so the only mask is the sender's and last-match returns the sender. Also `cleanCounterparty` (`:140`) strips only leading **non-letters**, so latin junk survives. Evidence: `BillPayment_20260522_132356.jpg` → `Ub นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา` (biller is `SCB มณี SHOP`); `BillPayment_20260521_115411.jpg` → `pp UNE ธนภูมิ เสนีวงศ์ ณ อยุธยา` (recipient is `นาง ศิริพร ศรีธวัช ณ อยุธยา`). Risk: a wrong-but-plausible name saved unnoticed (worse than empty). Suggested direction: for TTB, anchor the recipient on the block **after** the dest-bank token / after the sender block, and for billers capture the line preceding the `(NNNN…)` id; strip short latin/glyph prefixes in `cleanCounterparty`.
+
+- [ ] **(id: QA-FIELD-2b)** minor — **Paotang merchant lost when OCR renders `G-Wallet ID:` as `G-Wallet !0:`.** `PAOTANG_SECTION` (`:135`) anchors on the literal `G-Wallet ID:`. Evidence: `PaoTang_2026_06_07 18_39_32.png` → empty (merchant `ปราณี` lost; OCR line was `G-Wallet !0: …`). Suggested: loosen the anchor (e.g. `G-?Wallet\s*[I!1l][D0]`) or bound the section by the masked-wallet line and `ค่าสินค้า/บริการ`.
+
+### Dev notes
+- **QA-FIELD-2 (transfers) is verified ✅** — KTB/TTB transfer recipient names now pre-fill. QA-FIELD-2a/2b are the re-opened remainder (inbox protocol: checked-but-still-failing → new ids referencing the original). **FIELD-2 stays OPEN** until 2a/2b land and qa-lab re-runs, or pm-desk scopes TTB-bill biller extraction out (as KTB-bill biller already is).
+- **KTB จ่ายบิล** empty is an accepted known-limitation (biller `TUNGNGERN (กบตามสั่ง)`, no anchor) — consistent with the bill-payment biller deferral.
+- When 2a/2b close, `field-2-counterparty-capture.spec.ts` converts from capture to the standing per-slip regression assertion (recipient substring + party correctness).
+
+---
+
 ## [FIELD] qa-lab E2E — 2026-06-13
 **From**: qa-lab
 **Status**: QA-FIELD-1 ✅ GREEN (clears FIELD-1) · QA-FIELD-2 OPEN (capture filed)
