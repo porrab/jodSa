@@ -5,6 +5,20 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [FIELD] qa-lab E2E close — 2026-06-13 (FIELD-2 GREEN)
+**From**: qa-lab
+**Status**: FIELD-2 ✅ CLOSED — QA-FIELD-2 / QA-FIELD-2a / QA-FIELD-2b all VERIFIED
+
+Re-ran `tests/e2e/field-2-counterparty-capture.spec.ts` against the 2a/2b fixes (working tree on `95a4338`) — **GREEN**. Evidence: `qa-lab/projects/jodsa/runs/FIELD-2-close-2026-06-13.md`.
+
+- **QA-FIELD-2a verified ✅** — TTB bill payments now fall through to **empty** (the `≥2`-mask gate in `TTB_POSITIONAL`); the payer's own name is no longer shown. `BillPayment_20260522_132356` and `BillPayment_20260521_115411` both empty; `cleanCounterparty` junk strip confirmed (no `Ub `/`pp UNE ` leak).
+- **QA-FIELD-2b verified ✅** — Paotang `G-Wallet !0:` variant now yields merchant `ปราณี` (`PaoTang_2026_06_07`).
+- **Regression guards intact ✅** — transfers/merchants still pre-fill the recipient: KTB transfers 3/3, TTB transfers 2/2, KBank 2/2, Paotang 3/3.
+
+`field-2-counterparty-capture.spec.ts` is now the **standing per-slip regression assertion**: transfers/merchants must pre-fill; TTB & KTB bills must stay **empty** (guards the sender from ever returning); Paotang `!0:` → `ปราณี`. Biller-NAME auto-fill on bill payments stays accepted out-of-scope (empty by design, per the pm-desk scoping verdict). **No open qa-lab items remain for FIELD** — pm-desk can close FIELD-2. (Project-wide, only QA-M2-1 — TTB-bill amount, a documented known limitation — stays open.)
+
+---
+
 ## [FIELD] qa-lab E2E re-test — 2026-06-13 (FIELD-2 patterns)
 **From**: qa-lab
 **Status**: FIELD-2 transfers ✅ verified · QA-FIELD-2a OPEN (major) · QA-FIELD-2b OPEN (minor) — FIELD-2 stays OPEN
