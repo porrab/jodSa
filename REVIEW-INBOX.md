@@ -5,6 +5,32 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [FIELD] CHANGES NEEDED — 2026-06-13
+**From**: pm-desk (post-MVP field bugs from device testing on the Vercel/PWA build)
+**Status**: OPEN
+
+Three issues found while testing the deployed app on a phone. FIELD-1 and FIELD-2 are defects; FIELD-3 is a UX enhancement. Root causes for FIELD-1 and FIELD-3 are confirmed in code; FIELD-2's mechanism is confirmed but the exact missing pattern needs the failing slip's OCR text.
+
+### Items
+
+- [ ] **(id: FIELD-1)** major — **Save button is hidden behind the mobile bottom nav, but only on slips with a readable QR.** Repro: on a phone (or mobile viewport), import a slip whose QR decodes → the confirm form renders and shows the "Ref (from QR)" field → there is no reachable Save button. Slips *without* a readable QR show the Save button fine.
+  **Root cause (confirmed in code):** the scrollable content container `<main className="flex-1 overflow-auto"> <div className="container mx-auto … p-4 md:p-6">` has **no bottom padding to clear the fixed mobile bottom nav**. The nav is `fixed bottom-0 left-0 right-0 z-50 … md:hidden` (~56–60px tall) in `components/app-nav.tsx:53`. The slip confirm form's submit button (`components/slip-confirm-form.tsx:297`, `w-full`) is the **last element** in the form, so it lands in the bottom strip that the fixed nav overlays — and because the nav is `fixed`, scrolling can't move the button out from under it. On QR slips the extra read-only **Ref field** (`components/slip-confirm-form.tsx:280-285`, rendered only when `slip.refCode.value` is set) adds ~70px, pushing the form past the viewport so the button ends up squarely behind the nav. Non-QR slips are shorter, so their button clears the nav. The button is **not** disabled — it is rendered but occluded. (The earlier "datetime missing / no accounts disables the button" theory was ruled out: `parse-image.ts:82` always sets a fallback datetime, and the user has accounts.)
+  **Fix:** add bottom padding ≥ the nav height to the scroll container so the last element always clears the mobile nav. Apply `pb-24 md:pb-6` (or `pb-20`) to the inner `container` div in **both** `app/(app)/layout.tsx:13` and `app/import/page.tsx:23` — this fixes every page's last element on mobile, not just import. **Fixed =** on a small phone, importing a QR slip shows a fully visible, tappable Save button below the Ref field; confirm a transaction saves end-to-end.
+  **Optional cleanup (not required for the fix):** `app/import/page.tsx` duplicates the `(app)` layout shell (its own `<AppNav/>` + `<main>`) instead of living under the `(app)` route group. Consolidating would remove the double-maintenance of the same padding.
+
+- [ ] **(id: FIELD-2)** major — **Recipient/sender name is not pre-filled in the confirm form** for (at least some) banks. The confirm form pre-fills from `slip.counterparty.value` (`components/slip-confirm-form.tsx:258`), so an empty field means `extractCounterparty` returned `null`.
+  **Root cause (mechanism confirmed):** `extractCounterparty` (`lib/slip/extract.ts:129`) only matches when a recognized label keyword precedes the name (`ผู้รับ`/`ชื่อผู้รับ`/`โอนไปยัง`/`ปลายทาง`/`บัญชีปลายทาง`/`ผู้รับเงิน`/`ชื่อบัญชี`/`ชื่อเจ้าของบัญชี`/`ผู้โอน`, or the one K+ positional pattern). For slip layouts whose recipient name has **no recognized label** — or whose label is OCR-mangled — it returns `null`. **Secondary defect:** unlike `extractAmount` and `extractDateTime`, `extractCounterparty` runs on the **raw** OCR text — it never calls `normalizeThaiDigits`, so decomposed sara-am (`ํา`→`ำ`) and Thai-digit artifacts in labels/names are not normalized before matching (the same class of bug as M2-12). Even when a name is captured, it may carry decomposed characters.
+  **Need to pin the exact gap:** the bank(s) where the name is missing, plus the slip's OCR text. NOTE: the built-in OCR debug panel (`components/slip-confirm-form.tsx:288`) only renders when `NODE_ENV === 'development'`, so it will **not** appear on the Vercel production build — capture the OCR text from a local `next build && next start` (or temporarily un-gate `rawTextDebug`).
+  **Fix direction:** (1) run `extractCounterparty` through `normalizeThaiDigits` first, for parity with the other extractors; (2) once the OCR text identifies the layout, add the bank-specific label or positional pattern (extends the QA-M2-2 work); (3) add a unit test in `tests/unit/extract.test.ts` using the real OCR string. **Fixed =** the failing bank's recipient name pre-fills the confirm form; new unit test passes.
+
+- [ ] **(id: FIELD-3)** enhancement — **Auto-select the destination account by the slip's detected bank.** Today the account always defaults to the first account: `const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')` (`components/slip-confirm-form.tsx:57`). The slip already detects the issuing bank (`inferBankCode` → `slip.bankCode.value`, also passed as the hidden `bank_code` field at `slip-confirm-form.tsx:177-179`) and the `Account` type already carries `bank` (`slip-confirm-form.tsx:21-25`, fetched in `app/import/page.tsx:16`), so the data to match on is present.
+  **Fix direction:** initialize `accountId` to the first account whose `bank` matches `slip.bankCode.value` (case-insensitive), falling back to `accounts[0]` when there is no match (or no detected bank). Keep it a pre-selection the user can still override. Optionally show a subtle hint when auto-matched. **Fixed =** importing a slip from a bank the user has an account for pre-selects that account; no match falls back to the first account without error.
+
+### Dev notes
+Fix order: FIELD-1 first (one-line padding change, unblocks saving on mobile for QR slips — the highest-impact defect). FIELD-3 is a small, self-contained `useState` initializer change. FIELD-2 needs the OCR text before the pattern can be written — gather that artifact in parallel. FIELD-1 and FIELD-3 are pm-desk re-reviewable from code + a mobile screenshot; FIELD-2's fix should also get a qa-lab E2E pass on the affected bank's slip.
+
+---
+
 ## [M3] E2E RED — 2026-06-12
 **From**: qa-lab
 **Status**: RESOLVED (fix verified by qa-lab re-test 2026-06-12)
