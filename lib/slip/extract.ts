@@ -113,7 +113,8 @@ export function extractDateTime(text: string): FieldConfidence<string> {
 }
 
 const COUNTERPARTY_PATTERNS: Array<[RegExp, number]> = [
-  [/(?:ผู้รับ|ชื่อผู้รับ|โอนไปยัง|ปลายทาง)\s*:?\s*([^\n\d฿]{3,60})/i, 0.8],
+  // Bare ไปยัง added for KTB (label on its own line, name on next line) — \s consumes the \n.
+  [/(?:ผู้รับ|ชื่อผู้รับ|โอนไปยัง|ไปยัง|ปลายทาง)\s*:?\s*([^\n\d฿]{3,60})/i, 0.8],
   [/(?:Recipient|Beneficiary|To)\s*:?\s*([A-Za-zก-๙\s]{3,60})/i, 0.75],
   [/(?:บัญชีปลายทาง|ผู้รับเงิน)\s*:?\s*([^\n\d฿]{3,60})/i, 0.7],
   [/(?:ชื่อบัญชี|ชื่อเจ้าของบัญชี)\s*:?\s*([^\n\d฿]{3,60})/i, 0.72],
@@ -126,6 +127,27 @@ const COUNTERPARTY_PATTERNS: Array<[RegExp, number]> = [
   [/(?:From|Sender)\s*:?\s*([A-Za-zก-๙\s]{3,60})/i, 0.65],
 ]
 
+// TTB layout: no labels; each party is a `name\nXXX-X-XXNNN-N` block (bank-account mask,
+// 3X-1X-2X-3digit-1digit). Recipient is the LAST occurrence — sender is printed first.
+const TTB_POSITIONAL = /([^\n]{3,80})\n[xX]{3}[-–][xX][-–][xX]{2}\d{3}[-–]\d/g
+
+// Paotang merchant name sits between the `G-Wallet ID` line and `ค่าสินค้า/บริการ`, heavily OCR-degraded.
+// Anchor tolerates OCR variants of `ID:` (e.g. `!0:`, `1D`, `lD`) — see QA-FIELD-2b.
+const PAOTANG_SECTION = /G-?Wallet\s*[I!1l][D0]\s*:?[^\n]*\n([\s\S]*?)ค่าสินค้า\s*\/\s*บริการ/i
+
+function cleanCounterparty(raw: string): string {
+  // Strip leading OCR junk (digits, symbols, whitespace) that precedes the actual name.
+  // Thai-digit prefixes are already normalised to ASCII by normalizeThaiDigits.
+  let s = raw.replace(/^[^ก-๙a-zA-Z]+/, '').trim().replace(/\s+/g, ' ')
+  // If a Thai char appears later in the string, strip any leading run of latin/glyph junk
+  // (e.g. `Ub นาย ...`, `pp UNE ธนภูมิ ...`) up to the first Thai char. Don't disturb
+  // legitimately latin-named recipients (no Thai char anywhere). QA-FIELD-2a item 3.
+  if (/[ก-๙]/.test(s) && /^[A-Za-z]/.test(s)) {
+    s = s.replace(/^[A-Za-z][A-Za-z\s]*?(?=[ก-๙])/, '')
+  }
+  return s
+}
+
 export function extractCounterparty(text: string): FieldConfidence<string> {
   // Normalize like extractAmount/extractDateTime so decomposed sara-am and Thai digits
   // in labels/names don't break matching (parity fix, same class as M2-12).
@@ -137,6 +159,29 @@ export function extractCounterparty(text: string): FieldConfidence<string> {
       if (name.length >= 3) return { value: name, confidence }
     }
   }
+
+  // TTB positional fallback — require ≥2 mask blocks before firing.
+  // Transfers carry the mask on BOTH sender and recipient (last = recipient ✓);
+  // bill payments only mask the sender, so single-match would return the payer themselves
+  // — wrong-but-plausible, worse than empty. Bills fall through to null
+  // (accepted known-limitation, same as KTB bill). QA-FIELD-2a item 2.
+  const ttbMatches = [...t.matchAll(TTB_POSITIONAL)]
+  if (ttbMatches.length >= 2) {
+    const cleaned = cleanCounterparty(ttbMatches[ttbMatches.length - 1][1])
+    if (cleaned.length >= 3) return { value: cleaned, confidence: 0.6 }
+  }
+
+  // Paotang: first Thai-containing line in the merchant section.
+  const paotang = t.match(PAOTANG_SECTION)
+  if (paotang) {
+    for (const line of paotang[1].split('\n')) {
+      const cleaned = cleanCounterparty(line)
+      if (cleaned.length >= 3 && /[ก-๙]/.test(cleaned)) {
+        return { value: cleaned, confidence: 0.5 }
+      }
+    }
+  }
+
   return { value: null, confidence: 0 }
 }
 

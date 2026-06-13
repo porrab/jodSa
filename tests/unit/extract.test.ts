@@ -212,6 +212,92 @@ describe('extractCounterparty', () => {
     const r = extractCounterparty('สมชาย ใจดี\nxxx-x-x5678-x')
     expect(r.value).toBeNull()
   })
+
+  // ── FIELD-2 parts 2–3: KTB / TTB / Paotang real OCR strings ─────────────────
+
+  it('extracts KTB recipient via bare ไปยัง label on its own line (FIELD-2 KTB real OCR)', () => {
+    const r = extractCounterparty(
+      'นายธนภูมิ เสนีวงศ์ ญ อ* **\nกรุงไทย\nXXX-X-XX441-5\nไปยัง\nนางปราณี แสงตระการ\nพร้อมเพย์\nX XXXX XXXX5 94 0\nจํานวนเงิน                             55.00 บาท',
+    )
+    expect(r.value).toBe('นางปราณี แสงตระการ')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.75)
+  })
+
+  it('extracts TTB recipient (2nd block) before XXX-X-XXNNN-N mask, skipping sender (FIELD-2 TTB real OCR)', () => {
+    const r = extractCounterparty(
+      'โอนเงินสําเร็จ\n2 มิ.ย. 69, 20:58 น.\n4,000.00\nค่าธรรมเนียม 0.00\nยะ๒ นาย รนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\n๐  นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX357-1\nKBANK',
+    )
+    expect(r.value).toBe('นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.55)
+  })
+
+  it('extracts TTB จ่ายบิล recipient name (2nd block) — BillPayment slip layout (FIELD-2 TTB bill real OCR)', () => {
+    const r = extractCounterparty(
+      'จ่ายบิลสําเร็จ\nนาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\nนาง ศิริพร ศรีธวัช ณ อยุธยา\nXXX-X-XX123-4\nKBANK',
+    )
+    expect(r.value).toBe('นาง ศิริพร ศรีธวัช ณ อยุธยา')
+  })
+
+  it('extracts Paotang merchant name between G-Wallet ID and ค่าสินค้า/บริการ (FIELD-2 Paotang real OCR)', () => {
+    const r = extractCounterparty(
+      'fc)   ธนภูมิ เสน็วงศ์ ณ p***\nG-Wallet ID: **** **%**** 1840\n¥    รานสุก รสเดด\nLE      อาหาร ของหวาน เครื่องดื่ม\nค่าสินค้า/บริการ               65 บาท',
+    )
+    expect(r.value).toBe('รานสุก รสเดด')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.4)
+  })
+
+  it('does NOT trip TTB positional on K+ slip (bank-account mask format differs)', () => {
+    // K+ uses xxx-x-xNNNN-x (1 digit + 4 digits middle); TTB uses XXX-X-XXNNN-N (2X + 3 digits).
+    // K+ bare-name pattern should catch โชติสิริ first; TTB positional must not fire on K+ mask.
+    const r = extractCounterparty(
+      'ธนภูมิ เสนีวงศ์ ณ อ\nxxx-x-x5357-x\nโชติสิริ บุญเต็ม\nxxx-xxx-1535',
+    )
+    expect(r.value).toBe('โชติสิริ บุญเต็ม')
+  })
+
+  // ── QA-FIELD-2a/2b round-2 fixes ────────────────────────────────────────────
+
+  it('TTB จ่ายบิล (single mask = sender only) returns null, not the payer (QA-FIELD-2a item 2)', () => {
+    // Real OCR from BillPayment_20260522_132356.jpg — biller is `SCB มณี SHOP` (id-based, no mask).
+    // Only the payer carries XXX-X-XXNNN-N. Positional fallback must NOT fire (requires ≥2 masks);
+    // bill biller name is scoped out (accepted known-limitation) → empty is the correct outcome.
+    const r = extractCounterparty(
+      'จ่ายบิลสําเร็จ\n22 พ.ค. 69, 13:23 น.\nUb นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\nSCB มณี SHOP\n(1234567890)',
+    )
+    expect(r.value).toBeNull()
+  })
+
+  it('TTB transfer (two masks) still pre-fills recipient — round-2 regression guard', () => {
+    // Same TTB transfer fixture as the earlier FIELD-2 test — must remain green after the
+    // ≥2-mask gating change.
+    const r = extractCounterparty(
+      'โอนเงินสําเร็จ\n2 มิ.ย. 69, 20:58 น.\nยะ๒ นาย รนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\n๐  นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX357-1\nKBANK',
+    )
+    expect(r.value).toBe('นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา')
+  })
+
+  it('cleanCounterparty strips leading latin junk before Thai name (QA-FIELD-2a item 3)', () => {
+    // Real OCR transfer with latin glyph junk `pp UNE ` before the Thai recipient name.
+    // Force the path through TTB_POSITIONAL by giving it two masked blocks.
+    const r = extractCounterparty(
+      'โอนเงิน\nนาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\npp UNE นาง ศิริพร ศรีธวัช ณ อยุธยา\nXXX-X-XX123-4\nKBANK',
+    )
+    expect(r.value).toBe('นาง ศิริพร ศรีธวัช ณ อยุธยา')
+  })
+
+  it('does not strip latin from a legitimately latin-named recipient (no Thai in name)', () => {
+    // Negative side of the latin-strip rule: when no Thai char follows, leave the latin name alone.
+    const r = extractCounterparty('Recipient: John Smith')
+    expect(r.value).toContain('John Smith')
+  })
+
+  it('Paotang anchor tolerates `G-Wallet !0:` OCR variant of `G-Wallet ID:` (QA-FIELD-2b)', () => {
+    // Real OCR from PaoTang_2026_06_07 18_39_32.png had the ID-line mangled to `G-Wallet !0: ...`.
+    const r = extractCounterparty(
+      'ธนภูมิ เสน็วงศ์\nG-Wallet !0: **** **** **** 1840\n¥    ปราณี\nLE      บริการ\nค่าสินค้า/บริการ               100 บาท',
+    )
+    expect(r.value).toContain('ปราณี')
+  })
 })
 
 // ─── bankCode ────────────────────────────────────────────────────────────────
