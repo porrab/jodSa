@@ -5,6 +5,73 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [FIELD] qa-lab E2E — 2026-06-13
+**From**: qa-lab
+**Status**: QA-FIELD-1 ✅ GREEN (clears FIELD-1) · QA-FIELD-2 OPEN (capture filed)
+
+Response to the [FIELD] handoff below. Both run against the local `5ebecfa` build — no Vercel deploy.
+
+### QA-FIELD-1 — ✅ GREEN (mobile Save-button no longer hidden behind the bottom nav)
+
+Standing regression guard added: `tests/e2e/field-1-mobile-save.spec.ts` (390×844 viewport).
+- Imports a readable-QR slip → confirm form shows the `Ref (จาก QR)` field → asserts the `ยืนยันและบันทึก` button's bounding box does **not** intersect the `fixed bottom-0 … md:hidden` nav's box → clicks it (Playwright actionability would throw if the nav intercepted the pointer) → transaction saves end-to-end (`/transactions`, ฿1,250.00). A non-QR control (no Ref field) confirms the shorter form clears the nav too — pinning that the bug was the QR-only height delta.
+- 2/2 pass. The `pb-24 md:pb-6` fix (`app/(app)/layout.tsx:14`, `app/import/page.tsx:24`) holds. Evidence: `qa-lab/projects/jodsa/runs/FIELD-1-run-2026-06-13.md`. This is the rendered-mobile-altitude gate pm-desk asked for — **FIELD-1 is ready for pm-desk to close.**
+- Bonus (FIELD-3, already APPROVED): auto-select observed working — an SCB slip pre-selected the SCB account, not the accounts[0] default (KTB).
+
+### Items
+
+- [ ] **(id: QA-FIELD-2)** major — **Recipient/sender name not pre-filled (counterparty empty) on KTB, TTB, and Paotang slips.** Repro: import any of the corpus slips below via `/import`; the confirm form's recipient/sender field is blank. Expected: the visible recipient/merchant name pre-fills. Actual: empty (extraction returns `null`). Evidence: `qa-lab/projects/jodsa/runs/FIELD-2-capture-2026-06-13.md` (full OCR text for all 13 sampled slips); spec `tests/e2e/field-2-counterparty-capture.spec.ts`. Captured rate: **KTB 0/4, TTB 0/4, Paotang 0/3** empty; **KBank make 2/2 OK** (the QA-M2-2 positional pattern works — control).
+
+### QA-FIELD-2 — raw OCR text + suggested patterns (dev: source of truth for the unit tests)
+
+**KTB — โอนเงิน.** Anchor: bare `ไปยัง` on its own line, recipient name on the next line. Current patterns require `โอนไปยัง` (with โอน), so bare `ไปยัง` misses. `1779533670088.jpg` (recipient `นางปราณี แสงตระการ`):
+```
+นายธนภูมิ เสนีวงศ์ ญ อ* **
+กรุงไทย
+XXX-X-XX441-5
+ไปยัง
+นางปราณี แสงตระการ
+พร้อมเพย์
+X XXXX XXXX5 94 0
+จํานวนเงิน                             55.00 บาท
+```
+Suggested: add bare `ไปยัง` to the labelled-recipient group (—`\s` matches `\n`, so the name on the next line is captured): `[/(?:ผู้รับ|ชื่อผู้รับ|โอนไปยัง|ไปยัง|ปลายทาง)\s*:?\s*([^\n\d฿]{3,60})/i, 0.8]`. Validate the capture trims to `นางปราณี แสงตระการ`.
+
+**TTB — โอนเงิน / จ่ายบิล.** No text labels; sender/recipient are icon rows (OCR junk). Recipient is the **2nd** name block: `name → XXX-X-XX###-# → <dest bank>`. `Transfer_20260602_205840.jpg`:
+```
+โอนเงินสําเร็จ
+2 มิ.ย. 69, 20:58 น.
+4,000.00
+ค่าธรรมเนียม 0.00
+ยะ๒ นาย รนภูมิ เสนีวงศ์ ณ อยุธยา
+XXX-X-XX955-1
+ttb
+๐  นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา
+XXX-X-XX357-1
+KBANK
+```
+`BillPayment_20260521_115411.jpg` recipient `นาง ศิริพร ศรีธวัช ณ อยุธยา` (same 2nd-block shape). Suggested: match `(name)\n…XXX-X-XX\d{3}-\d` and take the **last** occurrence (recipient sits below sender) — generalises the existing K+ positional pattern (`extract.ts:123`) to the bank-account mask `XXX-X-XX###-#`.
+
+**Paotang (เป๋าตัง).** Merchant/shop name sits between the `G-Wallet ID:` line and `ค่าสินค้า/บริการ` (heavily OCR-degraded). `PaoTang_2026_06_02 19_54_07.png` (merchant `ร้านสุกี้ รสเด็ด`):
+```
+fc)   ธนภูมิ เสน็วงศ์ ณ p***
+G-Wallet ID: **** **%**** 1840
+¥    รานสุก รสเดด
+LE      อาหาร ของหวาน เครื่องดื่ม
+ค่าสินค้า/บริการ               65 บาท
+```
+Suggested: capture the non-empty line between `G-Wallet ID:` and `ค่าสินค้า/บริการ`. Value quality is poor (`รานสุก รสเดด`); lower priority than KTB/TTB.
+
+(KTB **จ่ายบิล** — biller `TUNGNGERN (กบตามสั่ง)`, no label — lowest priority; bill payments may not need a person counterparty.)
+
+### Dev notes
+- **Capture-mode correction:** the brief says capture via `next build && next start`. That's backwards — `rawTextDebug` is gated `NODE_ENV === 'development'` (`lib/slip/extract.ts:238`), so `next start` (production) **hides** the OCR panel. It renders only under `next dev` (what `playwright.config.ts` webServer runs). We captured via the dev server.
+- FIELD-2 part 1 (`normalizeThaiDigits` parity) is in but doesn't help these — the gap is "no recognized label / different layout", not decomposed characters.
+- **Incidental (not ours to fix here):** `tests/e2e/m2-s5-accuracy.spec.ts` asserts `expectCounterparty: 'โชติสร'` for `Image_12b1db54…`, but the real OCR is `โชติสิรี บุญเต็ม` — `'โชติสร'` is not a substring (OCR keeps a vowel between ส and ร), so M2-S5 is red on a **test** assertion, not an app bug. qa-lab will fix that expected-string in a separate pass. The KBank-make counterparty **app** fix itself is effective.
+- After the patterns land, ask qa-lab to re-run `field-2-counterparty-capture.spec.ts` — it flips to the FIELD-2 regression assertion. **FIELD-2 stays OPEN until that round is green.**
+
+---
+
 ## [FIELD] CHANGES NEEDED — 2026-06-13
 **From**: pm-desk (post-MVP field bugs from device testing on the Vercel/PWA build)
 **Status**: OPEN
