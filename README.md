@@ -28,18 +28,22 @@ tesseract.js + jsQR/zxing (client-side) · Recharts (lazy) · Vitest + Playwrigh
 
 ## Project status
 
-🚧 **Skeleton scaffolded — not built yet.** Structure, role, and skills are in place; no application code has been written.
+✅ **MVP complete — M1–M5 all APPROVED.** Post-MVP per-category last-used account default shipped
+(`1d8131a`); mobile field bugs FIELD-1/2/3 closed. The authoritative live record is this repo's git
+log (commit messages carry `pm-desk:`/`qa-lab:` status); `pm-desk/projects/jodsa/progress.md` is a
+rollup that can lag.
 
-Build proceeds in five milestones, **in order**:
+The five milestones, all delivered **in order**:
 
-| Milestone | Scope |
-|-----------|-------|
-| **M1** | Foundation + Auth + Manual Logging (income/expense/transfer + balances) |
-| **M2** | Slip Parsing (on-device QR + OCR) — *riskiest; needs a 25-slip corpus first* |
-| **M3** | Budgets + Recurring + Groups |
-| **M4** | Guest Group-Payment (capability-token RLS) |
-| **M5** | Polish + i18n + Theme + Charts + Share Target |
+| Milestone | Scope | Status |
+|-----------|-------|--------|
+| **M1** | Foundation + Auth + Manual Logging (income/expense/transfer + balances) | ✅ APPROVED |
+| **M2** | Slip Parsing (on-device QR + OCR) | ✅ APPROVED |
+| **M3** | Budgets + Recurring + Groups | ✅ APPROVED |
+| **M4** | Guest Group-Payment (capability-token RLS) | ✅ APPROVED |
+| **M5** | Polish + i18n + Theme + Charts + Share Target | ✅ APPROVED |
 
+Next: Phase 2 (deferred — Realtime sync, Line OA, BYO vision key, CSV export, cron) or new requests.
 See [CLAUDE.md](CLAUDE.md) for the full milestone list with acceptance criteria.
 
 ## Quick start
