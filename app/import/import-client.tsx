@@ -9,6 +9,7 @@ import { parseSlipImage, type ParseStage } from '@/lib/slip/parse-image'
 import { takeSharedSlip } from '@/lib/share-target'
 import SlipConfirmForm from '@/components/slip-confirm-form'
 import type { ParsedSlip } from '@/lib/slip/types'
+import type { LastAccountMap } from '@/lib/last-account'
 
 interface Account {
   id: string
@@ -19,11 +20,13 @@ interface Account {
 interface Props {
   displayName: string | null
   accounts: Account[]
+  lastByCategory: LastAccountMap
+  globalLastAccountId: string | null
 }
 
 type Stage = 'idle' | 'processing' | 'confirming' | 'error'
 
-export default function ImportClient({ displayName, accounts }: Props) {
+export default function ImportClient({ displayName, accounts, lastByCategory, globalLastAccountId }: Props) {
   const t = useTranslations('slip')
   const router = useRouter()
   const [stage, setStage] = useState<Stage>('idle')
@@ -83,6 +86,8 @@ export default function ImportClient({ displayName, accounts }: Props) {
       <SlipConfirmForm
         slip={slip}
         accounts={accounts}
+        lastByCategory={lastByCategory}
+        globalLastAccountId={globalLastAccountId}
         onBack={() => setStage('idle')}
         onSuccess={() => router.push('/transactions')}
       />

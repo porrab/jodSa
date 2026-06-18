@@ -16,6 +16,7 @@ import {
 import { createTransaction, checkNullRefDedup } from '@/app/actions/transactions'
 import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
+import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import type { ParsedSlip } from '@/lib/slip/types'
 
 interface Account {
@@ -27,6 +28,8 @@ interface Account {
 interface Props {
   slip: ParsedSlip
   accounts: Account[]
+  lastByCategory?: LastAccountMap
+  globalLastAccountId?: string | null
   onBack: () => void
   onSuccess: () => void
 }
@@ -49,20 +52,58 @@ function toDatetimeLocal(iso: string): string {
   return m ? `${m[1]}T${m[2]}` : ''
 }
 
-export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: Props) {
+export default function SlipConfirmForm({
+  slip,
+  accounts,
+  lastByCategory = {},
+  globalLastAccountId = null,
+  onBack,
+  onSuccess,
+}: Props) {
   const t = useTranslations('slip')
   const locale = useLocale()
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
-  // Pre-select the account whose bank matches the slip's detected bank (case-insensitive,
-  // since account.bank is e.g. "KBank" while inferBankCode emits "KBANK"); fall back to the
-  // first account when there's no match or no detected bank. User can still override.
-  const [accountId, setAccountId] = useState(() => {
+  // Account whose bank matches the slip's detected bank (case-insensitive: account.bank is
+  // e.g. "KBank" while inferBankCode emits "KBANK"). Per precedence in prompt.md §6, this
+  // parsed account wins over the per-category default; if it's null, the per-category /
+  // global last-used fallback chain kicks in.
+  const parsedAccountId = (() => {
     const code = slip.bankCode.value?.toLowerCase()
-    const matched = code ? accounts.find((a) => a.bank.toLowerCase() === code) : undefined
-    return (matched ?? accounts[0])?.id ?? ''
-  })
+    return code ? accounts.find((a) => a.bank.toLowerCase() === code)?.id ?? null : null
+  })()
+  const fallbackAccountId = accounts[0]?.id ?? null
+  const [accountId, setAccountId] = useState(() =>
+    resolveAccountDefault({
+      category: undefined,
+      lastByCategory,
+      globalLastAccountId,
+      parsedAccountId,
+      fallbackAccountId,
+    }) ?? '',
+  )
+  // Precedence rule #1 — once the user picks an account themselves, no later category
+  // change is allowed to overwrite their choice.
+  const [accountTouched, setAccountTouched] = useState(false)
   const [category, setCategory] = useState('')
+
+  function handleAccountChange(id: string) {
+    setAccountId(id)
+    setAccountTouched(true)
+  }
+
+  function handleCategoryChange(c: string) {
+    setCategory(c)
+    if (accountTouched) return
+    const next = resolveAccountDefault({
+      category: c,
+      lastByCategory,
+      globalLastAccountId,
+      parsedAccountId,
+      fallbackAccountId,
+    })
+    if (next) setAccountId(next)
+  }
   const [datetimeLocal, setDatetimeLocal] = useState(
     slip.datetime.value ? toDatetimeLocal(slip.datetime.value) : '',
   )
@@ -222,7 +263,7 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
           {accounts.length === 0 ? (
             <p className="text-sm text-destructive">{t('noAccounts')}</p>
           ) : (
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Select value={accountId} onValueChange={handleAccountChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -240,7 +281,7 @@ export default function SlipConfirmForm({ slip, accounts, onBack, onSuccess }: P
         {/* Category */}
         <div className="space-y-1.5">
           <Label>{t('category')}</Label>
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category} onValueChange={handleCategoryChange}>
             <SelectTrigger>
               <SelectValue placeholder={t('selectCategoryOptional')} />
             </SelectTrigger>
