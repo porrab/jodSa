@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { createTransaction } from '@/app/actions/transactions'
 import { CATEGORIES } from '@/lib/validators/transaction'
+import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -27,6 +28,8 @@ export default function TransactionForm({
   accounts,
   onSuccess,
   defaultValues,
+  lastByCategory = {},
+  globalLastAccountId = null,
 }: {
   accounts: Account[]
   onSuccess?: () => void
@@ -41,12 +44,45 @@ export default function TransactionForm({
     ref_code: string
     bank_code: string
   }>
+  lastByCategory?: LastAccountMap
+  globalLastAccountId?: string | null
 }) {
   const t = useTranslations('transaction')
   const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
-  const [accountId, setAccountId] = useState(defaultValues?.account_id ?? '')
+  const fallbackAccountId = accounts[0]?.id ?? null
+  const [accountId, setAccountId] = useState(() =>
+    defaultValues?.account_id ??
+    resolveAccountDefault({
+      category: defaultValues?.category,
+      lastByCategory,
+      globalLastAccountId,
+      parsedAccountId: null,
+      fallbackAccountId,
+    }) ?? '',
+  )
+  // Precedence rule #1 — once the user picks an account themselves, no later
+  // category change is allowed to overwrite their choice.
+  const [accountTouched, setAccountTouched] = useState(false)
   const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
   const [category, setCategory] = useState(defaultValues?.category ?? '')
+
+  function handleAccountChange(id: string) {
+    setAccountId(id)
+    setAccountTouched(true)
+  }
+
+  function handleCategoryChange(c: string) {
+    setCategory(c)
+    if (accountTouched) return
+    const next = resolveAccountDefault({
+      category: c,
+      lastByCategory,
+      globalLastAccountId,
+      parsedAccountId: null,
+      fallbackAccountId,
+    })
+    if (next) setAccountId(next)
+  }
 
   const now = new Date()
   const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -115,7 +151,7 @@ export default function TransactionForm({
       {/* Account */}
       <div className="space-y-1">
         <Label>{type === 'transfer' ? t('fromAccount') : t('account')}</Label>
-        <Select value={accountId} onValueChange={setAccountId} required>
+        <Select value={accountId} onValueChange={handleAccountChange} required>
           <SelectTrigger>
             <SelectValue placeholder={t('selectAccount')} />
           </SelectTrigger>
@@ -154,7 +190,7 @@ export default function TransactionForm({
       {type !== 'transfer' && (
         <div className="space-y-1">
           <Label>{t('categoryOptional')}</Label>
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category} onValueChange={handleCategoryChange}>
             <SelectTrigger>
               <SelectValue placeholder={t('selectCategory')} />
             </SelectTrigger>

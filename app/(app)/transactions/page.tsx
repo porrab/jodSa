@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
+import { buildLastAccountMap } from '@/lib/last-account'
 import TransactionsClient from './transactions-client'
 
 export default async function TransactionsPage() {
@@ -13,14 +14,26 @@ export default async function TransactionsPage() {
   const { from, to } = currentMonthRange()
   await materializeOccurrences(from, to)
 
-  const [{ data: transactions }, { data: accounts }] = await Promise.all([
+  const [{ data: transactions }, { data: accounts }, { data: history }] = await Promise.all([
     supabase
       .from('transactions')
       .select('*')
       .order('datetime', { ascending: false })
       .limit(200),
     supabase.from('accounts').select('*').order('created_at'),
+    // Seed for the per-category last-used-account default in the log form.
+    // Income/expense only — transfers don't carry a category. Bounded so a
+    // long-lived account doesn't pull thousands of rows.
+    supabase
+      .from('transactions')
+      .select('category, account_id')
+      .in('type', ['income', 'expense'])
+      .order('datetime', { ascending: false })
+      .limit(500),
   ])
+
+  const lastByCategory = buildLastAccountMap(history ?? [])
+  const globalLastAccountId = history?.[0]?.account_id ?? null
 
   return (
     <div className="space-y-6">
@@ -28,6 +41,8 @@ export default async function TransactionsPage() {
       <TransactionsClient
         transactions={transactions ?? []}
         accounts={accounts ?? []}
+        lastByCategory={lastByCategory}
+        globalLastAccountId={globalLastAccountId}
       />
     </div>
   )

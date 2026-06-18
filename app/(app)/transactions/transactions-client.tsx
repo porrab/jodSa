@@ -15,6 +15,7 @@ import TransactionForm from '@/components/transaction-form'
 import { deleteTransaction } from '@/app/actions/transactions'
 import { skipOccurrence } from '@/app/actions/recurring'
 import { formatTHB } from '@/lib/money'
+import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
@@ -29,9 +30,13 @@ const TYPE_STYLE: Record<string, { key: string; badgeCls: string; textCls: strin
 export default function TransactionsClient({
   transactions,
   accounts,
+  lastByCategory,
+  globalLastAccountId,
 }: {
   transactions: Transaction[]
   accounts: Account[]
+  lastByCategory: LastAccountMap
+  globalLastAccountId: string | null
 }) {
   const t = useTranslations('transaction')
   const locale = useLocale()
@@ -67,6 +72,8 @@ export default function TransactionsClient({
           <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
           <TransactionForm
             accounts={accounts}
+            lastByCategory={lastByCategory}
+            globalLastAccountId={globalLastAccountId}
             onSuccess={() => setAddOpen(false)}
           />
         </DialogContent>
