@@ -9,9 +9,11 @@ import {
   Upload,
   LogOut,
   PiggyBank,
+  Plus,
   Repeat,
   Users,
   HandCoins,
+  MoreHorizontal,
   Settings,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -19,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { openQuickAdd } from '@/lib/quick-add'
 
 const navItems = [
   { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
@@ -32,9 +35,15 @@ const navItems = [
   { href: '/settings', key: 'settings', icon: Settings },
 ] as const
 
-// Bottom bar can't hold every item on a phone — show the daily-use subset.
-const MOBILE_HREFS = new Set(['/dashboard', '/transactions', '/import', '/budgets', '/accounts', '/settings'])
-const mobileItems = navItems.filter((i) => MOBILE_HREFS.has(i.href))
+// Mobile bar — 4 daily destinations flanking the center (＋); management screens live under /more.
+const mobileLeft = [
+  { href: '/dashboard',    key: 'dashboard',    icon: LayoutDashboard },
+  { href: '/transactions', key: 'transactions', icon: ArrowLeftRight },
+] as const
+const mobileRight = [
+  { href: '/budgets', key: 'budgets', icon: PiggyBank },
+  { href: '/more',    key: 'more',    icon: MoreHorizontal },
+] as const
 
 export default function AppNav() {
   const t = useTranslations('nav')
@@ -47,28 +56,44 @@ export default function AppNav() {
     router.push('/login')
   }
 
+  const navItemCls = (active: boolean) =>
+    cn(
+      'flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors',
+      active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+    )
+
   return (
     <>
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom nav: 4 daily dests + center (＋) */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background md:hidden">
-        {mobileItems.map(({ href, key, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors',
-              pathname === href
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
+        {mobileLeft.map(({ href, key, icon: Icon }) => (
+          <Link key={href} href={href} className={navItemCls(pathname === href)}>
+            <Icon className="size-5" />
+            <span>{t(key)}</span>
+          </Link>
+        ))}
+
+        {/* Center Add/Scan FAB — opens the in-place quick-add sheet (no route change). */}
+        <button
+          type="button"
+          onClick={() => openQuickAdd()}
+          aria-label={t('add')}
+          className="flex flex-1 items-center justify-center"
+        >
+          <span className="-mt-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-colors hover:bg-primary/90 active:bg-primary/85">
+            <Plus className="size-6" />
+          </span>
+        </button>
+
+        {mobileRight.map(({ href, key, icon: Icon }) => (
+          <Link key={href} href={href} className={navItemCls(pathname === href)}>
             <Icon className="size-5" />
             <span>{t(key)}</span>
           </Link>
         ))}
       </nav>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — full set */}
       <aside className="hidden w-56 shrink-0 flex-col border-r bg-background p-4 md:flex">
         <div className="mb-6 px-2">
           <span className="text-lg font-bold">JodSa</span>

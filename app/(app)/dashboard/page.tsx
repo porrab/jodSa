@@ -7,6 +7,7 @@ import { formatTHB, computeAccountBalance } from '@/lib/money'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import BudgetBar from '@/components/budget-bar'
+import QuickAddCard from '@/components/quick-add-card'
 import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
 import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
@@ -94,19 +95,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t('title')}</h1>
+      {/* Greeting + net balance — one-line summary above the quick-add (design 07 rev 2026-06-15) */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <p className={`text-sm text-muted-foreground tabular-nums ${totalBalance < 0 ? 'text-destructive' : ''}`}>
+          {t('totalBalance')}: <span className="font-semibold">{formatTHB(totalBalance)}</span>
+        </p>
+      </div>
 
-      {/* Net balance */}
-      <Card>
-        <CardHeader className="pb-1">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{t('totalBalance')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className={`text-3xl font-bold tabular-nums ${totalBalance < 0 ? 'text-destructive' : ''}`}>
-            {formatTHB(totalBalance)}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Quick-add: amount + type + scan/save; the rest expands in the sheet. */}
+      <QuickAddCard />
 
       {/* This month summary */}
       <div className="grid gap-3 sm:grid-cols-2">

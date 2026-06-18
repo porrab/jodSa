@@ -1,15 +1,27 @@
 {
   "nav": {
-    "dashboard": "ภาพรวม",
+    "dashboard": "หน้าหลัก",
     "transactions": "รายการ",
     "import": "นำเข้า",
-    "budgets": "งบประมาณ",
+    "budgets": "งบ",
     "recurring": "รายการประจำ",
     "groups": "กลุ่ม/ทริป",
     "sessions": "จ่ายกลุ่ม",
     "accounts": "บัญชี",
     "settings": "ตั้งค่า",
+    "more": "เพิ่มเติม",
+    "add": "เพิ่มรายการ",
     "logout": "ออกจากระบบ"
+  },
+  "quickAdd": {
+    "title": "บันทึกรายการ",
+    "description": "กรอกข้อมูลรายการ",
+    "amountLabel": "จำนวนเงิน",
+    "income": "รับ",
+    "expense": "จ่าย",
+    "transfer": "โอน",
+    "scan": "สแกนสลิป",
+    "save": "บันทึก"
   },
   "auth": {
     "email": "อีเมล",

@@ -1,7 +1,7 @@
 {
   "nav": {
-    "dashboard": "Dashboard",
-    "transactions": "Transactions",
+    "dashboard": "Home",
+    "transactions": "Activity",
     "import": "Import",
     "budgets": "Budgets",
     "recurring": "Recurring",
@@ -9,7 +9,19 @@
     "sessions": "Group Pay",
     "accounts": "Accounts",
     "settings": "Settings",
+    "more": "More",
+    "add": "Add",
     "logout": "Sign Out"
+  },
+  "quickAdd": {
+    "title": "Log a transaction",
+    "description": "Enter the transaction details",
+    "amountLabel": "Amount",
+    "income": "Income",
+    "expense": "Expense",
+    "transfer": "Transfer",
+    "scan": "Scan slip",
+    "save": "Save"
   },
   "auth": {
     "email": "Email",
