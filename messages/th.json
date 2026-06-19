@@ -290,7 +290,17 @@
     "stage_extract": "ดึงข้อมูล...",
     "privacyNote": "รูปภาพไม่ถูกส่งออกนอกอุปกรณ์",
     "tryAgain": "ลองอีกครั้ง",
-    "supportedBanks": "รองรับสลิป SCB, KBank, KTB, BBL และ PromptPay — รูปภาพถูกประมวลผลบนอุปกรณ์และทิ้งทันทีหลังอ่าน"
+    "supportedBanks": "รองรับสลิป SCB, KBank, KTB, BBL และ PromptPay — รูปภาพถูกประมวลผลบนอุปกรณ์และทิ้งทันทีหลังอ่าน",
+    "batchTitle": "นำเข้าหลายอัน — {count} สลิป",
+    "batchQueueProcessing": "กำลังประมวลผลสลิป...",
+    "batchQueueHint": "{current} / {total}",
+    "batchSaved": "บันทึกแล้ว",
+    "batchSkipped": "ข้ามแล้ว",
+    "batchSkip": "ข้าม",
+    "batchReviewHint": "ตรวจสอบแต่ละสลิปแล้วบันทึกหรือข้าม",
+    "batchDone": "เสร็จสิ้น — ดูรายการ",
+    "batchParseFailed": "อ่านสลิปไม่ได้",
+    "batchParseFailedHint": "ภาพไม่ชัดหรือไม่ใช่สลิปธนาคารที่รองรับ"
   },
   "pay": {
     "amountInvalid": "จำนวนเงินไม่ถูกต้อง",

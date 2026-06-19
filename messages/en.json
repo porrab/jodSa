@@ -290,7 +290,17 @@
     "stage_extract": "Extracting data...",
     "privacyNote": "The image never leaves your device",
     "tryAgain": "Try again",
-    "supportedBanks": "Supports SCB, KBank, KTB, BBL and PromptPay slips — images are processed on-device and discarded right after reading"
+    "supportedBanks": "Supports SCB, KBank, KTB, BBL and PromptPay slips — images are processed on-device and discarded right after reading",
+    "batchTitle": "Batch Import — {count} slips",
+    "batchQueueProcessing": "Processing slips...",
+    "batchQueueHint": "{current} of {total}",
+    "batchSaved": "Saved",
+    "batchSkipped": "Skipped",
+    "batchSkip": "Skip",
+    "batchReviewHint": "Review each slip then save or skip",
+    "batchDone": "All done — view transactions",
+    "batchParseFailed": "Could not read this slip",
+    "batchParseFailedHint": "The image was unclear or is not a supported bank slip"
   },
   "pay": {
     "amountInvalid": "Invalid amount",
