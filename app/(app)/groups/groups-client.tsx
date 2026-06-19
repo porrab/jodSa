@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, Users, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
@@ -48,7 +49,7 @@ function GroupForm({
     <form action={formAction} className="space-y-4">
       {defaultValues?.id && <input type="hidden" name="id" value={defaultValues.id} />}
       <div className="space-y-1.5">
-        <Label htmlFor="title">{t('name')}</Label>
+        <Label htmlFor="title">{t('name')} <RequiredMark /></Label>
         <Input id="title" name="title" required defaultValue={defaultValues?.title} placeholder={t('namePlaceholder')} />
       </div>
       <div className="space-y-1.5">

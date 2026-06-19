@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import BudgetBar from '@/components/budget-bar'
 import QuickAddCard from '@/components/quick-add-card'
+import DashboardShortcuts from '@/components/dashboard-shortcuts'
 import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
 import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
@@ -105,6 +106,11 @@ export default async function DashboardPage() {
 
       {/* Quick-add: amount + type + scan/save; the rest expands in the sheet. */}
       <QuickAddCard />
+
+      {/* Mobile quick-access — desktop has the full sidebar instead. */}
+      <div className="md:hidden">
+        <DashboardShortcuts />
+      </div>
 
       {/* This month summary */}
       <div className="grid gap-3 sm:grid-cols-2">

@@ -6,6 +6,7 @@ import { AlertTriangle, ChevronLeft, Info, LockKeyhole } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import {
   Select,
   SelectContent,
@@ -243,7 +244,7 @@ export default function SlipConfirmForm({
         {/* Amount */}
         <div className="space-y-1.5">
           <Label>
-            {t('amountLabel')}
+            {t('amountLabel')} <RequiredMark />
             <ConfidenceBadge confidence={slip.amount.confidence} />
           </Label>
           <Input
@@ -259,7 +260,7 @@ export default function SlipConfirmForm({
 
         {/* Account */}
         <div className="space-y-1.5">
-          <Label>{t('account')}</Label>
+          <Label>{t('account')} <RequiredMark /></Label>
           {accounts.length === 0 ? (
             <p className="text-sm text-destructive">{t('noAccounts')}</p>
           ) : (
@@ -312,7 +313,7 @@ export default function SlipConfirmForm({
         {/* Datetime */}
         <div className="space-y-1.5">
           <Label>
-            {t('datetime')}
+            {t('datetime')} <RequiredMark />
             <ConfidenceBadge confidence={slip.datetime.confidence} />
           </Label>
           <Input

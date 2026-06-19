@@ -17,7 +17,7 @@ type SubmittedSlip = {
   paid_at: string
 }
 
-type Stage = 'idle' | 'processing' | 'confirming' | 'error'
+type Stage = 'idle' | 'processing' | 'confirming' | 'manual' | 'error'
 
 // Session persistence across browser restarts: the token lives in the URL and
 // the guest's own submissions live in localStorage keyed by token.
@@ -82,7 +82,6 @@ export default function PayClient({
   }, [ts])
 
   async function submitSlip() {
-    if (!slip) return
     const amountSatang = parseInputToSatang(amountInput)
     if (amountSatang === null || amountSatang <= 0) {
       toast.error(t('amountInvalid'))
@@ -96,7 +95,8 @@ export default function PayClient({
     try {
       const payload: SubmittedSlip = {
         amount_satang: amountSatang,
-        ref_code: slip.refCode.value,
+        // Manual entry (no parsed slip) carries no QR ref.
+        ref_code: slip?.refCode.value ?? null,
         paid_at: `${paidAtInput}:00+07:00`,
       }
       const res = await fetch(`/api/sessions/${token}/slips`, {
@@ -183,6 +183,13 @@ export default function PayClient({
               }}
             />
           </label>
+          <button
+            type="button"
+            onClick={() => { setSlip(null); setAmountInput(''); setPaidAtInput(''); setStage('manual') }}
+            className="w-full text-center text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            {t('enterManual')}
+          </button>
         </section>
       )}
 
@@ -236,6 +243,40 @@ export default function PayClient({
           )}
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => { setSlip(null); setStage('idle') }}>
+              {t('back')}
+            </Button>
+            <Button className="flex-1" onClick={submitSlip} disabled={submitting}>
+              {submitting ? t('sending') : t('sendSlip')}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {stage === 'manual' && (
+        <section className="space-y-4 rounded-xl border p-4">
+          <p className="text-sm text-muted-foreground">{t('manualHint')}</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="manual-amount">{ts('amountLabel')}</Label>
+            <Input
+              id="manual-amount"
+              type="text"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amountInput}
+              onChange={(e) => setAmountInput(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="manual-paid-at">{t('paidAt')}</Label>
+            <Input
+              id="manual-paid-at"
+              type="datetime-local"
+              value={paidAtInput}
+              onChange={(e) => setPaidAtInput(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setStage('idle')}>
               {t('back')}
             </Button>
             <Button className="flex-1" onClick={submitSlip} disabled={submitting}>

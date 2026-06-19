@@ -2,13 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createRateLimiter } from '@/lib/rate-limit'
 
-const GUEST_SLIP_POST = /^\/api\/sessions\/([^/]+)\/slips$/
+// Anonymous trip + collect POST endpoints: slips, join, expenses, confirm.
+// Captures the session token in group 1 for per-token rate-limit keys.
+const GUEST_POST = /^\/api\/sessions\/([^/]+)\/(?:slips(?:\/[^/]+\/confirm)?|join|expenses)$/
 const checkRateLimit = createRateLimiter(10, 60_000)
 
 export async function middleware(request: NextRequest) {
-  // Rate-limit guest slip POSTs by IP + token (RLS cannot rate-limit)
+  // Rate-limit anonymous session POSTs by IP + token (RLS cannot rate-limit)
   if (request.method === 'POST') {
-    const match = request.nextUrl.pathname.match(GUEST_SLIP_POST)
+    const match = request.nextUrl.pathname.match(GUEST_POST)
     if (match) {
       const ip =
         request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'

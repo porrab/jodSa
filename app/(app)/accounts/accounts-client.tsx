@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, QrCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -57,11 +58,11 @@ function AccountForm({
     <form action={formAction} className="space-y-4">
       {defaultValues?.id && <input type="hidden" name="id" value={defaultValues.id} />}
       <div className="space-y-1">
-        <Label htmlFor="name">{t('name')}</Label>
+        <Label htmlFor="name">{t('name')} <RequiredMark /></Label>
         <Input id="name" name="name" defaultValue={defaultValues?.name} required />
       </div>
       <div className="space-y-1">
-        <Label>{t('bank')}</Label>
+        <Label>{t('bank')} <RequiredMark /></Label>
         <Select value={bank} onValueChange={setBank} required>
           <SelectTrigger>
             <SelectValue placeholder={t('selectBank')} />

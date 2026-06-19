@@ -5,13 +5,15 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Copy, ExternalLink, Trash2, CheckCircle2, Circle, Lock, LockOpen,
+  ArrowLeft, Trash2, CheckCircle2, Circle, Lock, LockOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { setSessionStatus, setSlipConfirmed, deleteSlip } from '@/app/actions/sessions'
+import AddSlipSheet from '@/components/add-slip-sheet'
+import ShareLink from '@/components/share-link'
 import { formatTHB } from '@/lib/money'
 
 type Session = {
@@ -55,12 +57,6 @@ export default function SessionDetailClient({
 
   const recorded = slips.reduce((sum, s) => sum + s.amount_satang, 0)
   const confirmed = slips.filter((s) => s.confirmed).reduce((sum, s) => sum + s.amount_satang, 0)
-
-  async function copyLink() {
-    const url = `${window.location.origin}${payPath}`
-    await navigator.clipboard.writeText(url)
-    toast.success(t('linkCopied'))
-  }
 
   async function toggleStatus() {
     setBusy(true)
@@ -113,22 +109,12 @@ export default function SessionDetailClient({
             <CardTitle className="text-sm font-medium text-muted-foreground">{t('friendLink')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <code className="block truncate rounded bg-muted px-2 py-1.5 text-xs">{payPath}</code>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={copyLink}>
-                <Copy className="size-3.5 mr-1.5" />{t('copy')}
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href={payPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="size-3.5 mr-1.5" />{t('openView')}
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" onClick={toggleStatus} disabled={busy}>
-                {session.status === 'open'
-                  ? <><Lock className="size-3.5 mr-1.5" />{t('close')}</>
-                  : <><LockOpen className="size-3.5 mr-1.5" />{t('reopen')}</>}
-              </Button>
-            </div>
+            <ShareLink path={payPath} title={session.title} />
+            <Button variant="outline" size="sm" onClick={toggleStatus} disabled={busy}>
+              {session.status === 'open'
+                ? <><Lock className="size-3.5 mr-1.5" />{t('close')}</>
+                : <><LockOpen className="size-3.5 mr-1.5" />{t('reopen')}</>}
+            </Button>
             {qrUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qrUrl} alt={t('qrAlt')} className="max-h-40 rounded-lg border" />
@@ -158,7 +144,10 @@ export default function SessionDetailClient({
       </div>
 
       <div className="space-y-2">
-        <h2 className="font-semibold">{t('recordedSlips')}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">{t('recordedSlips')}</h2>
+          <AddSlipSheet sessionId={session.id} />
+        </div>
         {slips.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
             {t('noSlips')}

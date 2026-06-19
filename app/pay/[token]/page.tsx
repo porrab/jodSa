@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Database } from '@/lib/supabase/types'
 import PayClient from './pay-client'
+import TripClient from './trip-client'
+import { loadTripLedger } from '@/lib/trip-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +24,7 @@ export default async function PayPage({
 
   const { data: session } = await anon
     .from('payment_sessions')
-    .select('id, title, target_amount_satang, account_id')
+    .select('id, title, target_amount_satang, account_id, type')
     .eq('id', token)
     .maybeSingle()
 
@@ -30,6 +32,14 @@ export default async function PayPage({
     // RLS hides closed sessions from anon, so "closed" and "nonexistent" are
     // indistinguishable here — by design.
     return <PayClient token={token} session={null} qrUrl={null} />
+  }
+
+  // Trip session: a shared ledger. Token validated via the anon read above; the
+  // ledger itself is read server-side with the admin client (trip tables have no
+  // anon policy).
+  if (session.type === 'trip') {
+    const ledger = await loadTripLedger(token)
+    return <TripClient token={token} title={session.title} ledger={ledger} />
   }
 
   // Trusted server-only read: the open-session token was just validated via the
@@ -40,7 +50,7 @@ export default async function PayPage({
   const { data: account } = await admin
     .from('accounts')
     .select('qr_image_path')
-    .eq('id', session.account_id)
+    .eq('id', session.account_id ?? '')
     .single()
   if (account?.qr_image_path) {
     const { data: signed } = await admin.storage

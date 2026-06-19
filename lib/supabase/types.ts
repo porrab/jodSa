@@ -177,25 +177,81 @@ export interface Database {
         Row: {
           id: string
           owner: string
-          account_id: string
+          account_id: string | null
           title: string
           target_amount_satang: number | null
+          type: 'collect' | 'trip'
           status: 'open' | 'closed'
           created_at: string
         }
         Insert: {
           id: string
           owner: string
-          account_id: string
+          account_id?: string | null
           title: string
           target_amount_satang?: number | null
+          type?: 'collect' | 'trip'
           status?: 'open' | 'closed'
           created_at?: string
         }
         Update: {
           title?: string
           target_amount_satang?: number | null
+          type?: 'collect' | 'trip'
           status?: 'open' | 'closed'
+        }
+        Relationships: []
+      }
+      session_participants: {
+        Row: {
+          id: string
+          session_id: string
+          nickname: string
+          participant_token: string
+          user_id: string | null
+          is_owner: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          nickname: string
+          participant_token: string
+          user_id?: string | null
+          is_owner?: boolean
+          created_at?: string
+        }
+        Update: {
+          nickname?: string
+        }
+        Relationships: []
+      }
+      session_expenses: {
+        Row: {
+          id: string
+          session_id: string
+          payer_participant_id: string
+          title: string
+          total_amount_satang: number
+          split_among: number
+          qr_image_path: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          payer_participant_id: string
+          title: string
+          total_amount_satang: number
+          split_among: number
+          qr_image_path?: string | null
+          created_at?: string
+        }
+        Update: {
+          title?: string
+          total_amount_satang?: number
+          split_among?: number
+          qr_image_path?: string | null
         }
         Relationships: []
       }
@@ -207,6 +263,8 @@ export interface Database {
           ref_code: string | null
           paid_at: string
           confirmed: boolean
+          expense_id: string | null
+          payer_participant_id: string | null
           created_at: string
         }
         Insert: {
@@ -216,6 +274,8 @@ export interface Database {
           ref_code?: string | null
           paid_at: string
           confirmed?: boolean
+          expense_id?: string | null
+          payer_participant_id?: string | null
           created_at?: string
         }
         Update: {

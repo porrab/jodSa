@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, Repeat } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -92,7 +93,7 @@ function RuleForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="amount">{t('amountLabel')}</Label>
+        <Label htmlFor="amount">{t('amountLabel')} <RequiredMark /></Label>
         <Input
           id="amount" name="amount" type="text" inputMode="decimal" required
           defaultValue={defaultValues ? (defaultValues.amount_satang / 100).toFixed(2) : ''}
@@ -101,7 +102,7 @@ function RuleForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>{t('account')}</Label>
+        <Label>{t('account')} <RequiredMark /></Label>
         <Select value={accountId} onValueChange={setAccountId}>
           <SelectTrigger><SelectValue placeholder={t('selectAccount')} /></SelectTrigger>
           <SelectContent>
@@ -137,7 +138,7 @@ function RuleForm({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="interval">{t('everyLabel')}</Label>
+          <Label htmlFor="interval">{t('everyLabel')} <RequiredMark /></Label>
           <Input
             id="interval" name="interval" type="number" min={1} max={99} required
             defaultValue={defaultValues?.interval ?? 1}
@@ -170,7 +171,7 @@ function RuleForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="start_date">{t('startDate')}</Label>
+          <Label htmlFor="start_date">{t('startDate')} <RequiredMark /></Label>
           <Input
             id="start_date" name="start_date" type="date" required
             defaultValue={defaultValues?.start_date ?? ''}

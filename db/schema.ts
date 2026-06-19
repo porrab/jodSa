@@ -83,10 +83,32 @@ export const budgets = pgTable('budgets', {
 export const paymentSessions = pgTable('payment_sessions', {
   id: text('id').primaryKey(), // nanoid capability token
   owner: uuid('owner').notNull(),
-  accountId: uuid('account_id').notNull(),
+  accountId: uuid('account_id'), // null for trip sessions (no single receiving account)
   title: text('title').notNull(),
   targetAmountSatang: integer('target_amount_satang'),
+  type: text('type', { enum: ['collect', 'trip'] }).default('collect').notNull(),
   status: text('status', { enum: ['open', 'closed'] }).default('open').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const sessionParticipants = pgTable('session_participants', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: text('session_id').notNull(),
+  nickname: text('nickname').notNull(),
+  participantToken: text('participant_token').notNull(),
+  userId: uuid('user_id'),
+  isOwner: boolean('is_owner').default(false).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const sessionExpenses = pgTable('session_expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: text('session_id').notNull(),
+  payerParticipantId: uuid('payer_participant_id').notNull(),
+  title: text('title').notNull(),
+  totalAmountSatang: integer('total_amount_satang').notNull(),
+  splitAmong: integer('split_among').notNull(),
+  qrImagePath: text('qr_image_path'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -97,5 +119,7 @@ export const sessionSlips = pgTable('session_slips', {
   refCode: text('ref_code'),
   paidAt: timestamp('paid_at', { withTimezone: true }).notNull(),
   confirmed: boolean('confirmed').default(false).notNull(),
+  expenseId: uuid('expense_id'),
+  payerParticipantId: uuid('payer_participant_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })

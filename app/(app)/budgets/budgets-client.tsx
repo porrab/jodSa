@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, PiggyBank } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -78,7 +79,7 @@ function BudgetForm({
 
       {scope === 'category' && (
         <div className="space-y-1.5">
-          <Label>{t('category')}</Label>
+          <Label>{t('category')} <RequiredMark /></Label>
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
             <SelectContent>
@@ -91,7 +92,7 @@ function BudgetForm({
       )}
 
       <div className="space-y-1.5">
-        <Label htmlFor="amount">{t('amountLabel')}</Label>
+        <Label htmlFor="amount">{t('amountLabel')} <RequiredMark /></Label>
         <Input
           id="amount" name="amount" type="text" inputMode="decimal" required
           defaultValue={defaultValues ? (defaultValues.amount_satang / 100).toFixed(2) : ''}

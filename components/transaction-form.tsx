@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -136,7 +137,7 @@ export default function TransactionForm({
 
       {/* Amount — hero input: ฿ prefix + large tabular-nums (design 07) */}
       <div className="space-y-1">
-        <Label htmlFor="amount">{t('amount')}</Label>
+        <Label htmlFor="amount">{t('amount')} <RequiredMark /></Label>
         <div className="flex items-center gap-2 rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
           <span className="select-none text-2xl font-semibold tabular-nums text-muted-foreground">฿</span>
           <Input
@@ -154,7 +155,7 @@ export default function TransactionForm({
 
       {/* Account */}
       <div className="space-y-1">
-        <Label>{type === 'transfer' ? t('fromAccount') : t('account')}</Label>
+        <Label>{type === 'transfer' ? t('fromAccount') : t('account')} <RequiredMark /></Label>
         <Select value={accountId} onValueChange={handleAccountChange} required>
           <SelectTrigger>
             <SelectValue placeholder={t('selectAccount')} />
@@ -172,7 +173,7 @@ export default function TransactionForm({
       {/* To account (transfer only) */}
       {type === 'transfer' && (
         <div className="space-y-1">
-          <Label>{t('toAccount')}</Label>
+          <Label>{t('toAccount')} <RequiredMark /></Label>
           <Select value={toAccountId} onValueChange={setToAccountId} required>
             <SelectTrigger>
               <SelectValue placeholder={t('selectToAccount')} />
@@ -222,7 +223,7 @@ export default function TransactionForm({
 
       {/* Datetime */}
       <div className="space-y-1">
-        <Label htmlFor="datetime">{t('date')}</Label>
+        <Label htmlFor="datetime">{t('date')} <RequiredMark /></Label>
         <Input
           id="datetime"
           name="datetime"

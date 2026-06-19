@@ -6,6 +6,7 @@ import { loginAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 
 const initialState = { error: '' }
 
@@ -16,11 +17,11 @@ export default function LoginForm() {
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-1">
-        <Label htmlFor="email">{t('email')}</Label>
+        <Label htmlFor="email">{t('email')} <RequiredMark /></Label>
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </div>
       <div className="space-y-1">
-        <Label htmlFor="password">{t('password')}</Label>
+        <Label htmlFor="password">{t('password')} <RequiredMark /></Label>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
       {state.error && (
