@@ -30,13 +30,13 @@ export default function BudgetBar({
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
           className={`h-full rounded-full transition-all ${
-            status.over ? 'bg-destructive' : 'bg-primary'
+            status.over ? 'bg-expense' : 'bg-primary'
           }`}
           style={{ width: `${status.ratio * 100}%` }}
         />
       </div>
 
-      <p className={`text-xs tabular-nums ${status.over ? 'text-destructive' : 'text-muted-foreground'}`}>
+      <p className={`text-xs tabular-nums ${status.over ? 'text-expense' : 'text-muted-foreground'}`}>
         {status.over
           ? t('overBy', { amount: formatTHB(-status.remaining) })
           : t('remaining', { amount: formatTHB(status.remaining) })}

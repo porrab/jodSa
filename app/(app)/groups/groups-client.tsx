@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog'
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
+} from '@/components/ui/sheet'
 import { createGroup, updateGroup, deleteGroup } from '@/app/actions/groups'
 import { formatTHB } from '@/lib/money'
 
@@ -80,15 +80,15 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
 
   return (
     <div className="space-y-4">
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
+      <Sheet open={addOpen} onOpenChange={setAddOpen}>
+        <SheetTrigger asChild>
           <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('addTitle')}</DialogTitle></DialogHeader>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="px-4 pb-8">
+          <SheetHeader><SheetTitle>{t('addTitle')}</SheetTitle></SheetHeader>
           <GroupForm action={createGroup} onSuccess={() => setAddOpen(false)} />
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {groups.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
@@ -113,19 +113,19 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
                   </p>
                 </Link>
                 <div className="flex flex-col gap-1">
-                  <Dialog open={editId === g.id} onOpenChange={(o) => setEditId(o ? g.id : null)}>
-                    <DialogTrigger asChild>
+                  <Sheet open={editId === g.id} onOpenChange={(o) => setEditId(o ? g.id : null)}>
+                    <SheetTrigger asChild>
                       <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="px-4 pb-8">
+                      <SheetHeader><SheetTitle>{t('edit')}</SheetTitle></SheetHeader>
                       <GroupForm
                         defaultValues={{ id: g.id, title: g.title, note: g.note }}
                         action={updateGroup}
                         onSuccess={() => setEditId(null)}
                       />
-                    </DialogContent>
-                  </Dialog>
+                    </SheetContent>
+                  </Sheet>
                   <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(g.id)}>
                     <Trash2 className="size-3.5 text-destructive" />
                   </Button>

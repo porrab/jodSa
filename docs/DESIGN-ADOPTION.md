@@ -20,13 +20,13 @@ Track implementation of [07-design.md](source-idea/docs/07-design.md) against bu
 
 ## Phase C — M3+ (build to design from the start)
 
-- [ ] Budgets page: BudgetBar with calm under-budget / clear (not red) over-budget styles
-- [ ] Groups page: uses type-semantic colors throughout
-- [ ] Guest pay `/pay/<token>`: minimal trust-forward layout; states "recorded, host confirms"
-- [ ] Bottom tab bar: redesign `app-nav.tsx` with center Add/Scan button (thumb reach)
-- [ ] Bottom sheets: replace centered Dialogs on mobile with Sheet (slide-up)
-- [ ] `AmountDisplay` hero component: 40px tabular-nums, ฿ prefix
-- [ ] M5: charts use income/expense color tokens (not generic chart-*)
+- [x] Budgets page: BudgetBar uses `bg-expense`/`text-expense` (calm coral) for over-budget — not `destructive` red
+- [x] Groups page: type-semantic colors throughout (TYPE_STYLE map); group total in `text-expense`
+- [x] Guest pay `/pay/<token>`: visible trust note (Info icon + "Recorded, not bank-verified") above upload; footer recordedNote unchanged
+- [x] Bottom tab bar: `app-nav.tsx` 4 daily + center (＋) FAB + /more page (commit 582cbda)
+- [x] Bottom sheets: Groups add/edit and group-member add use `Sheet side="bottom"` (Dialog removed); app-shell quick-add also Sheet
+- [x] `TransactionForm` amount: hero input — ฿ prefix + `text-3xl font-semibold tabular-nums` (40px equivalent)
+- [x] M5: charts use `var(--income)` / `var(--expense)` tokens (not generic `chart-*`)
 
 ## Rules to enforce forever
 

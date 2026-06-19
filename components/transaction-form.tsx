@@ -134,18 +134,22 @@ export default function TransactionForm({
         </div>
       </div>
 
-      {/* Amount */}
+      {/* Amount — hero input: ฿ prefix + large tabular-nums (design 07) */}
       <div className="space-y-1">
         <Label htmlFor="amount">{t('amount')}</Label>
-        <Input
-          id="amount"
-          name="amount"
-          type="text"
-          inputMode="decimal"
-          placeholder="0.00"
-          defaultValue={defaultValues?.amount}
-          required
-        />
+        <div className="flex items-center gap-2 rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+          <span className="select-none text-2xl font-semibold tabular-nums text-muted-foreground">฿</span>
+          <Input
+            id="amount"
+            name="amount"
+            type="text"
+            inputMode="decimal"
+            placeholder="0.00"
+            defaultValue={defaultValues?.amount}
+            required
+            className="h-14 border-0 bg-transparent px-0 text-3xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
+          />
+        </div>
       </div>
 
       {/* Account */}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { AlertCircle, CheckCircle2, FileImage, Upload } from 'lucide-react'
+import { AlertCircle, CheckCircle2, FileImage, Info, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -150,6 +150,12 @@ export default function PayClient({
           </p>
         )}
       </header>
+
+      {/* Trust note — always visible: recorded not bank-verified */}
+      <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+        <Info className="mt-0.5 size-3.5 shrink-0" />
+        <span>{t('trustNote')}</span>
+      </div>
 
       {qrUrl && stage === 'idle' && (
         <section className="space-y-2 rounded-xl border p-4 text-center">

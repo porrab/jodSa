@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog'
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
+} from '@/components/ui/sheet'
 import { setTransactionGroup } from '@/app/actions/groups'
 import { groupExpenseTotal, groupExpenseByCategory, UNCATEGORIZED } from '@/lib/group'
 import { formatTHB } from '@/lib/money'
@@ -137,12 +137,12 @@ export default function GroupDetailClient({
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold">{t('memberHeading', { count: members.length })}</h2>
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger asChild>
+          <Sheet open={addOpen} onOpenChange={setAddOpen}>
+            <SheetTrigger asChild>
               <Button size="sm" variant="outline"><Plus className="size-4 mr-1" />{t('addMember')}</Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>{t('addMemberTitle')}</DialogTitle></DialogHeader>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto px-4 pb-8">
+              <SheetHeader><SheetTitle>{t('addMemberTitle')}</SheetTitle></SheetHeader>
               {candidates.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   {t('noCandidates')}
@@ -161,8 +161,8 @@ export default function GroupDetailClient({
                   ))}
                 </div>
               )}
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {members.length === 0 ? (

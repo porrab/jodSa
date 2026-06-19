@@ -318,7 +318,8 @@
     "sendSlip": "Send Slip",
     "yourSlips": "Your submitted slips",
     "refShort": "Ref {ref}",
-    "recordedNote": "Your slip is only <strong>recorded</strong> for the session owner to see — it is not bank-verified. The owner will check their actual balance and confirm it themselves"
+    "recordedNote": "Your slip is only <strong>recorded</strong> for the session owner to see — it is not bank-verified. The owner will check their actual balance and confirm it themselves",
+    "trustNote": "Recorded amounts only — not bank-verified. The session owner will check and confirm each slip."
   },
   "settings": {
     "title": "Settings",
