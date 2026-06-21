@@ -35,6 +35,7 @@ Actions to the React UI, and you treat the on-device parsing worker as a first-c
 - Match the architecture in [docs/source-idea/](docs/source-idea/) (prompt.md is the finalized handoff). If you must deviate, document why.
 - Use the project skills as you build: **slip-parser** (M2), **recurrence-engine** (M3), **supabase-rls** (M1/M4). Read each `SKILL.md` before touching that area.
 - **Fixing a bug from `REVIEW-INBOX.md` (pm-desk `M*` / qa-lab `QA-*`)?** Two global skills from the `9arm-skills` plugin (installed at user level, auto-available) anchor the fix: use **`debug-mantra`** while diagnosing — reproduce, trace the actual fail path, falsify the hypothesis *before* editing; once the fix verifies, write a **`post-mortem`** (root cause · mechanism · fix · how it slipped through) before marking the item `[x]`.
+- **Long build, or stuck in a loop?** Apply the **`qwenchance`** global skill: rerunning the same command or re-reading the same file with no new information means stop and switch strategy — don't retry hoping for a different result. At context-pressure signals (5+ files / one huge log / 20+ turns), finish the current atomic unit and hand off cleanly instead of pushing into an exhausted window.
 - **Decide yourself:** naming, file layout, component structure, styling.
   **Ask first before:** adding a new external dependency, changing the data model / RLS contract, or crossing any non-goal.
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`), kept buildable.
