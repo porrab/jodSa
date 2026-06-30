@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl'
 import { formatTHB } from '@/lib/money'
+import { Mascot } from '@/components/mascot'
 import type { BudgetRow, BudgetStatus } from '@/lib/budget'
 
 export default function BudgetBar({
@@ -36,10 +37,16 @@ export default function BudgetBar({
         />
       </div>
 
-      <p className={`text-xs tabular-nums ${status.over ? 'text-expense' : 'text-muted-foreground'}`}>
-        {status.over
-          ? t('overBy', { amount: formatTHB(-status.remaining) })
-          : t('remaining', { amount: formatTHB(status.remaining) })}
+      <p className={`flex items-center gap-1.5 text-xs tabular-nums ${status.over ? 'text-expense' : 'text-muted-foreground'}`}>
+        {status.over ? (
+          <>
+            {/* Surprised mascot = the brief's no-panic over-budget cue (never alarm-red) */}
+            <Mascot expr="surprised" className="h-4 w-4 shrink-0" />
+            {t('overBy', { amount: formatTHB(-status.remaining) })}
+          </>
+        ) : (
+          t('remaining', { amount: formatTHB(status.remaining) })
+        )}
       </p>
     </div>
   )
