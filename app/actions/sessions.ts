@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { nanoid } from 'nanoid'
 import { createClient } from '@/lib/supabase/server'
 import { sessionSchema, guestSlipSchema } from '@/lib/validators/session'
+import { uploadTripQr, copyAccountQrToTrip, TRIP_QR_MAX_BYTES } from '@/lib/trip-storage'
 
 export async function createSession(_prev: { error: string }, formData: FormData) {
   const supabase = await createClient()
@@ -66,6 +67,70 @@ export async function createSession(_prev: { error: string }, formData: FormData
   if (error) return { error: error.message }
 
   revalidatePath('/sessions')
+  return { error: '' }
+}
+
+// Trip: owner adds an expense in-app (authenticated). Unlike the anonymous
+// /expenses route, the owner may reuse a saved account QR (qr_account_id) — the
+// account is selected through the user-session client so RLS enforces ownership.
+export async function addTripExpenseAsOwner(
+  sessionId: string,
+  formData: FormData,
+): Promise<{ error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const title = ((formData.get('title') as string) ?? '').trim()
+  const total = Number(formData.get('total_amount_satang'))
+  const splitAmong = Number(formData.get('split_among'))
+  if (!title) return { error: 'กรุณาใส่ชื่อรายการ' }
+  if (!Number.isInteger(total) || total <= 0) return { error: 'จำนวนเงินไม่ถูกต้อง' }
+  if (!Number.isInteger(splitAmong) || splitAmong < 1) return { error: 'จำนวนคนไม่ถูกต้อง' }
+
+  const { data: me } = await supabase
+    .from('session_participants').select('id')
+    .eq('session_id', sessionId).eq('user_id', user.id).maybeSingle()
+  if (!me) return { error: 'ไม่พบผู้เข้าร่วม' }
+
+  const expenseId = crypto.randomUUID()
+  let qrPath: string | null = null
+
+  const accountId = formData.get('qr_account_id') as string | null
+  const file = formData.get('qr')
+  if (accountId) {
+    // RLS (accounts_select_own) means this returns the account only if the owner
+    // actually owns it — the ownership guard.
+    const { data: account } = await supabase
+      .from('accounts').select('qr_image_path').eq('id', accountId).maybeSingle()
+    if (!account?.qr_image_path) return { error: 'บัญชีนี้ไม่มี QR รับเงิน' }
+    try {
+      qrPath = await copyAccountQrToTrip(account.qr_image_path, sessionId, expenseId)
+    } catch {
+      return { error: 'ใช้ QR ไม่สำเร็จ' }
+    }
+  } else if (file instanceof File && file.size > 0) {
+    if (!file.type.startsWith('image/')) return { error: 'กรุณาเลือกไฟล์รูปภาพ' }
+    if (file.size > TRIP_QR_MAX_BYTES) return { error: 'ไฟล์ใหญ่เกิน 2MB' }
+    try {
+      qrPath = await uploadTripQr(sessionId, expenseId, file)
+    } catch {
+      return { error: 'อัปโหลด QR ไม่สำเร็จ' }
+    }
+  }
+
+  const { error } = await supabase.from('session_expenses').insert({
+    id: expenseId,
+    session_id: sessionId,
+    payer_participant_id: me.id,
+    title,
+    total_amount_satang: total,
+    split_among: splitAmong,
+    qr_image_path: qrPath,
+  })
+  if (error) return { error: error.message }
+
+  revalidatePath(`/sessions/${sessionId}`)
   return { error: '' }
 }
 

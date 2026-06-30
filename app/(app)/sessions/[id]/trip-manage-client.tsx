@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import ShareLink from '@/components/share-link'
 import TripClient from '@/app/pay/[token]/trip-client'
-import { setSessionStatus, deleteSession } from '@/app/actions/sessions'
+import { setSessionStatus, deleteSession, addTripExpenseAsOwner } from '@/app/actions/sessions'
 import type {
   Participant as TripParticipant,
   Expense as TripExpense,
@@ -30,11 +30,12 @@ type Seed = { participantId: string; participantToken: string; nickname: string 
 // sit on top; the ledger itself reuses the public TripClient, seeded with the
 // owner's participant identity so they act through the same UI + API routes.
 export default function TripManageClient({
-  session, ledger, seed,
+  session, ledger, seed, accountsWithQr,
 }: {
   session: { id: string; title: string; status: 'open' | 'closed' }
   ledger: Ledger
   seed: Seed | null
+  accountsWithQr: { id: string; name: string; bank: string }[]
 }) {
   const t = useTranslations('session')
   const tc = useTranslations('common')
@@ -96,7 +97,15 @@ export default function TripManageClient({
         </CardContent>
       </Card>
 
-      <TripClient token={session.id} title={session.title} ledger={ledger} seed={seed} embedded />
+      <TripClient
+        token={session.id}
+        title={session.title}
+        ledger={ledger}
+        seed={seed}
+        embedded
+        ownerAccounts={accountsWithQr.map((a) => ({ id: a.id, label: `${a.name} (${a.bank})` }))}
+        onOwnerAddExpense={(fd) => addTripExpenseAsOwner(session.id, fd)}
+      />
 
       <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive">
         <Trash2 className="size-3.5 mr-1.5" />{tc('delete')}

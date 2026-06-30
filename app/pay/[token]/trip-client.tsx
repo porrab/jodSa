@@ -13,6 +13,9 @@ import { Label } from '@/components/ui/label'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -112,23 +115,35 @@ function JoinForm({ token, onJoined }: { token: string; onJoined: (s: Stored) =>
 
 // ── Add expense ─────────────────────────────────────────────────────────────
 function AddExpenseSheet({
-  token, participantToken, defaultSplit, onDone,
+  token, participantToken, defaultSplit, onDone, ownerAccounts, onOwnerAddExpense,
 }: {
   token: string
   participantToken: string
   defaultSplit: number
   onDone: () => void
+  // Owner mode (in-app): when present, submit goes through the authenticated
+  // server action and the owner may reuse a saved account QR instead of uploading.
+  ownerAccounts?: { id: string; label: string }[]
+  onOwnerAddExpense?: (fd: FormData) => Promise<{ error: string }>
 }) {
   const t = useTranslations('trip')
+  const ownerMode = !!onOwnerAddExpense
+  const savedAccounts = ownerAccounts ?? []
+  const hasSaved = ownerMode && savedAccounts.length > 0
+
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [split, setSplit] = useState(String(defaultSplit))
   const [file, setFile] = useState<File | null>(null)
+  // QR source (owner mode only): reuse a saved account QR vs upload a new image.
+  const [qrSource, setQrSource] = useState<'saved' | 'upload'>(hasSaved ? 'saved' : 'upload')
+  const [accountId, setAccountId] = useState(savedAccounts[0]?.id ?? '')
   const [busy, setBusy] = useState(false)
 
   function reset() {
     setTitle(''); setAmount(''); setSplit(String(defaultSplit)); setFile(null)
+    setQrSource(hasSaved ? 'saved' : 'upload'); setAccountId(savedAccounts[0]?.id ?? '')
   }
 
   async function submit() {
@@ -140,13 +155,22 @@ function AddExpenseSheet({
     setBusy(true)
     try {
       const fd = new FormData()
-      fd.set('participant_token', participantToken)
       fd.set('title', title.trim())
       fd.set('total_amount_satang', String(satang))
       fd.set('split_among', String(splitN))
-      if (file) fd.set('qr', file)
-      const res = await fetch(`/api/sessions/${token}/expenses`, { method: 'POST', body: fd })
-      if (!res.ok) { toast.error(t('expenseFailed')); return }
+
+      if (ownerMode) {
+        if (qrSource === 'saved' && accountId) fd.set('qr_account_id', accountId)
+        else if (file) fd.set('qr', file)
+        const res = await onOwnerAddExpense!(fd)
+        if (res.error) { toast.error(t('expenseFailed')); return }
+      } else {
+        fd.set('participant_token', participantToken)
+        if (file) fd.set('qr', file)
+        const res = await fetch(`/api/sessions/${token}/expenses`, { method: 'POST', body: fd })
+        if (!res.ok) { toast.error(t('expenseFailed')); return }
+      }
+
       toast.success(t('expenseAdded'))
       setOpen(false)
       reset()
@@ -182,16 +206,46 @@ function AddExpenseSheet({
         <div className="space-y-1.5">
           <Label>{t('qrLabel')}</Label>
           <p className="text-xs text-muted-foreground">{t('qrHint')}</p>
-          <label className="mt-1 flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50">
-            <FileImage className="size-5 text-muted-foreground" />
-            <span className="text-xs font-medium">{file ? file.name : t('qrPick')}</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
+
+          {/* Owner with saved-QR accounts → choose between reusing one or uploading */}
+          {hasSaved && (
+            <div className="flex gap-2 pt-1">
+              {(['saved', 'upload'] as const).map((src) => (
+                <Button
+                  key={src}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQrSource(src)}
+                  className={cn('flex-1', qrSource === src && 'border-primary bg-primary/10 text-primary')}
+                >
+                  {src === 'saved' ? t('qrSourceSaved') : t('qrSourceUpload')}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {hasSaved && qrSource === 'saved' ? (
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger><SelectValue placeholder={t('qrSelectAccount')} /></SelectTrigger>
+              <SelectContent>
+                {savedAccounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <label className="mt-1 flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50">
+              <FileImage className="size-5 text-muted-foreground" />
+              <span className="text-xs font-medium">{file ? file.name : t('qrPick')}</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          )}
         </div>
         <Button className="w-full" onClick={submit} disabled={busy}>
           {busy ? t('savingExpense') : t('saveExpense')}
@@ -347,6 +401,7 @@ function SendSlipSheet({
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function TripClient({
   token, title, ledger, seed = null, embedded = false,
+  ownerAccounts, onOwnerAddExpense,
 }: {
   token: string
   title: string
@@ -356,6 +411,10 @@ export default function TripClient({
   // join step and act through the same ledger UI + API routes.
   seed?: Stored | null
   embedded?: boolean
+  // Owner-only: saved account QRs + the authenticated add-expense action. When
+  // passed (in-app), AddExpenseSheet offers "use a saved QR" instead of upload.
+  ownerAccounts?: { id: string; label: string }[]
+  onOwnerAddExpense?: (fd: FormData) => Promise<{ error: string }>
 }) {
   const t = useTranslations('trip')
   const router = useRouter()
@@ -450,6 +509,8 @@ export default function TripClient({
               participantToken={stored!.participantToken}
               defaultSplit={participants.length}
               onDone={refresh}
+              ownerAccounts={ownerAccounts}
+              onOwnerAddExpense={onOwnerAddExpense}
             />
           </div>
 

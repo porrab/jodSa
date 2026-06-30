@@ -22,7 +22,7 @@ export default async function SessionDetailPage({
   // Trip session → owner management view (ledger + owner controls).
   if (session.type === 'trip') {
     const { data: { user } } = await supabase.auth.getUser()
-    const [ledger, { data: me }] = await Promise.all([
+    const [ledger, { data: me }, { data: accountsWithQr }] = await Promise.all([
       loadTripLedger(id),
       supabase
         .from('session_participants')
@@ -30,6 +30,13 @@ export default async function SessionDetailPage({
         .eq('session_id', id)
         .eq('user_id', user?.id ?? '')
         .maybeSingle(),
+      // Owner's accounts that already have a saved receiving QR — offered as a
+      // "use saved QR" option when adding an expense.
+      supabase
+        .from('accounts')
+        .select('id, name, bank, qr_image_path')
+        .not('qr_image_path', 'is', null)
+        .order('created_at'),
     ])
     const seed = me
       ? { participantId: me.id, participantToken: me.participant_token, nickname: me.nickname }
@@ -39,6 +46,7 @@ export default async function SessionDetailPage({
         session={{ id: session.id, title: session.title, status: session.status }}
         ledger={ledger}
         seed={seed}
+        accountsWithQr={(accountsWithQr ?? []).map((a) => ({ id: a.id, name: a.name, bank: a.bank }))}
       />
     )
   }
