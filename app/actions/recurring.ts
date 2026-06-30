@@ -45,6 +45,7 @@ export async function createRecurringRule(_prev: { error: string }, formData: Fo
   revalidatePath('/recurring')
   revalidatePath('/transactions')
   revalidatePath('/dashboard')
+  revalidatePath('/budgets')
   return { error: '' }
 }
 
@@ -79,6 +80,7 @@ export async function deleteRecurringRule(id: string) {
   revalidatePath('/recurring')
   revalidatePath('/transactions')
   revalidatePath('/dashboard')
+  revalidatePath('/budgets')
 }
 
 /**
@@ -96,4 +98,5 @@ export async function skipOccurrence(ruleId: string, occurrenceDate: string, txI
   revalidatePath('/transactions')
   revalidatePath('/dashboard')
   revalidatePath('/accounts')
+  revalidatePath('/budgets')
 }

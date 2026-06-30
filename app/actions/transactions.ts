@@ -44,6 +44,7 @@ export async function createTransaction(_prev: { error: string }, formData: Form
   revalidatePath('/transactions')
   revalidatePath('/dashboard')
   revalidatePath('/accounts')
+  revalidatePath('/budgets')
   return { error: '' }
 }
 
@@ -54,6 +55,7 @@ export async function deleteTransaction(id: string) {
   revalidatePath('/transactions')
   revalidatePath('/dashboard')
   revalidatePath('/accounts')
+  revalidatePath('/budgets')
 }
 
 export async function checkNullRefDedup(
