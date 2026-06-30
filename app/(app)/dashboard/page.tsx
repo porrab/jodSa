@@ -10,6 +10,7 @@ import BudgetBar from '@/components/budget-bar'
 import QuickAddCard from '@/components/quick-add-card'
 import DashboardShortcuts from '@/components/dashboard-shortcuts'
 import { Mascot } from '@/components/mascot'
+import { HeroBalance } from '@/components/hero-balance'
 import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
 import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
@@ -105,9 +106,10 @@ export default async function DashboardPage() {
           className="pointer-events-none absolute -right-2 -top-3 -z-10 h-28 w-28 opacity-90"
         />
         <p className="text-sm font-medium text-white/80">{t('totalBalance')}</p>
-        <p className="mt-1 text-[2.15rem] font-bold leading-tight tabular-nums">
-          {formatTHB(totalBalance)}
-        </p>
+        <HeroBalance
+          satang={totalBalance}
+          className="mt-1 block text-[2.15rem] font-bold leading-tight tabular-nums"
+        />
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums">
           <span>
             <span className="text-white/70">{t('monthIncome')} </span>

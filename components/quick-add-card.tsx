@@ -58,7 +58,7 @@ export default function QuickAddCard() {
               variant="outline"
               size="sm"
               onClick={() => setType(ty)}
-              className={cn('flex-1', type === ty && TYPE_ACTIVE_CLS[ty])}
+              className={cn('press flex-1', type === ty && TYPE_ACTIVE_CLS[ty])}
             >
               {t(ty)}
             </Button>
@@ -66,13 +66,13 @@ export default function QuickAddCard() {
         </div>
 
         <div className="flex gap-2 pt-1">
-          <Button asChild variant="outline" className="flex-1">
+          <Button asChild variant="outline" className="press flex-1">
             <Link href="/import">
               <Camera className="mr-2 size-4" />
               {t('scan')}
             </Link>
           </Button>
-          <Button type="button" onClick={onSave} className="flex-1">
+          <Button type="button" onClick={onSave} className="press flex-1">
             {t('save')}
           </Button>
         </div>

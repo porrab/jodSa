@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
+import { Mascot } from '@/components/mascot'
 import { format } from 'date-fns'
 import { th, enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -80,7 +81,8 @@ export default function TransactionsClient({
       </Dialog>
 
       {transactions.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+        <div className="rounded-xl border border-dashed p-10 text-center text-muted-foreground">
+          <Mascot expr="sleepy" className="mx-auto mb-3 h-20 w-20 opacity-80" />
           <p>{t('noTransactions')}</p>
           <p className="text-sm mt-1">{t('addFirst')}</p>
         </div>
