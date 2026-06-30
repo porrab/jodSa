@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 80 380 380" width="380" height="380" role="img" aria-label="JodSa mascot — deadpan rounded-triangle character with slim oven-mitt hands">
+<g fill="none" stroke="#141414" stroke-linecap="round" stroke-linejoin="round">
+<path d="M258,212 C214,212 196,254 200,298" stroke-width="13"/>
+<path d="M422,212 C466,212 484,254 480,298" stroke-width="13"/>
+<path d="M312,318 L308,408" stroke-width="16"/>
+<path d="M368,318 L372,408" stroke-width="16"/>
+<path d="M340,118 C296,118 270,160 246,224 C232,262 230,308 268,318 L412,318 C450,308 448,262 434,224 C410,160 384,118 340,118 Z" fill="#ffffff" stroke-width="28"/>
+</g>
+<g fill="#141414">
+<ellipse cx="298" cy="414" rx="30" ry="14"/>
+<ellipse cx="382" cy="414" rx="30" ry="14"/>
+<rect x="184" y="298" width="28" height="58" rx="14"/>
+<ellipse cx="216" cy="314" rx="9" ry="11"/>
+<rect x="468" y="298" width="28" height="58" rx="14"/>
+<ellipse cx="464" cy="314" rx="9" ry="11"/>
+</g>
+<g fill="none" stroke="#141414" stroke-linecap="round" stroke-linejoin="round">
+<path d="M286,224 L316,224 C325,225 325,237 322,249" stroke-width="24"/>
+<path d="M394,224 L364,224 C355,225 355,237 358,249" stroke-width="24"/>
+<path d="M318,284 L362,284" stroke-width="11"/>
+</g>
+</svg>

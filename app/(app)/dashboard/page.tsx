@@ -4,11 +4,12 @@ import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import { formatTHB, computeAccountBalance } from '@/lib/money'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import BudgetBar from '@/components/budget-bar'
 import QuickAddCard from '@/components/quick-add-card'
 import DashboardShortcuts from '@/components/dashboard-shortcuts'
+import { Mascot } from '@/components/mascot'
 import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
 import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
@@ -96,12 +97,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Greeting + net balance — one-line summary above the quick-add (design 07 rev 2026-06-15) */}
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className={`text-sm text-muted-foreground tabular-nums ${totalBalance < 0 ? 'text-destructive' : ''}`}>
-          {t('totalBalance')}: <span className="font-semibold">{formatTHB(totalBalance)}</span>
+      {/* Hero — total balance as the focal point: elevated gradient card + deadpan
+          mascot watching over the money (design 07 rev 2026-06-30: Calm-Elevated). */}
+      <div className="bg-hero relative isolate overflow-hidden rounded-2xl px-5 py-5 text-white shadow-float">
+        <Mascot
+          expr="deadpan"
+          className="pointer-events-none absolute -right-2 -top-3 -z-10 h-28 w-28 opacity-90"
+        />
+        <p className="text-sm font-medium text-white/80">{t('totalBalance')}</p>
+        <p className="mt-1 text-[2.15rem] font-bold leading-tight tabular-nums">
+          {formatTHB(totalBalance)}
         </p>
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums">
+          <span>
+            <span className="text-white/70">{t('monthIncome')} </span>
+            <span className="font-semibold">+{formatTHB(monthIncome)}</span>
+          </span>
+          <span>
+            <span className="text-white/70">{t('monthExpense')} </span>
+            <span className="font-semibold">-{formatTHB(monthExpense)}</span>
+          </span>
+        </div>
       </div>
 
       {/* Quick-add: amount + type + scan/save; the rest expands in the sheet. */}
@@ -110,30 +126,6 @@ export default async function DashboardPage() {
       {/* Mobile quick-access — desktop has the full sidebar instead. */}
       <div className="md:hidden">
         <DashboardShortcuts />
-      </div>
-
-      {/* This month summary */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('monthIncome')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold tabular-nums text-income">
-              +{formatTHB(monthIncome)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('monthExpense')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold tabular-nums text-expense">
-              -{formatTHB(monthExpense)}
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Account balances */}
@@ -145,7 +137,7 @@ export default async function DashboardPage() {
               {t('viewAll')} <ArrowRight className="size-3" />
             </Link>
           </div>
-          <div className="rounded-lg border divide-y">
+          <div className="divide-y rounded-xl border bg-card shadow-soft">
             {(accounts ?? []).map((acct) => {
               const bal = computeAccountBalance(
                 (allTx ?? []) as Parameters<typeof computeAccountBalance>[0],

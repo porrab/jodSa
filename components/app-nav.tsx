@@ -59,13 +59,13 @@ export default function AppNav() {
   const navItemCls = (active: boolean) =>
     cn(
       'flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors',
-      active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+      active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
     )
 
   return (
     <>
       {/* Mobile bottom nav: 4 daily dests + center (＋) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background/85 shadow-[0_-8px_28px_-14px_rgb(16_60_48_/_0.28)] backdrop-blur-lg md:hidden">
         {mobileLeft.map(({ href, key, icon: Icon }) => (
           <Link key={href} href={href} className={navItemCls(pathname === href)}>
             <Icon className="size-5" />
@@ -80,7 +80,7 @@ export default function AppNav() {
           aria-label={t('add')}
           className="flex flex-1 items-center justify-center"
         >
-          <span className="-mt-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-colors hover:bg-primary/90 active:bg-primary/85">
+          <span className="press -mt-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-float ring-4 ring-background transition-colors hover:bg-primary/90 active:bg-primary/85">
             <Plus className="size-6" />
           </span>
         </button>

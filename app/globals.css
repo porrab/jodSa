@@ -34,6 +34,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Consistent elevation scale (calm, emerald-tinted) — soft lift, never harsh */
+  --shadow-soft: 0 1px 2px -1px rgb(16 60 48 / 0.08), 0 8px 22px -12px rgb(16 60 48 / 0.18);
+  --shadow-float: 0 4px 12px -6px rgb(16 60 48 / 0.16), 0 20px 38px -16px rgb(16 60 48 / 0.32);
 }
 
 /* jodsa — emerald brand / transaction-type semantic palette */
@@ -102,5 +105,28 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Emerald→teal brand gradient for the dashboard hero (white text passes AA on it) */
+  .bg-hero {
+    background-image: linear-gradient(135deg, oklch(0.53 0.12 166) 0%, oklch(0.51 0.095 202) 100%);
+  }
+  /* Tactile press feedback (UI/UX-pro-max: scale-feedback 0.95–1.05, 150ms, spring) */
+  .press {
+    transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press {
+    transition: none;
+  }
+  .press:active {
+    transform: none;
   }
 }

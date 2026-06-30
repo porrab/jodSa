@@ -3,7 +3,8 @@
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Repeat } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Mascot } from '@/components/mascot'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -251,8 +252,8 @@ export default function RecurringClient({
       )}
 
       {rules.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          <Repeat className="mx-auto mb-2 size-6" />
+        <div className="rounded-xl border border-dashed p-10 text-center text-muted-foreground">
+          <Mascot expr="shrug" className="mx-auto mb-3 h-20 w-20 opacity-80" />
           <p>{t('empty')}</p>
           <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
