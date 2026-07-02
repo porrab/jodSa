@@ -32,6 +32,7 @@ export default async function AccountsPage() {
     balance: computeAccountBalance(
       (transactions ?? []) as Parameters<typeof computeAccountBalance>[0],
       acct.id,
+      acct.opening_balance_satang ?? 0,
     ),
     qrUrl: acct.qr_image_path ? (qrUrls.get(acct.qr_image_path) ?? null) : null,
   }))

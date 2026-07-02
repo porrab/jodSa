@@ -90,7 +90,9 @@
     "qrSaved": "บันทึก QR แล้ว",
     "qrRemove": "ลบ QR",
     "qrRemoved": "ลบ QR แล้ว",
-    "qrRemoveFailed": "ไม่สามารถลบ QR ได้"
+    "qrRemoveFailed": "ไม่สามารถลบ QR ได้",
+    "openingBalance": "ยอดเงินตั้งต้น",
+    "openingBalanceHint": "ยอดคงเหลือของบัญชีนี้ตอนเริ่มใช้ (ไม่นับเป็นรายรับ)"
   },
   "budget": {
     "title": "งบประมาณ",
@@ -438,5 +440,16 @@
     "saving": "กำลังบันทึก...",
     "confirmDelete": "ยืนยันการลบ?",
     "thisActionCannotBeUndone": "การกระทำนี้ไม่สามารถยกเลิกได้"
+  },
+  "categories": {
+    "food": "อาหาร",
+    "transport": "เดินทาง",
+    "shopping": "ช้อปปิ้ง",
+    "health": "สุขภาพ",
+    "entertainment": "บันเทิง",
+    "utilities": "ค่าสาธารณูปโภค",
+    "salary": "เงินเดือน",
+    "freelance": "ฟรีแลนซ์",
+    "other": "อื่นๆ"
   }
 }

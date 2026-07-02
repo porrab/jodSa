@@ -3,6 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { accountSchema } from '@/lib/validators/account'
+import { parseInputToSatang } from '@/lib/money'
+
+// Opening balance is optional and may legitimately be 0 (or negative later);
+// an empty field means 0. Never a transaction — stored on the account row.
+function readOpeningBalance(formData: FormData): number {
+  const raw = (formData.get('opening_balance') as string | null)?.trim()
+  if (!raw) return 0
+  return parseInputToSatang(raw) ?? 0
+}
 
 export async function createAccount(_prev: { error: string }, formData: FormData) {
   const supabase = await createClient()
@@ -17,11 +26,12 @@ export async function createAccount(_prev: { error: string }, formData: FormData
 
   const { error } = await supabase
     .from('accounts')
-    .insert({ user_id: user.id, ...parsed.data })
+    .insert({ user_id: user.id, ...parsed.data, opening_balance_satang: readOpeningBalance(formData) })
 
   if (error) return { error: error.message }
 
   revalidatePath('/accounts')
+  revalidatePath('/dashboard')
   return { error: '' }
 }
 
@@ -39,12 +49,13 @@ export async function updateAccount(_prev: { error: string }, formData: FormData
 
   const { error } = await supabase
     .from('accounts')
-    .update(parsed.data)
+    .update({ ...parsed.data, opening_balance_satang: readOpeningBalance(formData) })
     .eq('id', id)
 
   if (error) return { error: error.message }
 
   revalidatePath('/accounts')
+  revalidatePath('/dashboard')
   return { error: '' }
 }
 

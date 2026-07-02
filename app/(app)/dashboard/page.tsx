@@ -84,6 +84,7 @@ export default async function DashboardPage() {
       computeAccountBalance(
         (allTx ?? []) as Parameters<typeof computeAccountBalance>[0],
         acct.id,
+        acct.opening_balance_satang ?? 0,
       ),
     0,
   )
@@ -144,6 +145,7 @@ export default async function DashboardPage() {
               const bal = computeAccountBalance(
                 (allTx ?? []) as Parameters<typeof computeAccountBalance>[0],
                 acct.id,
+                acct.opening_balance_satang ?? 0,
               )
               return (
                 <div key={acct.id} className="flex items-center justify-between p-3">

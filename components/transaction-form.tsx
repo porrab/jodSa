@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -201,7 +202,7 @@ export default function TransactionForm({
             </SelectTrigger>
             <SelectContent>
               {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
               ))}
             </SelectContent>
           </Select>

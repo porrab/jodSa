@@ -21,6 +21,9 @@ export const accounts = pgTable('accounts', {
   name: text('name').notNull(),
   bank: text('bank').notNull(),
   qrImagePath: text('qr_image_path'),
+  // Starting balance of the account (satang). NOT a transaction — kept off
+  // income/expense/transfer/budget analysis; only seeds computeAccountBalance.
+  openingBalanceSatang: integer('opening_balance_satang').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

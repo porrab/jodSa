@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
+import { CategoryLabel } from '@/lib/categories'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -120,7 +121,7 @@ function RuleForm({
           <SelectTrigger><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
           <SelectContent>
             {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
+              <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -293,7 +294,7 @@ export default function RecurringClient({
                   <p>{freqSummary(rule, t)}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {acct && <Badge variant="secondary">{acct.name}</Badge>}
-                    {rule.category && <Badge variant="outline">{rule.category}</Badge>}
+                    {rule.category && <Badge variant="outline"><CategoryLabel value={rule.category} /></Badge>}
                   </div>
                   <p className="text-xs">
                     {t('startsOn', { date: rule.start_date })}

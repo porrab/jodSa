@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { ChevronLeft, Plus, X } from 'lucide-react'
 import { format } from 'date-fns'
@@ -64,7 +65,7 @@ function TxRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
           {tx.counterparty ?? acct?.name ?? '—'}
-          {tx.category && <span className="ml-1.5 text-xs text-muted-foreground">{tx.category}</span>}
+          {tx.category && <span className="ml-1.5 text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>}
         </p>
         <p className="text-xs text-muted-foreground">
           {format(new Date(tx.datetime), 'd MMM yyyy HH:mm', { locale: locale === 'th' ? th : enUS })}
@@ -125,7 +126,7 @@ export default function GroupDetailClient({
             <div className="space-y-1">
               {breakdown.map(([cat, amt]) => (
                 <div key={cat} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{cat === UNCATEGORIZED ? t('uncategorized') : cat}</span>
+                  <span className="text-muted-foreground">{cat === UNCATEGORIZED ? t('uncategorized') : <CategoryLabel value={cat} />}</span>
                   <span className="tabular-nums">{formatTHB(amt)}</span>
                 </div>
               ))}

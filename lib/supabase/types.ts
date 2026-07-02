@@ -30,6 +30,7 @@ export interface Database {
           name: string
           bank: string
           qr_image_path: string | null
+          opening_balance_satang: number
           created_at: string
         }
         Insert: {
@@ -38,12 +39,14 @@ export interface Database {
           name: string
           bank: string
           qr_image_path?: string | null
+          opening_balance_satang?: number
           created_at?: string
         }
         Update: {
           name?: string
           bank?: string
           qr_image_path?: string | null
+          opening_balance_satang?: number
         }
         Relationships: []
       }

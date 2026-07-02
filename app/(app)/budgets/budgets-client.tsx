@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, PiggyBank } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -84,7 +85,7 @@ function BudgetForm({
             <SelectTrigger><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
             <SelectContent>
               {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
               ))}
             </SelectContent>
           </Select>

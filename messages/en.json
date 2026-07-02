@@ -90,7 +90,9 @@
     "qrSaved": "QR saved",
     "qrRemove": "Remove QR",
     "qrRemoved": "QR removed",
-    "qrRemoveFailed": "Could not remove QR"
+    "qrRemoveFailed": "Could not remove QR",
+    "openingBalance": "Starting balance",
+    "openingBalanceHint": "The account balance when you start using it (not counted as income)."
   },
   "budget": {
     "title": "Budgets",
@@ -438,5 +440,16 @@
     "saving": "Saving...",
     "confirmDelete": "Confirm delete?",
     "thisActionCannotBeUndone": "This action cannot be undone"
+  },
+  "categories": {
+    "food": "Food",
+    "transport": "Transport",
+    "shopping": "Shopping",
+    "health": "Health",
+    "entertainment": "Entertainment",
+    "utilities": "Utilities",
+    "salary": "Salary",
+    "freelance": "Freelance",
+    "other": "Other"
   }
 }

@@ -78,4 +78,13 @@ describe('computeAccountBalance', () => {
     expect(computeAccountBalance(fixture, A)).toBe(-200000) // -2000 THB
     expect(computeAccountBalance(fixture, B)).toBe(500000)  // +5000 THB
   })
+
+  it('opening balance seeds the running balance (not counted as income)', () => {
+    // A opens with 2000 THB; the txs above net +500 THB → 2500 THB total
+    expect(computeAccountBalance(txs, A, 200000)).toBe(250000)
+    // opening balance alone, no transactions → returned as-is
+    expect(computeAccountBalance([], A, 200000)).toBe(200000)
+    // omitted opening balance defaults to 0 (backward compatible)
+    expect(computeAccountBalance(txs, A)).toBe(50000)
+  })
 })

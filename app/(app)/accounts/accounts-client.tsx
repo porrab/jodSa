@@ -27,6 +27,7 @@ type Account = {
   name: string
   bank: string
   balance: number
+  opening_balance_satang: number
   qr_image_path: string | null
   qrUrl: string | null
 }
@@ -36,7 +37,7 @@ function AccountForm({
   action,
   onSuccess,
 }: {
-  defaultValues?: { name: string; bank: string; id?: string }
+  defaultValues?: { name: string; bank: string; id?: string; openingBalanceSatang?: number }
   action: typeof createAccount | typeof updateAccount
   onSuccess: () => void
 }) {
@@ -73,6 +74,23 @@ function AccountForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="opening_balance">{t('openingBalance')}</Label>
+        <Input
+          id="opening_balance"
+          name="opening_balance"
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          className="tabular-nums"
+          defaultValue={
+            defaultValues?.openingBalanceSatang
+              ? (defaultValues.openingBalanceSatang / 100).toFixed(2)
+              : ''
+          }
+        />
+        <p className="text-xs text-muted-foreground">{t('openingBalanceHint')}</p>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
@@ -210,7 +228,12 @@ export default function AccountsClient({
                         <DialogContent>
                           <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
                           <AccountForm
-                            defaultValues={{ id: acct.id, name: acct.name, bank: acct.bank }}
+                            defaultValues={{
+                              id: acct.id,
+                              name: acct.name,
+                              bank: acct.bank,
+                              openingBalanceSatang: acct.opening_balance_satang,
+                            }}
                             action={updateAccount}
                             onSuccess={() => setEditId(null)}
                           />

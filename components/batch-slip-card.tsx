@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { CategoryLabel } from '@/lib/categories'
 import { AlertTriangle, CheckCircle2, Info, SkipForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -241,7 +242,7 @@ export default function BatchSlipCard({
           <Select value={category} onValueChange={handleCategoryChange}>
             <SelectTrigger className="h-9"><SelectValue placeholder={t('selectCategoryOptional')} /></SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {CATEGORIES.map((c) => <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>)}
             </SelectContent>
           </Select>
 

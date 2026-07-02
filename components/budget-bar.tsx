@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl'
 import { formatTHB } from '@/lib/money'
 import { Mascot } from '@/components/mascot'
+import { CategoryLabel } from '@/lib/categories'
 import type { BudgetRow, BudgetStatus } from '@/lib/budget'
 
 export default function BudgetBar({
@@ -12,7 +13,13 @@ export default function BudgetBar({
 }) {
   const t = useTranslations('budget')
   const label =
-    budget.scope === 'overall' ? t('scopeOverall') : (budget.category ?? t('noCategory'))
+    budget.scope === 'overall' ? (
+      t('scopeOverall')
+    ) : budget.category ? (
+      <CategoryLabel value={budget.category} />
+    ) : (
+      t('noCategory')
+    )
 
   return (
     <div className="space-y-1.5">

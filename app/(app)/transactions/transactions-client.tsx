@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
@@ -104,7 +105,7 @@ export default function TransactionsClient({
                       {t(style.key)}
                     </span>
                     {tx.category && (
-                      <span className="text-xs text-muted-foreground">{tx.category}</span>
+                      <span className="text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>
                     )}
                   </div>
                   <p className="text-sm mt-0.5 truncate">
