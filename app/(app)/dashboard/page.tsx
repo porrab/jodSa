@@ -33,16 +33,21 @@ export default async function DashboardPage() {
   // transfer in/out + opening balance) so cost stays flat as history grows.
   // One 6-month income/expense window serves both the chart and this month's
   // totals/budget math (transfers are excluded from all of those anyway).
-  const fetchTxData = () =>
-    Promise.all([
+  // The refetch pass must attach an AbortSignal: Next memoizes identical GET
+  // fetches within one render, so without it the re-run would be handed the
+  // pre-insert response instead of hitting Supabase again.
+  const fetchTxData = (fresh = false) => {
+    const sixMo = supabase
+      .from('transactions')
+      .select('type, amount_satang, category, datetime')
+      .in('type', ['income', 'expense'])
+      .gte('datetime', chartStart.toISOString())
+      .lte('datetime', monthEnd)
+    return Promise.all([
       supabase.rpc('account_balances'),
-      supabase
-        .from('transactions')
-        .select('type, amount_satang, category, datetime')
-        .in('type', ['income', 'expense'])
-        .gte('datetime', chartStart.toISOString())
-        .lte('datetime', monthEnd),
+      fresh ? sixMo.abortSignal(new AbortController().signal) : sixMo,
     ])
+  }
 
   // Lazy-on-read materialization runs concurrently with the reads instead of in
   // front of them; when it actually inserted occurrences (first load of a new
@@ -56,7 +61,7 @@ export default async function DashboardPage() {
     materializeOccurrences(matFrom, matTo),
     fetchTxData(),
   ])
-  const [{ data: balances }, { data: sixMoTx }] = mat.inserted ? await fetchTxData() : txFirst
+  const [{ data: balances }, { data: sixMoTx }] = mat.inserted ? await fetchTxData(true) : txFirst
 
   if (process.env.PERF_LOG) {
     console.log(

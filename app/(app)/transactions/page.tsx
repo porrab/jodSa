@@ -9,24 +9,30 @@ export default async function TransactionsPage() {
   const t = await getTranslations('transaction')
   const supabase = await createClient()
 
-  const fetchData = () =>
-    Promise.all([
-      supabase
-        .from('transactions')
-        .select('*')
-        .order('datetime', { ascending: false })
-        .limit(200),
+  // The refetch pass must attach an AbortSignal: Next memoizes identical GET
+  // fetches within one render, so without it the re-run would be handed the
+  // pre-insert responses instead of hitting Supabase again.
+  const fetchData = (fresh = false) => {
+    const list = supabase
+      .from('transactions')
+      .select('*')
+      .order('datetime', { ascending: false })
+      .limit(200)
+    // Seed for the per-category last-used-account default in the log form.
+    // Income/expense only — transfers don't carry a category. Bounded so a
+    // long-lived account doesn't pull thousands of rows.
+    const history = supabase
+      .from('transactions')
+      .select('category, account_id')
+      .in('type', ['income', 'expense'])
+      .order('datetime', { ascending: false })
+      .limit(500)
+    return Promise.all([
+      fresh ? list.abortSignal(new AbortController().signal) : list,
       supabase.from('accounts').select('*').order('created_at'),
-      // Seed for the per-category last-used-account default in the log form.
-      // Income/expense only — transfers don't carry a category. Bounded so a
-      // long-lived account doesn't pull thousands of rows.
-      supabase
-        .from('transactions')
-        .select('category, account_id')
-        .in('type', ['income', 'expense'])
-        .order('datetime', { ascending: false })
-        .limit(500),
+      fresh ? history.abortSignal(new AbortController().signal) : history,
     ])
+  }
 
   // Lazy-on-read: create any due recurring occurrences for the current month.
   // It runs concurrently with the list reads; when it inserted rows the reads
@@ -34,7 +40,7 @@ export default async function TransactionsPage() {
   const { from, to } = currentMonthRange()
   const [mat, first] = await Promise.all([materializeOccurrences(from, to), fetchData()])
   const [{ data: transactions }, { data: accounts }, { data: history }] = mat.inserted
-    ? await fetchData()
+    ? await fetchData(true)
     : first
 
   const lastByCategory = buildLastAccountMap(history ?? [])
