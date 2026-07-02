@@ -46,6 +46,29 @@ export default function TransactionsClient({
   const [addOpen, setAddOpen] = useState(false)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
 
+  // Bangkok calendar-day key (YYYY-MM-DD) — groups the list by the day the money
+  // actually moved, not the viewer's UTC day.
+  const bangkokDayKey = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+  const todayKey = bangkokDayKey(new Date().toISOString())
+  const yesterdayKey = bangkokDayKey(new Date(Date.now() - 86_400_000).toISOString())
+
+  function dayLabel(key: string, sampleIso: string): string {
+    if (key === todayKey) return t('today')
+    if (key === yesterdayKey) return t('yesterday')
+    return format(new Date(sampleIso), 'EEE d MMM yyyy', { locale: dateLocale })
+  }
+
+  // Transactions arrive already sorted datetime-desc, so walking them keeps each
+  // day's rows contiguous — collect them into ordered day groups.
+  const groups: { key: string; label: string; items: Transaction[] }[] = []
+  for (const tx of transactions) {
+    const key = bangkokDayKey(tx.datetime)
+    const last = groups[groups.length - 1]
+    if (last && last.key === key) last.items.push(tx)
+    else groups.push({ key, label: dayLabel(key, tx.datetime), items: [tx] })
+  }
+
   async function handleDelete(tx: Transaction) {
     // A materialized recurring occurrence must be skipped (delete + exception
     // row), or the lazy-on-read materializer will recreate it on next load.
@@ -88,50 +111,62 @@ export default function TransactionsClient({
           <p className="text-sm mt-1">{t('addFirst')}</p>
         </div>
       ) : (
-        <div className="rounded-lg border divide-y">
-          {transactions.map((tx) => {
-            const acct = accountMap[tx.account_id]
-            const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-            const style = TYPE_STYLE[tx.type] ?? TYPE_STYLE.expense
-
-            return (
-              <div key={tx.id} className="flex items-center gap-3 p-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={cn(
-                      'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
-                      style.badgeCls,
-                    )}>
-                      {t(style.key)}
-                    </span>
-                    {tx.category && (
-                      <span className="text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>
-                    )}
-                  </div>
-                  <p className="text-sm mt-0.5 truncate">
-                    {tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : acct?.name ?? '—')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(tx.datetime), 'd MMM yyyy HH:mm', { locale: dateLocale })}
-                    {acct && <> · {acct.name}</>}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className={cn('font-semibold tabular-nums text-sm', style.textCls)}>
-                    {style.prefix}{formatTHB(tx.amount_satang)}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => handleDelete(tx)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
+        <div className="space-y-4">
+          {groups.map((group) => (
+            <div key={group.key}>
+              {/* Day header — sticks under the top bar while its rows scroll. */}
+              <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-background/85 px-1 py-1 backdrop-blur">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </h2>
               </div>
-            )
-          })}
+              <div className="rounded-lg border divide-y">
+                {group.items.map((tx) => {
+                  const acct = accountMap[tx.account_id]
+                  const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
+                  const style = TYPE_STYLE[tx.type] ?? TYPE_STYLE.expense
+
+                  return (
+                    <div key={tx.id} className="flex items-center gap-3 p-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={cn(
+                            'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
+                            style.badgeCls,
+                          )}>
+                            {t(style.key)}
+                          </span>
+                          {tx.category && (
+                            <span className="text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>
+                          )}
+                        </div>
+                        <p className="text-sm mt-0.5 truncate">
+                          {tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : acct?.name ?? '—')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
+                          {acct && <> · {acct.name}</>}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={cn('font-semibold tabular-nums text-sm', style.textCls)}>
+                          {style.prefix}{formatTHB(tx.amount_satang)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleDelete(tx)}
+                        className="shrink-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

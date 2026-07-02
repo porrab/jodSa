@@ -65,7 +65,9 @@
     "date": "Date & Time",
     "saved": "Transaction saved",
     "saving": "Saving...",
-    "save": "Save Transaction"
+    "save": "Save Transaction",
+    "today": "Today",
+    "yesterday": "Yesterday"
   },
   "account": {
     "title": "Accounts",
