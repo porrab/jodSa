@@ -134,13 +134,12 @@ export default function SlipConfirmForm({
         const { duplicates } = await checkNullRefDedup(acctId, amountSatang, dt)
         if (duplicates.length > 0) {
           const dup = duplicates[0]
-          // If the existing row has a ref_code, QR decode was reliable on first import —
-          // treat this as a hard duplicate even though this attempt's QR decode failed (M2-7).
-          if (dup.ref_code) {
-            setError(t('hardDuplicate'))
-            setLoading(false)
-            return
-          }
+          // This slip has no ref_code of its own, so the DB UNIQUE(user_id,
+          // ref_code) index can't catch a re-import. Per the blueprint, a null-ref
+          // match is a *soft* signal: warn, never hard-block. (Two genuinely
+          // distinct transactions can share account+amount+time, and a matched row
+          // that happens to carry a ref_code doesn't make THIS new slip a
+          // duplicate.) The user confirms with "save anyway" or cancels.
           const when = new Date(dup.datetime).toLocaleString(locale === 'th' ? 'th-TH' : 'en-GB', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
           })

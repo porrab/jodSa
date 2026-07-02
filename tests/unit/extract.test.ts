@@ -5,6 +5,7 @@ import {
   extractCounterparty,
   inferBankCode,
   extractRefCodeFromQR,
+  extractRefCodeFromText,
   extractFields,
 } from '@/lib/slip/extract'
 
@@ -350,6 +351,37 @@ describe('extractRefCodeFromQR', () => {
   it('returns null for empty string', () => {
     expect(extractRefCodeFromQR('')).toBeNull()
   })
+
+  it('returns null for a non-EMVCo QR with no long digit run (no repeating-prefix fallback)', () => {
+    // A MAKE/KBank-style slip-verify payload whose only constant is a short
+    // merchant/terminal id must NOT become a ref_code, or every slip collides.
+    expect(extractRefCodeFromQR('https://slip.kbank/verify?m=001')).toBeNull()
+    expect(extractRefCodeFromQR('KBANKSLIPVERIFY')).toBeNull()
+  })
+})
+
+// ─── OCR ref extraction (printed transaction number) ─────────────────────────
+
+describe('extractRefCodeFromText', () => {
+  it('reads MAKE/KBank เลขที่รายการ label', () => {
+    expect(extractRefCodeFromText('เลขที่รายการ: 015062512345678')).toBe('015062512345678')
+  })
+
+  it('reads เลขที่ทำรายการ label', () => {
+    expect(extractRefCodeFromText('เลขที่ทำรายการ 2024ABC12345')).toBe('2024ABC12345')
+  })
+
+  it('reads a generic Reference No label', () => {
+    expect(extractRefCodeFromText('Reference No: ABCD1234EFGH')).toBe('ABCD1234EFGH')
+  })
+
+  it('normalises Thai digits in the reference value', () => {
+    expect(extractRefCodeFromText('เลขที่รายการ ๐๑๕๐๖๒๕๑๒๓')).toBe('0150625123')
+  })
+
+  it('returns null when no reference label is present', () => {
+    expect(extractRefCodeFromText('จำนวนเงิน 100.00 บาท')).toBeNull()
+  })
 })
 
 // ─── extractFields integration ───────────────────────────────────────────────
@@ -376,6 +408,21 @@ describe('extractFields', () => {
     const r = extractFields(sampleText, 'REF99887766554433', null)
     expect(r.refCode.value).toBe('99887766554433')
     expect(r.refCode.confidence).toBeGreaterThanOrEqual(0.9)
+  })
+
+  it('falls back to the printed เลขที่รายการ when the QR carries no reference (MAKE/KBank)', () => {
+    // MAKE slip QR: EMVCo, no tag 62-05 → extractRefCodeFromQR returns null.
+    const makeText = `${sampleText}\nเลขที่รายการ: 015062598765432`
+    const qr = '00020101021130xxYYzz6304ABCD' // EMVCo, no tag 62 sub-05
+    const r = extractFields(makeText, qr, null)
+    expect(r.refCode.value).toBe('015062598765432')
+    expect(r.refCode.confidence).toBeGreaterThan(0)
+    expect(r.refCode.confidence).toBeLessThan(0.9) // OCR-derived, lower trust than QR
+  })
+
+  it('leaves refCode null when neither QR nor OCR carry a reference', () => {
+    const r = extractFields(sampleText, '00020101021130xxYY6304ABCD', null)
+    expect(r.refCode.value).toBeNull()
   })
 
   it('preserves rawTextDebug only in development', () => {

@@ -234,13 +234,31 @@ export function extractRefCodeFromQR(qrData: string): string | null {
 
   // Non-EMVCo: prefer 15+ digit sequences (transaction refs);
   // 10–12 digit sequences are typically account numbers that repeat.
+  // If nothing long enough is present, return null — NEVER fall back to a chunk
+  // of the raw payload, which for some banks (e.g. MAKE/KBank slip-verify QRs) is
+  // a constant prefix/merchant id that repeats across every slip and would make
+  // distinct transactions collide on UNIQUE(user_id, ref_code). A null here lets
+  // extractFields fall back to the printed transaction number from OCR instead.
   const nums = qrData.match(/\d{8,}/g)
-  if (!nums) return qrData.substring(0, 100)
+  if (!nums) return null
   const longRef = nums.find((n) => n.length >= 15)
   if (longRef) return longRef
   const medRef = nums.find((n) => n.length > 13)
   if (medRef) return medRef
   return null
+}
+
+// Printed transaction/reference number from OCR text. Used when the QR carries no
+// per-transaction reference (MAKE/KBank slip QRs are EMVCo without tag 62-05), so
+// these slips still get a unique ref_code for dedup instead of falling through to
+// the fragile amount+time soft-dedup. Labels cover KBank/MAKE ("เลขที่รายการ",
+// "เลขที่ทำรายการ") plus the generic Thai/English reference labels.
+export function extractRefCodeFromText(ocrText: string): string | null {
+  const t = normalizeThaiDigits(ocrText)
+  const m = t.match(
+    /(?:เลขที่ทำรายการ|เลขที่รายการ|เลขที่อ้างอิง|หมายเลขอ้างอิง|รหัสอ้างอิง|เลขรายการ|ยืนยันเลขที่|อ้างอิง|Ref(?:erence)?(?:\s*(?:No|Number|ID))?)\s*[:#.]?\s*([A-Za-z0-9-]{6,30})/i,
+  )
+  return m ? m[1] : null
 }
 
 export function extractFields(
@@ -253,15 +271,19 @@ export function extractFields(
   const counterparty = extractCounterparty(ocrText)
   const bankCode = inferBankCode(ocrText)
 
+  // ref_code precedence: a per-transaction reference from the QR (highest trust),
+  // else the transaction number printed on the slip (OCR). The OCR fallback runs
+  // even when a QR is present but yielded no usable reference — MAKE/KBank slip
+  // QRs are EMVCo without tag 62-05, so without this those slips would never get
+  // a ref_code and would rely on the amount+time soft-dedup instead of their own
+  // unique เลขที่รายการ.
+  const qrRef = qrData ? extractRefCodeFromQR(qrData) : null
   let refCode: FieldConfidence<string>
-  if (qrData) {
-    const ref = extractRefCodeFromQR(qrData)
-    refCode = ref ? { value: ref, confidence: 0.95 } : { value: null, confidence: 0 }
+  if (qrRef) {
+    refCode = { value: qrRef, confidence: 0.95 }
   } else {
-    const m = ocrText.match(
-      /(?:Ref|อ้างอิง|เลขที่อ้างอิง|เลขรายการ|หมายเลขอ้างอิง|ยืนยันเลขที่)\s*[:#]?\s*([\w-]{6,30})/i,
-    )
-    refCode = m ? { value: m[1], confidence: 0.5 } : { value: null, confidence: 0 }
+    const textRef = extractRefCodeFromText(ocrText)
+    refCode = textRef ? { value: textRef, confidence: 0.6 } : { value: null, confidence: 0 }
   }
 
   // Income heuristic: recipient name matches user's display name → they received the money
