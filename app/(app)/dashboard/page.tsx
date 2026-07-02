@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
-import { formatTHB, computeAccountBalance } from '@/lib/money'
+import { formatTHB } from '@/lib/money'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import BudgetBar from '@/components/budget-bar'
@@ -22,78 +22,79 @@ export default async function DashboardPage() {
   const supabase = await createClient()
 
   const now = new Date()
-  const monthStart = startOfMonth(now).toISOString()
+  const monthStartDate = startOfMonth(now)
   const monthEnd = endOfMonth(now).toISOString()
 
   const chartStart = startOfMonth(subMonths(now, 5))
 
-  // accounts + budgets don't depend on recurring materialization, so fetch them
-  // concurrently with it instead of waiting behind it.
-  const independent = Promise.all([
-    supabase.from('accounts').select('*').order('created_at'),
-    supabase.from('budgets').select('*'),
-  ])
+  const tPage = performance.now()
 
-  // Lazy-on-read: the transaction reads below count materialized occurrences
-  // (real rows), so they must wait until materialization has written them.
-  const { from: matFrom, to: matTo } = currentMonthRange(now)
-  await materializeOccurrences(matFrom, matTo)
-
-  const [
-    [{ data: accounts }, { data: budgets }],
-    [{ data: allTx }, { data: monthTx }, { data: chartTx }],
-  ] = await Promise.all([
-    independent,
+  // Balances come from the account_balances RPC (a Postgres aggregate honoring
+  // transfer in/out + opening balance) so cost stays flat as history grows.
+  // One 6-month income/expense window serves both the chart and this month's
+  // totals/budget math (transfers are excluded from all of those anyway).
+  const fetchTxData = () =>
     Promise.all([
-      supabase.from('transactions').select('type, amount_satang, account_id, to_account_id'),
+      supabase.rpc('account_balances'),
       supabase
         .from('transactions')
         .select('type, amount_satang, category, datetime')
-        .gte('datetime', monthStart)
-        .lte('datetime', monthEnd),
-      supabase
-        .from('transactions')
-        .select('type, amount_satang, datetime')
         .in('type', ['income', 'expense'])
         .gte('datetime', chartStart.toISOString())
         .lte('datetime', monthEnd),
+    ])
+
+  // Lazy-on-read materialization runs concurrently with the reads instead of in
+  // front of them; when it actually inserted occurrences (first load of a new
+  // window, or after a rule change) the reads re-run so they see the new rows.
+  const { from: matFrom, to: matTo } = currentMonthRange(now)
+  const [[{ data: accounts }, { data: budgets }], mat, txFirst] = await Promise.all([
+    Promise.all([
+      supabase.from('accounts').select('*').order('created_at'),
+      supabase.from('budgets').select('*'),
     ]),
+    materializeOccurrences(matFrom, matTo),
+    fetchTxData(),
   ])
+  const [{ data: balances }, { data: sixMoTx }] = mat.inserted ? await fetchTxData() : txFirst
+
+  if (process.env.PERF_LOG) {
+    console.log(
+      `[perf] dashboard: total=${(performance.now() - tPage).toFixed(0)}ms refetch=${mat.inserted} sixMoTx=${sixMoTx?.length ?? 0} balances=${balances?.length ?? 0}`,
+    )
+  }
 
   const chartSeries: MonthlyPoint[] = Array.from({ length: 6 }, (_, i) => {
     const month = format(subMonths(now, 5 - i), 'yyyy-MM')
     return { month, income: 0, expense: 0 }
   })
   const byMonth = new Map(chartSeries.map((p) => [p.month, p]))
-  for (const tx of chartTx ?? []) {
+  for (const tx of sixMoTx ?? []) {
     const point = byMonth.get(format(new Date(tx.datetime), 'yyyy-MM'))
     if (!point) continue
     if (tx.type === 'income') point.income += tx.amount_satang
     else point.expense += tx.amount_satang
   }
 
-  const monthExpenses = (monthTx ?? []).filter((t) => t.type === 'expense') as ExpenseRow[]
+  const monthTx = (sixMoTx ?? []).filter((t) => new Date(t.datetime) >= monthStartDate)
+
+  const monthExpenses = monthTx.filter((t) => t.type === 'expense') as ExpenseRow[]
   const budgetItems = ((budgets ?? []) as BudgetRow[])
     .map((budget) => ({ budget, status: budgetStatus(budget, monthExpenses, now) }))
     .sort((a) => (a.budget.scope === 'overall' ? -1 : 1))
     .slice(0, 3)
 
+  const balanceByAccount = new Map((balances ?? []).map((b) => [b.account_id, b.balance_satang]))
   const totalBalance = (accounts ?? []).reduce(
-    (sum, acct) =>
-      sum +
-      computeAccountBalance(
-        (allTx ?? []) as Parameters<typeof computeAccountBalance>[0],
-        acct.id,
-        acct.opening_balance_satang ?? 0,
-      ),
+    (sum, acct) => sum + (balanceByAccount.get(acct.id) ?? acct.opening_balance_satang ?? 0),
     0,
   )
 
-  const monthIncome = (monthTx ?? [])
+  const monthIncome = monthTx
     .filter((t) => t.type === 'income')
     .reduce((s, t) => s + t.amount_satang, 0)
 
-  const monthExpense = (monthTx ?? [])
+  const monthExpense = monthTx
     .filter((t) => t.type === 'expense')
     .reduce((s, t) => s + t.amount_satang, 0)
 
@@ -142,11 +143,7 @@ export default async function DashboardPage() {
           </div>
           <div className="divide-y rounded-xl border bg-card shadow-soft">
             {(accounts ?? []).map((acct) => {
-              const bal = computeAccountBalance(
-                (allTx ?? []) as Parameters<typeof computeAccountBalance>[0],
-                acct.id,
-                acct.opening_balance_satang ?? 0,
-              )
+              const bal = balanceByAccount.get(acct.id) ?? acct.opening_balance_satang ?? 0
               return (
                 <div key={acct.id} className="flex items-center justify-between p-3">
                   <div>

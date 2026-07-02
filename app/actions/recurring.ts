@@ -58,13 +58,21 @@ export async function updateRecurringRule(_prev: { error: string }, formData: Fo
   const result = parseForm(formData)
   if (!result.ok) return { error: result.error }
 
+  // Reset the materialization guard: an edited schedule/amount may add dates in
+  // the current window, and lazy-on-read only re-checks rules whose guard is
+  // behind the window (idempotent, so re-running is safe).
   const { error } = await supabase
     .from('recurring_rules')
-    .update(result.data)
+    .update({ ...result.data, materialized_through: null })
     .eq('id', id)
   if (error) return { error: error.message }
 
+  // Same set as create/delete: the edited rule changes what materializes on
+  // these pages, so they must not be served stale from the router cache.
   revalidatePath('/recurring')
+  revalidatePath('/transactions')
+  revalidatePath('/dashboard')
+  revalidatePath('/budgets')
   return { error: '' }
 }
 

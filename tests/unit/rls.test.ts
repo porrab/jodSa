@@ -84,6 +84,29 @@ describe.skipIf(SKIP)('RLS isolation: user B cannot read user A data', () => {
     const found = (data ?? []).find((t) => t.id === txAId)
     expect(found).toBeUndefined()
   })
+
+  // account_balances() is SECURITY INVOKER — RLS on accounts + transactions
+  // applies inside the function, so it must behave exactly like direct selects.
+  it('account_balances RPC computes A\'s balance under A\'s session', async () => {
+    const { data, error } = await clientA.rpc('account_balances')
+    expect(error).toBeNull()
+    const row = (data ?? []).find((r) => r.account_id === accountAId)
+    // opening balance 0 + the single 10000-satang income inserted above
+    expect(row?.balance_satang).toBe(10000)
+  })
+
+  it('account_balances RPC does not leak A\'s accounts to B', async () => {
+    const { data, error } = await clientB.rpc('account_balances')
+    expect(error).toBeNull()
+    expect((data ?? []).find((r) => r.account_id === accountAId)).toBeUndefined()
+  })
+
+  it('account_balances RPC returns nothing for anon', async () => {
+    const anon = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    const { data, error } = await anon.rpc('account_balances')
+    expect(error).toBeNull()
+    expect(data ?? []).toHaveLength(0)
+  })
 })
 
 describe.skipIf(SKIP)('M4 RLS: guest capability-token (Pattern B)', () => {

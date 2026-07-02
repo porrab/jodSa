@@ -1,18 +1,18 @@
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
-import { computeAccountBalance } from '@/lib/money'
 import AccountsClient from './accounts-client'
 
 export default async function AccountsPage() {
   const t = await getTranslations('account')
   const supabase = await createClient()
 
-  const [{ data: accounts }, { data: transactions }] = await Promise.all([
+  // account_balances aggregates in Postgres (RLS applies) so this page doesn't
+  // pull the user's whole transaction history just to sum it.
+  const [{ data: accounts }, { data: balances }] = await Promise.all([
     supabase.from('accounts').select('*').order('created_at'),
-    supabase
-      .from('transactions')
-      .select('type, amount_satang, account_id, to_account_id'),
+    supabase.rpc('account_balances'),
   ])
+  const balanceByAccount = new Map((balances ?? []).map((b) => [b.account_id, b.balance_satang]))
 
   const qrPaths = (accounts ?? [])
     .map((a) => a.qr_image_path)
@@ -29,11 +29,7 @@ export default async function AccountsPage() {
 
   const accountsWithBalance = (accounts ?? []).map((acct) => ({
     ...acct,
-    balance: computeAccountBalance(
-      (transactions ?? []) as Parameters<typeof computeAccountBalance>[0],
-      acct.id,
-      acct.opening_balance_satang ?? 0,
-    ),
+    balance: balanceByAccount.get(acct.id) ?? acct.opening_balance_satang ?? 0,
     qrUrl: acct.qr_image_path ? (qrUrls.get(acct.qr_image_path) ?? null) : null,
   }))
 

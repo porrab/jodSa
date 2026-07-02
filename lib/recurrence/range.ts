@@ -15,3 +15,12 @@ export function currentMonthRange(d = new Date()): { from: string; to: string } 
   const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate() // day 0 of next month = last day of this month
   return { from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${pad(lastDay)}` }
 }
+
+/**
+ * True when a rule may still be missing occurrences for a window ending at `to`.
+ * `materializedThrough` is the rule's guard date (YYYY-MM-DD, null = never
+ * materialized). Plain string comparison is correct for ISO dates.
+ */
+export function needsMaterialization(materializedThrough: string | null, to: string): boolean {
+  return materializedThrough === null || materializedThrough < to
+}

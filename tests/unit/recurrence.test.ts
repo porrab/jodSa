@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateOccurrenceDates, type RecurrenceRule } from '@/lib/recurrence/recurrence'
+import { needsMaterialization } from '@/lib/recurrence/range'
 
 const weekly = (over: Partial<RecurrenceRule> = {}): RecurrenceRule => ({
   freq: 'weekly',
@@ -141,5 +142,27 @@ describe('clamping + exceptions', () => {
       '2026-05-31',
     )
     expect(dates).toEqual([])
+  })
+})
+
+describe('needsMaterialization guard', () => {
+  it('null guard (never materialized) needs work', () => {
+    expect(needsMaterialization(null, '2026-07-31')).toBe(true)
+  })
+
+  it('guard at the window end is fresh', () => {
+    expect(needsMaterialization('2026-07-31', '2026-07-31')).toBe(false)
+  })
+
+  it('guard past the window end is fresh', () => {
+    expect(needsMaterialization('2026-08-31', '2026-07-31')).toBe(false)
+  })
+
+  it('guard from an earlier month is stale', () => {
+    expect(needsMaterialization('2026-06-30', '2026-07-31')).toBe(true)
+  })
+
+  it('string comparison holds across a year boundary', () => {
+    expect(needsMaterialization('2025-12-31', '2026-01-31')).toBe(true)
   })
 })

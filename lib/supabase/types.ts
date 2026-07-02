@@ -118,6 +118,7 @@ export interface Database {
           by_weekday: number[] | null
           start_date: string
           end_date: string | null
+          materialized_through: string | null
         }
         Insert: {
           id?: string
@@ -131,6 +132,7 @@ export interface Database {
           by_weekday?: number[] | null
           start_date: string
           end_date?: string | null
+          materialized_through?: string | null
         }
         Update: {
           type?: 'income' | 'expense'
@@ -142,6 +144,7 @@ export interface Database {
           by_weekday?: number[] | null
           start_date?: string
           end_date?: string | null
+          materialized_through?: string | null
         }
         Relationships: []
       }
@@ -288,7 +291,12 @@ export interface Database {
       }
     }
     Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Functions: {
+      account_balances: {
+        Args: Record<PropertyKey, never>
+        Returns: { account_id: string; balance_satang: number }[]
+      }
+    }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }
   }
