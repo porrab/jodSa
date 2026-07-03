@@ -112,7 +112,7 @@ Full th/en + light/dark app-wide. Dashboard summary + income/expense charts (laz
 PWA install + Web Share Target (Android) + in-app upload (iOS fallback). Account deletion (cascade) in settings.
 - **Accept:** Toggle language/theme → whole app updates, no untranslated core strings. Android share-from-gallery lands on `/import` parsed; iOS upload button does the same. Charts render; Recharts **not** in the M1 route bundle. Delete account → all rows gone (cascade), user signed out.
 
-**Phase 2 (do NOT build now):** Supabase Realtime live-sync · Line OA image send · BYO vision API key · CSV export · Vercel Cron notifications.
+**Phase 2 (do NOT build now):** Supabase Realtime live-sync · Push notifications (PWA Web Push via Vercel Cron: daily logging reminder at set times + recurring-due "did you pay?" confirmation) · BYO vision API key · CSV export.
 
 ---
 

@@ -43,7 +43,7 @@ The five milestones, all delivered **in order**:
 | **M4** | Guest Group-Payment (capability-token RLS) | ✅ APPROVED |
 | **M5** | Polish + i18n + Theme + Charts + Share Target | ✅ APPROVED |
 
-Next: Phase 2 (deferred — Realtime sync, Line OA, BYO vision key, CSV export, cron) or new requests.
+Next: Phase 2 (deferred — Realtime sync, push notifications, BYO vision key, CSV export) or new requests.
 See [CLAUDE.md](CLAUDE.md) for the full milestone list with acceptance criteria.
 
 ## Quick start

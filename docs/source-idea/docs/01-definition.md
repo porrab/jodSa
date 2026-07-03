@@ -29,7 +29,7 @@ It is a **portfolio piece intended for real use by others** — multi-tenant, ea
 - **Locale:** THB only; UI Thai/English; light/dark theme.
 - **MVP core (3 things):** (1) three log types [income, expense, transfer], (2) AI slip reading (QR + free OCR, client-side), (3) budgets/goals with +/- tracking.
 - **Also in MVP:** multi-bank accounts, recurring/subscription expenses with per-weekday exclusions, grouped expenses (trips), guest group-payment sessions, PWA share target.
-- **Deferred to Phase 2:** real-time live sync, Line OA image send, BYO vision API key, CSV export, cron notifications.
+- **Deferred to Phase 2:** real-time live sync, push notifications (PWA Web Push for budget/recurring alerts, via cron), BYO vision API key, CSV export.
 
 ## Naming
 - Project name: **JodSa** ("จด" = to record — the core action). Slug: `jodsa`. Mascot/icon to be designed by the owner later.

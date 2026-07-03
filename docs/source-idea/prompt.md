@@ -430,7 +430,7 @@ Build milestones in order. Each is shippable on its own.
 - PWA install + Web Share Target (Android) + in-app upload button (iOS fallback).
 - Account deletion (cascade) in settings.
 
-**Phase 2 (do not build now):** Supabase Realtime live-sync; Line OA image send; BYO vision API key; CSV export; Vercel Cron for budget/recurring notifications.
+**Phase 2 (do not build now):** Supabase Realtime live-sync; Push notifications (PWA Web Push for budget/recurring alerts, via Vercel Cron); BYO vision API key; CSV export.
 
 ## 6. Acceptance Tests
 

@@ -25,5 +25,5 @@ To build this project, open a fresh Claude Code session in a new directory and p
 - **Core MVP (3 things):** three log types (income/expense/transfer), AI slip reading (QR + free client-side OCR), budgets/goals with +/-.
 - **Free by design:** no paid AI vision in MVP — slip parsing is QR decode + Tesseract.js on-device, so others can use it at zero cost to the owner. BYO vision key is a Phase 2 option.
 - **Key security rule:** runtime user data flows only through supabase-js with the user session (RLS enforced); Drizzle/service-role are migrations-only and never touch user data on a request path.
-- **Deferred to Phase 2:** real-time live sync, Line OA image send, BYO vision key, CSV export, cron notifications.
+- **Deferred to Phase 2:** real-time live sync, push notifications (PWA Web Push, via cron), BYO vision key, CSV export.
 - Owner plans to design a mascot/icon for JodSa later.

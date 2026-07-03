@@ -59,7 +59,9 @@ Five ordered milestones, each shippable on its own. Acceptance tests are detaile
 
 ## Phase 2 (not built now)
 - Supabase Realtime live-sync (Notion-style).
-- Line OA image send.
+- Push notifications (PWA Web Push, triggered by Vercel Cron):
+  - Daily logging reminder at fixed times (e.g. 12:00 & 22:00 Asia/Bangkok) — "log today's income/expense".
+  - Recurring-expense due reminder — asks the user to **confirm they actually paid** this occurrence for that day/month (confirm → keep the row; skip → write a `recurring_exceptions` row), instead of assuming it was paid. Ties into the existing lazy-on-read recurrence model.
+  - (Optional) budget over-limit alert.
 - BYO vision API key (premium accuracy).
 - CSV export.
-- Vercel Cron for budget/recurring notifications.
