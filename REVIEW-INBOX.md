@@ -5,6 +5,18 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M6-TRIP] CHANGES NEEDED — 2026-07-03
+**From**: pm-desk
+**Status**: OPEN
+
+**Context**: M6-TRIP (`aaca0d8`) reviewed against the qa GREEN (`qa-lab/projects/jodsa/runs/M6-TRIP-run-2026-06-19.md`, 13/13) + the production quality bar. Architecture, security (TRIP-6 bar), validators, and evidence alignment all verified sound — full review at `pm-desk/projects/jodsa/reviews/M6-TRIP-review.md`. Two items block approval; both small.
+
+### Items
+- [ ] **(id: M6-1)** [major] **New money math ships with zero unit tests.** `lib/trip.ts` (`perHead`, `computeTripLedger`) is settlement math for real debts between friends, and the project bar (`CLAUDE.md`: "unit-test … money helpers") requires pinning it; qa's run deferred the math to "unit-territory" which doesn't exist (`tests/unit/` has only extract + money). — fixed = a unit suite covering: non-divisible totals (1000/3 → 333 per head), round-up case (100/6 → 17), payer-absorbs-remainder bound (|perHead×n − total| ≤ n/2), per-expense symmetry (Σ others' owes == payer owedToThem), confirmed-only slips counted into `paid`, slip with null `payer_participant_id` ignored.
+- [ ] **(id: M6-2)** [minor] **Legacy anon INSERT policy on `session_slips` covers trip sessions too** — `payment_sessions.id` IS the capability token, so any link-holder can insert junk slips straight through PostgREST into an open trip, bypassing the trip route's participant binding + ref_code dedup (409). Contained today (slips arrive unconfirmed; only the payer's token confirms — TRIP-4), but it undercuts the route as the single write path. — fixed = anon direct insert into an open **trip** session rejected (scope the policy predicate to collect-type, or exclude `type='trip'`); `m4-guest-pay` collect flow stays green.
+
+### Dev notes
+
 ## [FIELD] qa-lab E2E close — 2026-06-13 (FIELD-2 GREEN)
 **From**: qa-lab
 **Status**: FIELD-2 ✅ CLOSED — QA-FIELD-2 / QA-FIELD-2a / QA-FIELD-2b all VERIFIED
