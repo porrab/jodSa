@@ -5,6 +5,32 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [SPEC] Spec change — 2026-07-07 (field-feedback round 2)
+**From**: idea-forge
+**Status**: OPEN
+
+- [ ] **(id: SPEC-1)** — The blueprint gained **M7 → M8 → M9** and the design brief was **reset to
+  v3**. Read in order (paths root-relative to `E:\claudeWorkSpace`):
+  1. `idea-forge/ideas/jodsa/docs/04-roadmap.md` — "Post-M6 milestones": M7 Ledger Correctness &
+     Editing · M8 Smart Account Mapping · M9 UX Reset, each with acceptance criteria.
+  2. `idea-forge/ideas/jodsa/docs/07-design.md` — **v3 replaces all prior design rules**; build M9
+     against it (journeys J1–J6, contrast floor+ceiling, density budget, button-placement rules).
+
+  **Why (evidence from live use, 2 real users):** no way to edit a saved transaction
+  (`updateTransaction` does not exist in the repo); false "duplicate" blocks on different slips
+  (bare `อ้างอิง` label captures constant bill Ref.1 customer ids; `/62\d{2}05/` TLV regex can
+  false-match mid-payload); dates often wrong (`2 มิ.ย. 69` → 2-digit BE year rejected → silent
+  "now" fallback — every TTB slip); auto-account matches bank only, but the owner runs 3 KTB +
+  2 KBank accounts; quick-add with zero accounts is a dead end (no empty state in
+  `transaction-form`/`quick-add-card`); dark theme causes eye strain (contrast glare + density);
+  trip/group double concept confuses users.
+
+  **Action for dev:** implement M7 first (correctness; smallest, highest daily pain), then M8,
+  then M9. Old dashboard/design code that conflicts with v3 is superseded — do not preserve the
+  gradient hero, Home chart, or per-row trash icons. Ask pm-desk to review per milestone as usual.
+
+---
+
 ## [FIELD] qa-lab E2E close — 2026-06-13 (FIELD-2 GREEN)
 **From**: qa-lab
 **Status**: FIELD-2 ✅ CLOSED — QA-FIELD-2 / QA-FIELD-2a / QA-FIELD-2b all VERIFIED
