@@ -42,6 +42,34 @@ possible cold-start. The lever is **reducing/bounding the per-page Supabase work
 
 **`app/(app)/transactions/page.tsx`** (line ~15) also `await materializeOccurrences(...)` before listing.
 
+## ⚠️ Related correctness bug — "recurring set but never deducts" (verify/fix BEFORE optimizing)
+
+Reported 2026-07-02: a user sets a recurring rule but it never materializes into a real deducted
+transaction — the balance never changes. This lives in the **same `materializeOccurrences`** the perf work
+touches, so **confirm materialization actually works before adding any skip/guard** (lever #1 below):
+optimizing a function that is silently failing would only entrench the bug.
+
+Evidence-based suspects (reproduce first — debug-mantra):
+1. **Swallowed insert error (leading candidate).** `lib/recurrence/materialize.ts` ends with
+   `await supabase.from('transactions').insert(toInsert)` and **never checks `error`**. If that insert fails
+   (RLS, a NOT NULL / constraint, or the `occurrence_date` / `recurring_rule_id` columns), it fails *silently*
+   → occurrences are never created → nothing deducts. Also violates CLAUDE.md "surface errors, don't swallow
+   them." Surface/log the error first — it may reveal the cause immediately.
+2. **Runs only on `/dashboard` and `/transactions`.** Materialization is lazy-on-read and fires nowhere else
+   (the `/recurring` page does NOT materialize; no cron/background). A rule "does nothing" until one of those
+   pages loads — confirm the user's flow actually hits a materializing page.
+3. **Current-month window only** (`currentMonthRange`). Occurrences in a month the app was never opened during
+   are never back-filled. (Future months are correctly not materialized yet.)
+4. **Dead guard helper.** `lib/recurrence/range.ts` exports `needsMaterialization(materializedThrough, to)`
+   referencing a per-rule "guard date", but `recurring_rules` has **no `materialized_through` column** and
+   `materializeOccurrences` never calls it — an intended guard was left unwired. Relevant to lever #1: if you
+   add the guard for perf, add the column + wire it; don't treat the dead helper as live.
+
+**READ `.claude/skills/recurrence-engine/SKILL.md` first.** Reproduce: set a rule whose day falls in the
+current month → open `/dashboard` → assert a real expense row is created and the balance drops. Trace the
+actual insert, fix, and add a test that locks it (e.g. "a due monthly rule materializes exactly one expense
+row and the balance reflects it"). Preserve idempotency, Asia/Bangkok, and all existing recurrence tests.
+
 ## The task — levers, ranked (each with its guardrail)
 
 1. **Stop materialize from blocking / running every load.** It's correctness-sensitive.
