@@ -5,6 +5,40 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [SPEC] Spec change — 2026-07-10 (recurring never deducts → M7-D)
+**From**: idea-forge
+**Status**: OPEN
+
+- [ ] **(id: SPEC-2)** — **M7 gains M7-D: recurring rules must actually deduct** (owner field
+  report 2026-07-10: "ตั้งรายการประจำแล้วแต่ไม่ได้หักจริงเลย"; same symptom first logged
+  2026-07-02 in `project/jodsa/PERF-HANDOFF.md` §"Related correctness bug" — still failing in the
+  field after the perf pass). Full spec + acceptance:
+  `idea-forge/ideas/jodsa/docs/04-roadmap.md` (M7-D) · UX rules: `idea-forge/ideas/jodsa/docs/07-design.md` (J7).
+
+  **Facts already established (2026-07-10, this brief's author — do not re-derive):**
+  - Migration `db/migrations/0006_*.sql` **is applied on the live Supabase**: REST probe of
+    `recurring_rules?select=materialized_through` and `rpc/account_balances` both return 200
+    (a missing column would 42703). The unapplied-migration hypothesis is dead.
+  - Confirmed code defects regardless of the field root cause:
+    (1) `lib/recurrence/range.ts` `needsMaterialization(undefined, to)` → **false** — silently
+    disables materialization on any shape drift; (2) `lib/recurrence/materialize.ts` inserts
+    **one all-or-nothing batch across all rules** — one poisoned rule starves every rule and
+    blocks guard advancement; the post-insert guard `.update()` error is unchecked;
+    (3) `lib/recurrence/recurrence.ts` generates the **whole current month up front** — when it
+    works, money looks deducted weeks early (contradicts the due-date mental model; design J7
+    now requires ≤ today materialization).
+  - Materialization fires only on `/dashboard` + `/transactions` loads; failures today are
+    server-log-only (`[recurrence] occurrence insert failed`).
+
+  **Action for dev (debug-mantra, in this order):** verify the deployed Vercel bundle includes
+  `2917b7d`/`e0447d8` (stale deploy = top remaining suspect) → check Vercel function logs for the
+  insert-failed line → reproduce on prod with a due rule → fix the three defects above + adopt
+  the ≤-today behavior + J7 visibility (หักล่าสุด/ครั้งถัดไป + error state, 🔁 badge). Keep
+  idempotency, Asia/Bangkok, skip-exception semantics; `m3-recurring.spec.ts` stays green.
+  Slot into the M7 build (with M7-A/B/C); pm-desk reviews as part of M7.
+
+---
+
 ## [SPEC] Spec change — 2026-07-07 (field-feedback round 2)
 **From**: idea-forge
 **Status**: OPEN
