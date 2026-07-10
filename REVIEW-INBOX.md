@@ -7,9 +7,9 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ## [SPEC] Spec change — 2026-07-10 (recurring never deducts → M7-D)
 **From**: idea-forge
-**Status**: OPEN
+**Status**: RESOLVED — M7-D implemented; post-mortem at `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`. Awaiting pm-desk re-review as part of M7.
 
-- [ ] **(id: SPEC-2)** — **M7 gains M7-D: recurring rules must actually deduct** (owner field
+- [x] **(id: SPEC-2)** — **M7 gains M7-D: recurring rules must actually deduct** (owner field
   report 2026-07-10: "ตั้งรายการประจำแล้วแต่ไม่ได้หักจริงเลย"; same symptom first logged
   2026-07-02 in `project/jodsa/PERF-HANDOFF.md` §"Related correctness bug" — still failing in the
   field after the perf pass). Full spec + acceptance:
@@ -37,6 +37,38 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
   idempotency, Asia/Bangkok, skip-exception semantics; `m3-recurring.spec.ts` stays green.
   Slot into the M7 build (with M7-A/B/C); pm-desk reviews as part of M7.
 
+  **Dev fix (2026-07-10):** ⚠️ **Vercel bundle/log verification step skipped — no `vercel` CLI and
+  no `.vercel` project link found locally, only a GitHub remote** (`github.com/porrab/jodSa`); this
+  step needs the user to check the Vercel dashboard directly (deployment hash + function logs).
+  Confirmed regardless the three code defects and fixed all of them:
+  - `lib/recurrence/range.ts` — `needsMaterialization` now returns
+    `!materializedThrough || materializedThrough < to` (was `materializedThrough === null`), so an
+    `undefined` guard (shape drift) is treated as "never materialized," not "materialized forever."
+  - `lib/recurrence/materialize.ts` — replaced the single-batch insert + single-batch guard update
+    with a per-rule loop: each rule's insert and guard-advance are independent, a failing rule's
+    error is captured in a new `RuleMaterializeResult[]` without blocking any other rule, and the
+    guard-update's own error (previously unchecked) is now checked and reported per rule too.
+  - **≤-today clamp**: added `clampToToday()`/`todayBangkok()` to `range.ts`; `materializeOccurrences`
+    computes `effectiveTo = clampToToday(to)` once and uses it everywhere (stale filter, occurrence
+    generation, existing-row range query, guard value) — a rule due later this month no longer
+    deducts early, and the guard never advances past today.
+  - **J7 visibility**: `/recurring` now also calls `materializeOccurrences` (previously only
+    `/dashboard` + `/transactions` did) and shows per-rule `หักล่าสุด: <date> · ครั้งถัดไป: <date>`
+    (or an explicit error line on materialization failure) via new `lib/recurrence/status.ts`
+    (`computeNextDue`, pure) + `components/recurring-form.tsx`. A 🔁 badge now marks materialized
+    rows in `app/(app)/transactions/transactions-client.tsx`.
+  - **Tests**: new `tests/unit/materialize.test.ts` (3 tests, mocks `@/lib/supabase/server` since
+    `materialize.ts` is server-only — required a `vitest.config.ts` alias for the bare `server-only`
+    specifier, which Next's bundler resolves internally but Vite/Vitest cannot) proves per-rule
+    isolation and the today-clamp against the real code. `tests/unit/recurrence.test.ts` gained
+    `needsMaterialization(undefined, …)` + `clampToToday`/`todayBangkok`/`computeNextDue` tests.
+    `tests/e2e/m3-recurring.spec.ts` re-run live against `pnpm dev` + Supabase → passes (had to
+    update its delete-interaction locator — see M7-A note below, an unrelated UI change in the same
+    session moved the delete affordance off the row).
+  - Post-mortem: `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`.
+  - **User step remaining**: check the Vercel dashboard for the deployed bundle hash + function logs
+    (tooling unavailable locally); re-deploy after this fix lands.
+
 ---
 
 ## [SPEC] Spec change — 2026-07-07 (field-feedback round 2)
@@ -62,6 +94,41 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
   **Action for dev:** implement M7 first (correctness; smallest, highest daily pain), then M8,
   then M9. Old dashboard/design code that conflicts with v3 is superseded — do not preserve the
   gradient hero, Home chart, or per-row trash icons. Ask pm-desk to review per milestone as usual.
+
+  **Dev progress (2026-07-10) — M7 implemented, M8/M9 not started:**
+  - **M7-A** Edit saved transactions: `updateTransaction` server action
+    (`app/actions/transactions.ts`, `lib/validators/transaction.ts` → `transactionUpdateSchema`,
+    everything editable except `ref_code` — structurally excluded from the schema, not just absent
+    from the form) + UI per J3: row tap → detail bottom sheet
+    (`components/transaction-detail-sheet.tsx`) → แก้ไข opens the same form prefilled → ลบรายการ
+    lives inside the sheet, separated from แก้ไข. Removed the old per-row trash icon
+    (`transactions-client.tsx`). RLS `transactions_update_own` already existed (migration
+    `0001_initial.sql`) — no new migration needed; added a live RLS test (`tests/unit/rls.test.ts`,
+    "B cannot update A's transaction") — passes against the real Supabase project.
+  - **M7-B** Dedup false-positive fix (`lib/slip/extract.ts`): dropped bare `อ้างอิง`/`รหัสอ้างอิง`
+    from `extractRefCodeFromText` (kept เลขที่รายการ/เลขที่ทำรายการ/เลขที่อ้างอิง/Ref No.);
+    replaced the `/62\d{2}05/` regex with a real EMVCo TLV walk (`parseEMVCoTLV` — sequential
+    tag+len+value parsing, nested for tag 62/sub 05) so a coincidental "6205"-shaped byte run
+    mid-payload can no longer false-match. Duplicate-conflict UX per J2 in both
+    `components/slip-confirm-form.tsx` and `components/batch-slip-card.tsx`: a new
+    `checkRefCodeDuplicate` action looks up the colliding transaction proactively (before insert)
+    and shows its date/amount/counterparty + "บันทึกเป็นรายการใหม่" (saves with `ref_code` cleared)
+    + "ดูรายการเดิม", replacing the bare `รายการนี้มีอยู่แล้ว` block.
+  - **M7-C** Datetime: fixed the 2-digit Buddhist-era year in the Thai-month path
+    (`extractDateTime`'s `m2` branch) — `2 มิ.ย. 69` now resolves to 2026-06-02, not a rejected
+    year-69 → silent "now" fallback. Regression tests added from the real qa-lab OCR corpus
+    (`tests/unit/extract.test.ts`, TTB transfer + bill-payment strings, plus a 4-digit-BE-year
+    KTB regression guard).
+  - **M7-D** Recurring actually deducts — see the SPEC-2 entry above (resolved in the same
+    session); post-mortem at `docs/postmortems/M7-D-recurring-never-deducts.md`.
+  - Gates: `pnpm exec tsc --noEmit` exit 0 · `pnpm build` succeeds · unit suite 180/180 passed
+    (incl. live RLS, 0 skipped — `.env.test` credentials present, Supabase reachable) ·
+    `tests/e2e/m3-recurring.spec.ts` + `tests/e2e/field-2-counterparty-capture.spec.ts` both green
+    against `pnpm dev` + live Supabase.
+  - **Not done**: M8 (Smart Account Mapping) and M9 (UX Reset) — out of this session's scope, SPEC-1
+    stays OPEN until those land. User steps: check the Vercel dashboard for the M7-D deploy (no
+    local `vercel` CLI/`.vercel` link); no new DB migration to apply (RLS policy + guard column both
+    already existed before this session).
 
 ---
 
