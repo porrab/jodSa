@@ -12,7 +12,7 @@ import { RequiredMark } from '@/components/ui/required-mark'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { createTransaction } from '@/app/actions/transactions'
+import { createTransaction, updateTransaction } from '@/app/actions/transactions'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
@@ -32,6 +32,7 @@ export default function TransactionForm({
   defaultValues,
   lastByCategory = {},
   globalLastAccountId = null,
+  editId,
 }: {
   accounts: Account[]
   onSuccess?: () => void
@@ -48,6 +49,10 @@ export default function TransactionForm({
   }>
   lastByCategory?: LastAccountMap
   globalLastAccountId?: string | null
+  // Present → edit an existing transaction (M7-A); absent → create. ref_code is
+  // never part of the edit payload (transactionUpdateSchema excludes it — J3:
+  // "everything editable except ref_code"), so there's no field for it here.
+  editId?: string
 }) {
   const t = useTranslations('transaction')
   const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
@@ -103,7 +108,7 @@ export default function TransactionForm({
         const dt = new Date(dtLocal)
         fd.set('datetime', dt.toISOString())
       }
-      const result = await createTransaction(prev, fd)
+      const result = editId ? await updateTransaction(prev, fd) : await createTransaction(prev, fd)
       if (!result.error) {
         toast.success(t('saved'))
         onSuccess?.()
@@ -117,6 +122,7 @@ export default function TransactionForm({
 
   return (
     <form action={formAction} className="space-y-4">
+      {editId && <input type="hidden" name="id" value={editId} />}
       {/* Type */}
       <div className="space-y-1">
         <Label>{t('type')}</Label>

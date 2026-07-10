@@ -85,6 +85,26 @@ describe.skipIf(SKIP)('RLS isolation: user B cannot read user A data', () => {
     expect(found).toBeUndefined()
   })
 
+  // M7-A: updateTransaction relies on `transactions_update_own` RLS (using +
+  // with check on user_id = auth.uid()) rather than an app-level ownership
+  // filter. B's update must silently match zero rows — A's row must come back
+  // unchanged under A's own session.
+  it('B cannot update A\'s transaction (M7-A)', async () => {
+    const { error: updateErr } = await clientB
+      .from('transactions')
+      .update({ amount_satang: 999999 })
+      .eq('id', txAId)
+    expect(updateErr).toBeNull() // RLS excludes the row — no error, just no match
+
+    const { data, error } = await clientA
+      .from('transactions')
+      .select('amount_satang')
+      .eq('id', txAId)
+      .single()
+    expect(error).toBeNull()
+    expect(data?.amount_satang).toBe(10000) // unchanged from setup
+  })
+
   // account_balances() is SECURITY INVOKER — RLS on accounts + transactions
   // applies inside the function, so it must behave exactly like direct selects.
   it('account_balances RPC computes A\'s balance under A\'s session', async () => {

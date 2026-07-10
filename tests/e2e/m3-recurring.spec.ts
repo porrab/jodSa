@@ -52,14 +52,21 @@ test('M3-S2 deleting a generated occurrence is not recreated on reload', async (
   const rows = page.getByText(AMOUNT_TEXT)
   await expect(rows.first()).toBeVisible()
   const before = await rows.count()
-  expect(before, 'weekly rule should materialize multiple occurrences this month').toBeGreaterThanOrEqual(2)
+  // M7-D: materialization now clamps to today (Asia/Bangkok) instead of
+  // generating the whole month up front (design J7 — money must not look spent
+  // before its due date), so a weekly rule starting on the 1st only has as many
+  // occurrences as weeks have elapsed so far this month — at least 1, not
+  // necessarily "several" the way the old whole-month materialization gave.
+  expect(before, 'weekly rule should materialize at least one due occurrence this month').toBeGreaterThanOrEqual(1)
 
-  // Delete one occurrence through the ONLY user affordance: the row's trash button.
-  // (The list doesn't optimistically update — it re-reads on navigation — so we
-  // wait for the success toast to know the delete server action has completed.)
+  // Delete one occurrence through the ONLY user affordance: row tap → detail
+  // sheet → ลบรายการ (M7-A / design J3 — delete moved off the list row into the
+  // sheet). The list doesn't optimistically update — it re-reads on navigation —
+  // so we wait for the success toast to know the delete server action completed.
+  const firstRow = page.getByText(AMOUNT_TEXT).first().locator('xpath=ancestor::button[1]')
+  await firstRow.click()
   page.once('dialog', (d) => d.accept()) // confirm "ข้ามรายการประจำนี้?" (occurrence skip)
-  const firstRow = page.getByText(AMOUNT_TEXT).first().locator('xpath=ancestor::div[contains(@class,"p-3")][1]')
-  await firstRow.getByRole('button').click()
+  await page.getByRole('button', { name: 'ลบรายการ' }).click()
   // an occurrence is skipped (delete + exception), not plainly deleted — distinct toast
   await expect(page.getByText('ข้ามรายการประจำแล้ว')).toBeVisible()
 

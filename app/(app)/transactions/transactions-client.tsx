@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
-import { toast } from 'sonner'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
 import { format } from 'date-fns'
 import { th, enUS } from 'date-fns/locale'
@@ -14,8 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import TransactionForm from '@/components/transaction-form'
-import { deleteTransaction } from '@/app/actions/transactions'
-import { skipOccurrence } from '@/app/actions/recurring'
+import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { formatTHB } from '@/lib/money'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
@@ -44,6 +42,7 @@ export default function TransactionsClient({
   const locale = useLocale()
   const dateLocale = locale === 'th' ? th : enUS
   const [addOpen, setAddOpen] = useState(false)
+  const [detailTx, setDetailTx] = useState<Transaction | null>(null)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
 
   // Bangkok calendar-day key (YYYY-MM-DD) — groups the list by the day the money
@@ -67,24 +66,6 @@ export default function TransactionsClient({
     const last = groups[groups.length - 1]
     if (last && last.key === key) last.items.push(tx)
     else groups.push({ key, label: dayLabel(key, tx.datetime), items: [tx] })
-  }
-
-  async function handleDelete(tx: Transaction) {
-    // A materialized recurring occurrence must be skipped (delete + exception
-    // row), or the lazy-on-read materializer will recreate it on next load.
-    const isOccurrence = tx.recurring_rule_id != null && tx.occurrence_date != null
-    const msg = isOccurrence ? t('skipOccurrenceConfirm') : t('deleteConfirm')
-    if (!confirm(msg)) return
-    try {
-      if (isOccurrence) {
-        await skipOccurrence(tx.recurring_rule_id!, tx.occurrence_date!, tx.id)
-      } else {
-        await deleteTransaction(tx.id)
-      }
-      toast.success(isOccurrence ? t('occurrenceSkipped') : t('deleted'))
-    } catch {
-      toast.error(t('actionFailed'))
-    }
   }
 
   return (
@@ -127,7 +108,15 @@ export default function TransactionsClient({
                   const style = TYPE_STYLE[tx.type] ?? TYPE_STYLE.expense
 
                   return (
-                    <div key={tx.id} className="flex items-center gap-3 p-3">
+                    // J3: row tap opens the detail sheet — no inline destructive icon
+                    // (today's per-row trash button invites misfires; delete now lives
+                    // inside the sheet, separated from the primary edit action).
+                    <button
+                      key={tx.id}
+                      type="button"
+                      onClick={() => setDetailTx(tx)}
+                      className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent/50"
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={cn(
@@ -138,6 +127,11 @@ export default function TransactionsClient({
                           </span>
                           {tx.category && (
                             <span className="text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>
+                          )}
+                          {tx.recurring_rule_id && (
+                            <span className="text-xs" title={t('recurringBadge')} aria-label={t('recurringBadge')}>
+                              🔁
+                            </span>
                           )}
                         </div>
                         <p className="text-sm mt-0.5 truncate">
@@ -153,15 +147,7 @@ export default function TransactionsClient({
                           {style.prefix}{formatTHB(tx.amount_satang)}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleDelete(tx)}
-                        className="shrink-0 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
@@ -169,6 +155,15 @@ export default function TransactionsClient({
           ))}
         </div>
       )}
+
+      <TransactionDetailSheet
+        tx={detailTx}
+        accounts={accounts}
+        lastByCategory={lastByCategory}
+        globalLastAccountId={globalLastAccountId}
+        open={detailTx !== null}
+        onOpenChange={(o) => { if (!o) setDetailTx(null) }}
+      />
     </div>
   )
 }
