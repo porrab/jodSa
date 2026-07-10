@@ -11,6 +11,12 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts'],
   },
   resolve: {
-    alias: { '@': resolve(__dirname, '.') },
+    alias: {
+      '@': resolve(__dirname, '.'),
+      // Next's bundler resolves this bare specifier internally at build time; it
+      // isn't an installed package, so tests that import a `server-only` module
+      // (e.g. lib/recurrence/materialize.ts) need an explicit stub to resolve it.
+      'server-only': resolve(__dirname, 'tests/unit/__stubs__/server-only.ts'),
+    },
   },
 })

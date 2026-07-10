@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateOccurrenceDates, type RecurrenceRule } from '@/lib/recurrence/recurrence'
-import { needsMaterialization } from '@/lib/recurrence/range'
+import { needsMaterialization, clampToToday, todayBangkok } from '@/lib/recurrence/range'
+import { computeNextDue } from '@/lib/recurrence/status'
 
 const weekly = (over: Partial<RecurrenceRule> = {}): RecurrenceRule => ({
   freq: 'weekly',
@@ -164,5 +165,64 @@ describe('needsMaterialization guard', () => {
 
   it('string comparison holds across a year boundary', () => {
     expect(needsMaterialization('2025-12-31', '2026-01-31')).toBe(true)
+  })
+
+  // SPEC-2 confirmed defect: `undefined === null` is false and `undefined < to`
+  // is also false, so the old `materializedThrough === null` check silently
+  // treated a shape-drifted `undefined` row as "already materialized forever."
+  it('undefined guard (shape drift) needs work, not silently skipped', () => {
+    expect(needsMaterialization(undefined, '2026-07-31')).toBe(true)
+  })
+
+  it('empty-string guard needs work (any falsy value = never materialized)', () => {
+    expect(needsMaterialization('', '2026-07-31')).toBe(true)
+  })
+})
+
+describe('clampToToday / todayBangkok (M7-D — materialize only up to the due date)', () => {
+  it('clamps a future month-end down to today', () => {
+    const today = todayBangkok()
+    const [y, m] = today.split('-').map(Number)
+    const farFuture = `${y + 1}-12-31`
+    expect(clampToToday(farFuture)).toBe(today)
+  })
+
+  it('leaves a past date untouched (already ≤ today)', () => {
+    expect(clampToToday('2000-01-01')).toBe('2000-01-01')
+  })
+
+  it('leaves today itself untouched', () => {
+    const today = todayBangkok()
+    expect(clampToToday(today)).toBe(today)
+  })
+})
+
+describe('computeNextDue (J7 — recurring page "next due" line)', () => {
+  it('finds the next occurrence strictly after today for a weekly rule', () => {
+    const next = computeNextDue(
+      { freq: 'weekly', interval: 1, startDate: '2020-01-01' },
+      [],
+      '2026-06-15', // a Monday
+    )
+    // weekly with no byWeekday defaults to the start weekday (Wed, since
+    // 2020-01-01 is a Wednesday) — next Wednesday after 2026-06-15
+    expect(next).not.toBeNull()
+    expect(next! > '2026-06-15').toBe(true)
+  })
+
+  it('returns null once the rule has ended', () => {
+    const next = computeNextDue(
+      { freq: 'monthly', interval: 1, startDate: '2020-01-05', endDate: '2026-01-05' },
+      [],
+      '2026-06-15',
+    )
+    expect(next).toBeNull()
+  })
+
+  it('skips a date recorded in recurring_exceptions', () => {
+    const rule: RecurrenceRule = { freq: 'monthly', interval: 1, startDate: '2026-01-05' }
+    const withoutSkip = computeNextDue(rule, [], '2026-06-01')
+    const withSkip = computeNextDue(rule, [withoutSkip!], '2026-06-01')
+    expect(withSkip).not.toBe(withoutSkip)
   })
 })

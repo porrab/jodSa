@@ -66,6 +66,10 @@ export const recurringRules = pgTable('recurring_rules', {
   byWeekday: integer('by_weekday').array(),
   startDate: date('start_date').notNull(),
   endDate: date('end_date'),
+  // Guard date added by 0006_perf_balance_rpc_materialize_guard.sql — was missing
+  // here (schema.ts/supabase types had drifted; lib/supabase/types.ts already had
+  // it). Backfilled for consistency while touching this table for M7-D.
+  materializedThrough: date('materialized_through'),
 })
 
 export const recurringExceptions = pgTable('recurring_exceptions', {

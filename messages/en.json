@@ -67,7 +67,11 @@
     "saving": "Saving...",
     "save": "Save Transaction",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "recurringBadge": "From a recurring rule",
+    "edit": "Edit",
+    "deleteAction": "Delete transaction",
+    "refCode": "Slip reference: {code}"
   },
   "account": {
     "title": "Accounts",
@@ -160,7 +164,12 @@
     "empty": "No recurring entries yet",
     "emptyHint": "e.g. rent, salary, monthly subscriptions",
     "startsOn": "From {date}",
-    "untilDate": "until {date}"
+    "untilDate": "until {date}",
+    "lastDeducted": "Last deducted: {date}",
+    "lastDeductedNone": "Last deducted: never yet",
+    "nextDue": "Next due: {date}",
+    "nextDueNone": "Next due: none",
+    "materializeError": "This deduction failed — it will retry next time"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -337,6 +346,9 @@
     "lowConfidence": "Low confidence",
     "hardDuplicate": "This transaction already exists (duplicate ref_code)",
     "softDuplicate": "Similar transaction found: {who} at {when}",
+    "refDuplicateWarning": "May be a duplicate of: {when} · {amount} · {who}",
+    "viewExisting": "View existing",
+    "saveAsNew": "Save as new transaction",
     "unnamed": "Unnamed",
     "confirmTitle": "Confirm Transaction",
     "confirmSubtitle": "Review and edit before saving",

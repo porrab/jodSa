@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, AlertTriangle } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
 import { CategoryLabel } from '@/lib/categories'
 import { Button } from '@/components/ui/button'
@@ -196,6 +196,12 @@ function RuleForm({
   )
 }
 
+export interface RuleStatus {
+  lastDeducted: string | null // YYYY-MM-DD, last materialized occurrence (any month)
+  nextDue: string | null // YYYY-MM-DD, first occurrence after today; null if rule ended
+  error: string | null // set when this rule's materialization failed this load (J7)
+}
+
 type Translate = (key: string, values?: Record<string, string | number>) => string
 
 function freqSummary(rule: Rule, t: Translate): string {
@@ -216,9 +222,11 @@ function freqSummary(rule: Rule, t: Translate): string {
 export default function RecurringClient({
   rules,
   accounts,
+  status = {},
 }: {
   rules: Rule[]
   accounts: Account[]
+  status?: Record<string, RuleStatus>
 }) {
   const t = useTranslations('recurring')
   const [addOpen, setAddOpen] = useState(false)
@@ -300,6 +308,24 @@ export default function RecurringClient({
                     {t('startsOn', { date: rule.start_date })}
                     {rule.end_date ? ` · ${t('untilDate', { date: rule.end_date })}` : ''}
                   </p>
+                  {/* J7 — "did it work?" in one line: last deducted / next due, or an
+                      explicit error state instead of a silent no-op. */}
+                  {status[rule.id]?.error ? (
+                    <p className="flex items-center gap-1 text-xs font-medium text-destructive">
+                      <AlertTriangle className="size-3 shrink-0" />
+                      {t('materializeError')}
+                    </p>
+                  ) : (
+                    <p className="text-xs">
+                      {status[rule.id]?.lastDeducted
+                        ? t('lastDeducted', { date: status[rule.id]!.lastDeducted! })
+                        : t('lastDeductedNone')}
+                      {' · '}
+                      {status[rule.id]?.nextDue
+                        ? t('nextDue', { date: status[rule.id]!.nextDue! })
+                        : t('nextDueNone')}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             )

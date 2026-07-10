@@ -16,11 +16,36 @@ export function currentMonthRange(d = new Date()): { from: string; to: string } 
   return { from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${pad(lastDay)}` }
 }
 
+/** Today's calendar date (YYYY-MM-DD) in Asia/Bangkok. */
+export function todayBangkok(d = new Date()): string {
+  const { y, m, day } = bangkokParts(d)
+  return `${y}-${pad(m)}-${pad(day)}`
+}
+
+/**
+ * Clamp a materialization window's upper bound to today (Asia/Bangkok) — deduction
+ * must land on the rule's actual due date, not the whole remaining month up front
+ * (design J7 / M7-D). `to` is typically a month-end from `currentMonthRange`; when
+ * that's in the future relative to today, today wins.
+ */
+export function clampToToday(to: string, d = new Date()): string {
+  const today = todayBangkok(d)
+  return to > today ? today : to
+}
+
 /**
  * True when a rule may still be missing occurrences for a window ending at `to`.
  * `materializedThrough` is the rule's guard date (YYYY-MM-DD, null = never
  * materialized). Plain string comparison is correct for ISO dates.
+ *
+ * Accepts `undefined` too (not just `null`) — a shape drift that returns the row
+ * without this column (e.g. a stale generated-types file, or a partial select)
+ * must never silently disable materialization forever. `!materializedThrough`
+ * treats any falsy value (null, undefined, '') as "never materialized".
  */
-export function needsMaterialization(materializedThrough: string | null, to: string): boolean {
-  return materializedThrough === null || materializedThrough < to
+export function needsMaterialization(
+  materializedThrough: string | null | undefined,
+  to: string,
+): boolean {
+  return !materializedThrough || materializedThrough < to
 }

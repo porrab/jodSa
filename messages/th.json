@@ -67,7 +67,11 @@
     "saving": "กำลังบันทึก...",
     "save": "บันทึกรายการ",
     "today": "วันนี้",
-    "yesterday": "เมื่อวาน"
+    "yesterday": "เมื่อวาน",
+    "recurringBadge": "จากรายการประจำ",
+    "edit": "แก้ไข",
+    "deleteAction": "ลบรายการ",
+    "refCode": "อ้างอิงสลิป: {code}"
   },
   "account": {
     "title": "บัญชี",
@@ -160,7 +164,12 @@
     "empty": "ยังไม่มีรายการประจำ",
     "emptyHint": "เช่น ค่าเช่า เงินเดือน ค่าสมาชิกรายเดือน",
     "startsOn": "เริ่ม {date}",
-    "untilDate": "ถึง {date}"
+    "untilDate": "ถึง {date}",
+    "lastDeducted": "หักล่าสุด: {date}",
+    "lastDeductedNone": "หักล่าสุด: ยังไม่เคย",
+    "nextDue": "ครั้งถัดไป: {date}",
+    "nextDueNone": "ครั้งถัดไป: ไม่มี",
+    "materializeError": "หักเงินรอบนี้ไม่สำเร็จ — ระบบจะลองใหม่ในครั้งถัดไป"
   },
   "dashboard": {
     "title": "ภาพรวม",
@@ -337,6 +346,9 @@
     "lowConfidence": "ความมั่นใจต่ำ",
     "hardDuplicate": "รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)",
     "softDuplicate": "พบรายการที่คล้ายกัน: {who} เมื่อ {when}",
+    "refDuplicateWarning": "อาจซ้ำกับ: {when} · {amount} · {who}",
+    "viewExisting": "ดูรายการเดิม",
+    "saveAsNew": "บันทึกเป็นรายการใหม่",
     "unnamed": "ไม่ระบุชื่อ",
     "confirmTitle": "ยืนยันรายการ",
     "confirmSubtitle": "ตรวจสอบและแก้ไขก่อนบันทึก",
