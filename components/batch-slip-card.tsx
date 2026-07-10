@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { createTransaction, checkNullRefDedup } from '@/app/actions/transactions'
-import { parseInputToSatang } from '@/lib/money'
+import { createTransaction, checkNullRefDedup, checkRefCodeDuplicate } from '@/app/actions/transactions'
+import { parseInputToSatang, formatTHB } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import { cn } from '@/lib/utils'
@@ -66,6 +66,9 @@ export default function BatchSlipCard({
   const [datetimeLocal, setDatetimeLocal] = useState(slip.datetime.value ? toDatetimeLocal(slip.datetime.value) : '')
   const [dupWarning, setDupWarning] = useState<string | null>(null)
   const [pendingFd, setPendingFd] = useState<FormData | null>(null)
+  // Hard duplicate (same ref_code already saved) — design J2 verdict + override,
+  // same as the single-slip confirm form (M7-B).
+  const [refDup, setRefDup] = useState<{ id: string; datetime: string; amount_satang: number; counterparty: string | null } | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState<BatchDoneAction | null>(null)
@@ -101,6 +104,17 @@ export default function BatchSlipCard({
     setLoading(true)
 
     const refCode = slip.refCode.value?.trim() ?? ''
+
+    if (refCode) {
+      const { duplicate } = await checkRefCodeDuplicate(refCode)
+      if (duplicate) {
+        setRefDup(duplicate)
+        setPendingFd(buildFd(raw))
+        setLoading(false)
+        return
+      }
+    }
+
     if (!refCode) {
       const amountSatang = parseInputToSatang(raw.get('amount') as string)
       const datetimeISO = datetimeLocal ? `${datetimeLocal}:00+07:00` : ''
@@ -132,6 +146,14 @@ export default function BatchSlipCard({
   async function confirmDup() {
     if (!pendingFd) return
     setDupWarning(null); setLoading(true)
+    await doCreate(pendingFd)
+  }
+
+  async function saveRefDupAsNew() {
+    if (!pendingFd) return
+    setRefDup(null)
+    pendingFd.delete('ref_code')
+    setLoading(true)
     await doCreate(pendingFd)
   }
 
@@ -171,6 +193,27 @@ export default function BatchSlipCard({
       </CardHeader>
 
       <CardContent className="px-4 pb-4">
+        {refDup && (
+          <div className="mb-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+            <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+              {t('refDuplicateWarning', {
+                when: new Date(refDup.datetime).toLocaleString(locale === 'th' ? 'th-TH' : 'en-GB', {
+                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                }),
+                amount: formatTHB(refDup.amount_satang),
+                who: refDup.counterparty ?? t('unnamed'),
+              })}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" className="h-7 text-xs" asChild>
+                <a href="/transactions" target="_blank" rel="noopener noreferrer">{t('viewExisting')}</a>
+              </Button>
+              <Button size="sm" className="h-7 text-xs" onClick={saveRefDupAsNew} disabled={loading}>
+                {t('saveAsNew')}
+              </Button>
+            </div>
+          </div>
+        )}
         {dupWarning && (
           <div className="mb-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
             <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{dupWarning}</p>

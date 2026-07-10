@@ -152,6 +152,35 @@ describe('extractDateTime', () => {
     const r = extractDateTime('15 พ . ค . 2567 14:30')
     expect(r.value).toMatch(/^2024-05-15T14:30:00\+07:00$/)
   })
+
+  // M7-C: 2-digit Buddhist-era year in the Thai-month path. TTB prints "d MMM yy"
+  // (e.g. "2 มิ.ย. 69") on every slip; before the fix this parsed as literal year
+  // 69, buildISO rejected it (< 1900), and extractDateTime returned null — the
+  // caller then silently fell back to "now" (FIELD/M7 report). Real OCR strings
+  // from the qa-lab corpus (REVIEW-INBOX FIELD-2-capture-2026-06-13).
+  describe('2-digit Buddhist-era year (M7-C)', () => {
+    it('TTB โอนเงิน — "2 มิ.ย. 69, 20:58 น." → 2026-06-02 20:58', () => {
+      const r = extractDateTime('โอนเงินสําเร็จ\n2 มิ.ย. 69, 20:58 น.\n4,000.00')
+      expect(r.value).toMatch(/^2026-06-02T20:58:00\+07:00$/)
+    })
+
+    it('TTB จ่ายบิล — "21 พ.ค. 69, 11:54 u." → 2026-05-21 11:54', () => {
+      // trailing "u." is an OCR misread of "น." — irrelevant to date/time matching
+      const r = extractDateTime('จ่ายบัลสําเร็จ\n21 พ.ค. 69, 11:54 u.\nค่าธรรมเนียม 0.00')
+      expect(r.value).toMatch(/^2026-05-21T11:54:00\+07:00$/)
+    })
+
+    it('a bare 2-digit year still resolves without a preceding "25" in the source text', () => {
+      const r = extractDateTime('9 ก.ค. 69 08:00')
+      expect(r.value).toMatch(/^2026-07-09T08:00:00\+07:00$/)
+    })
+
+    it('does not regress the existing 4-digit BE year path (KTB, "15 มี.ค. 2569")', () => {
+      // Real OCR: `วันที่ทํารายการ                15 มี.ค. 2569 - 19:10`
+      const r = extractDateTime('วันที่ทํารายการ                15 มี.ค. 2569 - 19:10')
+      expect(r.value).toMatch(/^2026-03-15T19:10:00\+07:00$/)
+    })
+  })
 })
 
 // ─── counterparty ────────────────────────────────────────────────────────────
@@ -337,15 +366,42 @@ describe('extractRefCodeFromQR', () => {
     expect(r).toBe('12345678901234')
   })
 
-  it('handles EMVCo PromptPay format (tag 62 sub-field 05)', () => {
-    // 62[05=total-len] 05[12=sub-len] [12-char ref]
-    const r = extractRefCodeFromQR('0002010102122962050512345678901234END')
-    expect(r).not.toBeNull()
+  // Real EMVCo TLV: tag(2)+len(2)+value(len), sequential from position 0.
+  //   00 02 "01"                          — Payload Format Indicator
+  //   01 02 "12"                          — Point of Initiation Method
+  //   62 16 "0512123456789012"            — Additional Data Field Template
+  //     └ 05 12 "123456789012"            — Reference Label (nested TLV)
+  //   63 04 "ABCD"                        — CRC
+  it('handles EMVCo PromptPay format (tag 62 sub-field 05), walking real TLV structure', () => {
+    const qr = '000201' + '010212' + '62160512123456789012' + '6304ABCD'
+    const r = extractRefCodeFromQR(qr)
+    expect(r).toBe('123456789012')
   })
 
   it('returns null for EMVCo QR with no tag 62 reference label', () => {
     // PromptPay static QR — no tag 62 sub-field 05; must not use account/phone as ref_code
     expect(extractRefCodeFromQR('0002010102121234567890')).toBeNull()
+  })
+
+  // M7-B: the old /62\d{2}05/ regex matched these four bytes ("6205...")
+  // wherever they happened to appear, even mid-payload inside an unrelated
+  // field's value — not necessarily a real top-level tag-62 template. A real
+  // TLV walk from position 0 must not be fooled by that coincidence.
+  it('does not false-match "6205"-shaped bytes that land mid-payload, not at a real TLV boundary', () => {
+    // Field 01 declares len=02 but its value ("01") is followed immediately by
+    // bytes that spell "6205..." — a regex scan would match them as tag 62/
+    // sub-05, but walking the TLV structure from position 0 correctly reads
+    // tag "01" (len 02, value "01"), then continues from the true next
+    // boundary and never treats the embedded "6205" text as a real tag.
+    const qr = '000201' + '01026205' + '05121234567890' + '6304ABCD'
+    expect(extractRefCodeFromQR(qr)).toBeNull()
+  })
+
+  it('stops cleanly on a truncated/malformed TLV instead of misreading it', () => {
+    // "62" tag claims len=99 but only a handful of bytes follow — must not throw
+    // or return a garbage substring.
+    const qr = '000201' + '629905'
+    expect(extractRefCodeFromQR(qr)).toBeNull()
   })
 
   it('returns null for empty string', () => {
@@ -381,6 +437,24 @@ describe('extractRefCodeFromText', () => {
 
   it('returns null when no reference label is present', () => {
     expect(extractRefCodeFromText('จำนวนเงิน 100.00 บาท')).toBeNull()
+  })
+
+  // M7-B: bare "อ้างอิง" and "รหัสอ้างอิง" are dropped — on recurring bill
+  // slips these labels carry the biller's Ref.1/customer id, which stays the
+  // same for every payment to that biller (only the amount/date change), so
+  // treating it as a per-transaction ref_code false-blocked a genuinely new
+  // month's payment as a duplicate. Per-transaction labels (เลขที่รายการ,
+  // เลขที่ทำรายการ, เลขที่อ้างอิง, Ref No.) are unaffected.
+  it('no longer captures a bare "อ้างอิง" label (dropped — constant per-biller id)', () => {
+    expect(extractRefCodeFromText('รหัสอ้างอิง A5a66273bc35e43a9')).toBeNull()
+  })
+
+  it('no longer captures a bare "อ้างอิง" label without the รหัส prefix', () => {
+    expect(extractRefCodeFromText('อ้างอิง: A5a66273bc35e43a9')).toBeNull()
+  })
+
+  it('still captures the per-transaction "เลขที่อ้างอิง" label (not dropped)', () => {
+    expect(extractRefCodeFromText('เลขที่อ้างอิง: 260602205835311007')).toBe('260602205835311007')
   })
 })
 

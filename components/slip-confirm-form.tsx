@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createTransaction, checkNullRefDedup } from '@/app/actions/transactions'
+import { createTransaction, checkNullRefDedup, checkRefCodeDuplicate } from '@/app/actions/transactions'
+import { formatTHB } from '@/lib/money'
 import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
@@ -111,6 +112,9 @@ export default function SlipConfirmForm({
   )
   const [dupWarning, setDupWarning] = useState<string | null>(null)
   const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
+  // Hard duplicate (same ref_code already saved) — design J2: show the colliding
+  // transaction's date/amount/counterparty + an override, never a bare block.
+  const [refDup, setRefDup] = useState<{ id: string; datetime: string; amount_satang: number; counterparty: string | null } | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -124,6 +128,18 @@ export default function SlipConfirmForm({
     setLoading(true)
 
     const refCode = (formData.get('ref_code') as string | null)?.trim() ?? ''
+
+    // True duplicate: this slip's own ref_code already exists — check proactively
+    // so the user gets the rich J2 verdict instead of a generic DB-constraint error.
+    if (refCode) {
+      const { duplicate } = await checkRefCodeDuplicate(refCode)
+      if (duplicate) {
+        setRefDup(duplicate)
+        setPendingFormData(formData)
+        setLoading(false)
+        return
+      }
+    }
 
     // Soft dedup: check for near-duplicate if ref_code is absent
     if (!refCode) {
@@ -171,6 +187,16 @@ export default function SlipConfirmForm({
     await doCreate(pendingFormData)
   }
 
+  // "บันทึกเป็นรายการใหม่" override (J2): save anyway, with ref_code cleared so
+  // the new row doesn't collide with the existing one on UNIQUE(user_id, ref_code).
+  async function saveRefDupAsNew() {
+    if (!pendingFormData) return
+    setRefDup(null)
+    pendingFormData.delete('ref_code')
+    setLoading(true)
+    await doCreate(pendingFormData)
+  }
+
   const datetimeISO = datetimeLocal ? `${datetimeLocal}:00+07:00` : ''
 
   return (
@@ -196,6 +222,28 @@ export default function SlipConfirmForm({
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
           <Info className="mt-0.5 size-4 shrink-0" />
           <span>{t('lowConfidenceNotice')}</span>
+        </div>
+      )}
+
+      {refDup && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2 dark:border-amber-800 dark:bg-amber-900/20">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            {t('refDuplicateWarning', {
+              when: new Date(refDup.datetime).toLocaleString(locale === 'th' ? 'th-TH' : 'en-GB', {
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+              }),
+              amount: formatTHB(refDup.amount_satang),
+              who: refDup.counterparty ?? t('unnamed'),
+            })}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <a href="/transactions" target="_blank" rel="noopener noreferrer">{t('viewExisting')}</a>
+            </Button>
+            <Button size="sm" onClick={saveRefDupAsNew} disabled={loading}>
+              {t('saveAsNew')}
+            </Button>
+          </div>
         </div>
       )}
 

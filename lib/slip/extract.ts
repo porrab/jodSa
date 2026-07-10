@@ -95,7 +95,13 @@ export function extractDateTime(text: string): FieldConfidence<string> {
   if (m2) {
     const rawMonth = m2[2].replace(/\s*\.\s*/g, '.').trim()
     const month = THAI_MONTHS[rawMonth]
-    const year = adjustYear(parseInt(m2[3]))
+    // 2-digit Buddhist-era year (M7-C): TTB prints "d MMM yy" (e.g. "2 มิ.ย. 69").
+    // Without this, "69" parses as literal year 69 (adjustYear leaves it alone —
+    // only 4-digit BE years exceed the >2400 threshold), buildISO then rejects it
+    // (< 1900) and the caller silently falls back to "now". Prepend the current
+    // BE century, same as the dd/MM/yy path just above, before adjusting.
+    const rawYear = m2[3]
+    const year = adjustYear(parseInt(rawYear.length === 2 ? '25' + rawYear : rawYear))
     const time = findTimeAfter(t, m2.index! + m2[0].length)
     const iso = buildISO(+m2[1], month, year, time?.h ?? 0, time?.min ?? 0)
     if (iso) return { value: iso, confidence: time ? 0.88 : 0.72 }
@@ -215,21 +221,41 @@ export function inferBankCode(text: string): FieldConfidence<string> {
   return { value: null, confidence: 0 }
 }
 
+// EMVCo QR payloads are a flat sequence of tag(2)+len(2)+value(len) records
+// (BER-TLV style); tag 62 ("Additional Data Field Template") nests another such
+// sequence as its value. Walking this structure from position 0 (rather than
+// regex-scanning for the tag/label bytes) is the only way to know a "62" match
+// is really a top-level tag and not coincidental digits inside an unrelated
+// field's value (M7-B — the old /62\d{2}05/ regex could match mid-payload).
+function parseEMVCoTLV(payload: string): Map<string, string> {
+  const fields = new Map<string, string>()
+  let i = 0
+  while (i + 4 <= payload.length) {
+    const tag = payload.slice(i, i + 2)
+    const lenStr = payload.slice(i + 2, i + 4)
+    if (!/^\d{2}$/.test(lenStr)) break // not a valid TLV length field — stop
+    const len = parseInt(lenStr, 10)
+    const value = payload.slice(i + 4, i + 4 + len)
+    if (value.length < len) break // truncated — rest of the string isn't a full record
+    fields.set(tag, value)
+    i += 4 + len
+  }
+  return fields
+}
+
 export function extractRefCodeFromQR(qrData: string): string | null {
   if (!qrData) return null
 
   // EMVCo PromptPay QR: only tag 62 sub-field 05 (Reference Label) is a
   // per-transaction identifier. Account numbers and PromptPay IDs in other
   // fields repeat across slips and must NOT be used as ref_code (M2-6).
-  // TLV format: 62[2-digit-total-len]...[05[2-digit-sub-len][value]]
   if (qrData.startsWith('000201')) {
-    const tag62 = qrData.match(/62\d{2}05(\d{2})(\w{1,30})/)
-    if (tag62) {
-      const len = parseInt(tag62[1])
-      const val = tag62[2].substring(0, len)
-      if (val.length >= 6) return val
-    }
-    return null
+    const root = parseEMVCoTLV(qrData)
+    const tag62 = root.get('62')
+    if (!tag62) return null
+    const sub = parseEMVCoTLV(tag62)
+    const val = sub.get('05')
+    return val && val.length >= 6 ? val : null
   }
 
   // Non-EMVCo: prefer 15+ digit sequences (transaction refs);
@@ -255,8 +281,14 @@ export function extractRefCodeFromQR(qrData: string): string | null {
 // "เลขที่ทำรายการ") plus the generic Thai/English reference labels.
 export function extractRefCodeFromText(ocrText: string): string | null {
   const t = normalizeThaiDigits(ocrText)
+  // Bare "อ้างอิง" and "รหัสอ้างอิง" are dropped (M7-B): recurring bill slips print
+  // a constant biller Ref.1/customer id under exactly these labels — identical
+  // every month — which previously masqueraded as a per-transaction ref_code and
+  // false-blocked a genuinely new month's payment as a duplicate. Only labels that
+  // are structurally per-transaction (a transaction/reference *number*, not a
+  // biller's customer reference) remain.
   const m = t.match(
-    /(?:เลขที่ทำรายการ|เลขที่รายการ|เลขที่อ้างอิง|หมายเลขอ้างอิง|รหัสอ้างอิง|เลขรายการ|ยืนยันเลขที่|อ้างอิง|Ref(?:erence)?(?:\s*(?:No|Number|ID))?)\s*[:#.]?\s*([A-Za-z0-9-]{6,30})/i,
+    /(?:เลขที่ทำรายการ|เลขที่รายการ|เลขที่อ้างอิง|หมายเลขอ้างอิง|เลขรายการ|ยืนยันเลขที่|Ref(?:erence)?(?:\s*(?:No|Number|ID))?)\s*[:#.]?\s*([A-Za-z0-9-]{6,30})/i,
   )
   return m ? m[1] : null
 }
