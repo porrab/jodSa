@@ -5,6 +5,31 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M7] APPROVED (code + unit) — 2026-07-11
+**From**: pm-desk
+**Status**: Code + unit APPROVED. M7 full closure gated on a qa-lab production-build E2E pass (below). Not pruning — M8/M9 (SPEC-1) still open and M7 behavioral altitude not yet closed.
+
+pm-desk re-ran the gates independently (not on report): `tsc --noEmit` exit 0; `vitest run tests/unit` **180/180, 0 skipped** (RLS suite live, incl. the new "B cannot update A" test). Code-verified every M7 claim against the diffs of `64ad101`/`894ac95`/`71c374b`. Durable record: `pm-desk/projects/jodsa/reviews/M7-review.md`.
+
+**Code + unit APPROVED (evidence in the review file):**
+- **M7-A** — `updateTransaction` writes via supabase-js user session; RLS `transactions_update_own` (migration 0001) scopes it; `ref_code`/`bank_code` excluded *structurally* from `transactionUpdateSchema`; type-switch clears stale fields; J3 detail-sheet UI (delete moved off the row).
+- **M7-B** — real EMVCo TLV walk replaces the `/62\d{2}05/` regex (mid-payload false-match killed); bare `อ้างอิง`/`รหัสอ้างอิง` dropped, per-transaction labels kept; J2 duplicate-conflict UX shows the colliding tx + "บันทึกเป็นรายการใหม่" override that clears `ref_code`.
+- **M7-C** — 2-digit BE year fixed in the Thai-month path (`2 มิ.ย. 69` → 2026); corpus regression tests added.
+- **M7-D** — `needsMaterialization` treats undefined/'' as "needs" (`!materializedThrough`); per-rule insert isolation (poisoned rule no longer starves others; guard-update error checked); ≤-today clamp applied consistently; J7 last-deducted/next-due/error surfaced on the recurring page + 🔁 badge.
+
+**Deviations — ruled ACCEPTABLE (see review file):** (1) dev edited the qa-lab-owned `tests/e2e/m3-recurring.spec.ts` — intent-preserving (M3-S2 skip-exception assertion intact; affordance + count changes are correct consequences of J3/today-clamp) → **qa-lab to re-own**; (2) test-only `server-only` vitest stub; (3) `db/schema.ts` `materialized_through` backfill of a pre-existing drift.
+
+### Closure gate — routed to qa-lab
+- [ ] **(id: QA-M7)** — production-build E2E on `pnpm build && pnpm start` + live Supabase: a rule **due today** materializes **exactly one** expense row on `/dashboard` load and the balance drops; a rule **due later this month** does **not** deduct early; create→edit→verify a transaction persists; duplicate-conflict override saves a new row. **Re-own** the dev-edited `tests/e2e/m3-recurring.spec.ts`. A GREEN run dated after `e374b83` closes M7.
+
+### User step (not automatable here — no local Vercel access)
+- Verify the deployed Vercel bundle is at/after `64ad101` (guard + per-rule isolation + logging) and **redeploy**; check function logs for `[recurrence] occurrence insert failed`. A **stale deploy** is the leading hypothesis for the original "recurring never deducts" field report — the code fixes are correct, but the field failure itself is only confirmed-fixed once prod runs the new bundle.
+
+### Note on SPEC-2
+The SPEC-2 items are dev-resolved and pm-desk has code-verified them; the block stays until qa-lab closes M7 behaviorally (then pm-desk prunes SPEC-2 + this M7 block together on full APPROVED).
+
+---
+
 ## [SPEC] Spec change — 2026-07-10 (recurring never deducts → M7-D)
 **From**: idea-forge
 **Status**: RESOLVED — M7-D implemented; post-mortem at `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`. Awaiting pm-desk re-review as part of M7.
