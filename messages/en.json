@@ -98,7 +98,9 @@
     "qrRemoved": "QR removed",
     "qrRemoveFailed": "Could not remove QR",
     "openingBalance": "Starting balance",
-    "openingBalanceHint": "The account balance when you start using it (not counted as income)."
+    "openingBalanceHint": "The account balance when you start using it (not counted as income).",
+    "numberHint": "Last account digits",
+    "numberHintHint": "The last 3-4 visible digits shown on a slip. Helps tell apart accounts at the same bank (optional)."
   },
   "budget": {
     "title": "Budgets",
@@ -361,6 +363,7 @@
     "expense": "Expense",
     "amountLabel": "Amount (THB)",
     "account": "Account",
+    "matchedFromSlip": "Matched from slip",
     "noAccounts": "No accounts yet — please add an account first",
     "category": "Category",
     "selectCategoryOptional": "Select category",

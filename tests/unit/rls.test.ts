@@ -129,6 +129,109 @@ describe.skipIf(SKIP)('RLS isolation: user B cannot read user A data', () => {
   })
 })
 
+// M8: slip_account_map — the learned fingerprint → account mapping (Smart
+// Account Mapping). 2-user isolation test per the supabase-rls skill's review
+// checklist ("2-user isolation test exists (user A cannot read user B's rows)").
+describe.skipIf(SKIP)('M8 RLS: slip_account_map owner isolation', () => {
+  let clientA: ReturnType<typeof createClient<Database>>
+  let clientB: ReturnType<typeof createClient<Database>>
+  let userAId: string
+  let userBId: string
+  let accountAId: string
+  let mapAId: string
+  const fingerprint = `rls-test-fp-${Date.now()}`
+
+  beforeAll(async () => {
+    clientA = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    clientB = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+
+    const [resA, resB] = await Promise.all([
+      clientA.auth.signInWithPassword({ email: USER_A_EMAIL!, password: USER_A_PASS! }),
+      clientB.auth.signInWithPassword({ email: USER_B_EMAIL!, password: USER_B_PASS! }),
+    ])
+    if (resA.error) throw new Error(`User A login failed: ${resA.error.message}`)
+    if (resB.error) throw new Error(`User B login failed: ${resB.error.message}`)
+    userAId = resA.data.user!.id
+    userBId = resB.data.user!.id
+
+    const { data: acct, error: acctErr } = await clientA
+      .from('accounts')
+      .insert({ user_id: userAId, name: 'M8 RLS Account', bank: 'KTB' })
+      .select('id')
+      .single()
+    if (acctErr) throw new Error(`Account insert failed: ${acctErr.message}`)
+    accountAId = acct!.id
+
+    const { data: map, error: mapErr } = await clientA
+      .from('slip_account_map')
+      .insert({ user_id: userAId, fingerprint, account_id: accountAId })
+      .select('id')
+      .single()
+    if (mapErr) throw new Error(`slip_account_map insert failed: ${mapErr.message}`)
+    mapAId = map!.id
+  })
+
+  afterAll(async () => {
+    if (mapAId) await clientA.from('slip_account_map').delete().eq('id', mapAId)
+    if (accountAId) await clientA.from('accounts').delete().eq('id', accountAId)
+    await Promise.all([clientA.auth.signOut(), clientB.auth.signOut()])
+  })
+
+  it('A can read their own mapping', async () => {
+    const { data, error } = await clientA
+      .from('slip_account_map')
+      .select('id, account_id, fingerprint')
+      .eq('id', mapAId)
+      .single()
+    expect(error).toBeNull()
+    expect(data?.account_id).toBe(accountAId)
+  })
+
+  it('B cannot see A\'s mapping', async () => {
+    const { data, error } = await clientB.from('slip_account_map').select('id')
+    expect(error).toBeNull()
+    expect((data ?? []).find((m) => m.id === mapAId)).toBeUndefined()
+  })
+
+  it('B cannot insert a mapping row claiming to be A\'s user_id', async () => {
+    const { error } = await clientB
+      .from('slip_account_map')
+      .insert({ user_id: userAId, fingerprint: `${fingerprint}-b`, account_id: accountAId })
+    expect(error).not.toBeNull() // insert with-check requires user_id = auth.uid()
+  })
+
+  it('B cannot update A\'s mapping', async () => {
+    const { error: updateErr } = await clientB
+      .from('slip_account_map')
+      .update({ hits: 999 })
+      .eq('id', mapAId)
+    expect(updateErr).toBeNull() // RLS excludes the row — no error, just no match
+
+    const { data } = await clientA.from('slip_account_map').select('hits').eq('id', mapAId).single()
+    expect(data?.hits).toBe(1) // unchanged from insert default
+  })
+
+  it('B can create their own mapping under the SAME fingerprint without conflicting with A\'s', async () => {
+    const { data: acctB, error: acctErr } = await clientB
+      .from('accounts')
+      .insert({ user_id: userBId, name: 'M8 RLS Account B', bank: 'KTB' })
+      .select('id')
+      .single()
+    expect(acctErr).toBeNull()
+
+    const { data: mapB, error: mapErr } = await clientB
+      .from('slip_account_map')
+      .insert({ user_id: userBId, fingerprint, account_id: acctB!.id })
+      .select('id')
+      .single()
+    expect(mapErr).toBeNull() // UNIQUE(user_id, fingerprint) is per-user, not global
+    expect(mapB?.id).not.toBe(mapAId)
+
+    await clientB.from('slip_account_map').delete().eq('id', mapB!.id)
+    await clientB.from('accounts').delete().eq('id', acctB!.id)
+  })
+})
+
 describe.skipIf(SKIP)('M4 RLS: guest capability-token (Pattern B)', () => {
   let host: ReturnType<typeof createClient<Database>>
   let guest: ReturnType<typeof createClient<Database>>

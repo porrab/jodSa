@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
-import { AlertTriangle, CheckCircle2, Info, SkipForward } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Info, SkipForward, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -12,13 +12,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { createTransaction, checkNullRefDedup, checkRefCodeDuplicate } from '@/app/actions/transactions'
+import { lookupSlipAccountMap, recordSlipAccountMapping } from '@/app/actions/slip-account-map'
 import { parseInputToSatang, formatTHB } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
-import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
+import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } from '@/lib/last-account'
+import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
 import { cn } from '@/lib/utils'
 import type { ParsedSlip } from '@/lib/slip/types'
 
-interface Account { id: string; name: string; bank: string }
+interface Account { id: string; name: string; bank: string; number_hint?: string | null }
 
 const LOW_CONF = 0.7
 
@@ -57,11 +59,28 @@ export default function BatchSlipCard({
   })()
   const fallbackAccountId = accounts[0]?.id ?? null
 
+  // M8: slip signals for Smart Account Mapping (same precedence as SlipConfirmForm).
+  const senderMask = slip.senderMask.value
+  const sourceApp = slip.sourceApp.value
+  const fingerprint = buildFingerprint({ bankCode: slip.bankCode.value, sourceApp, senderMask })
+  const numberHintAccountId = matchAccountByNumberHint(senderMask, accounts)
+  const appSignatureAccountId = matchAccountByAppSignature(sourceApp, accounts)
+  const [learnedAccountId, setLearnedAccountId] = useState<string | null>(null)
+
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
   const [accountId, setAccountId] = useState(() =>
-    resolveAccountDefault({ category: undefined, lastByCategory, globalLastAccountId, parsedAccountId, fallbackAccountId }) ?? '',
+    resolveAccountDefault({
+      category: undefined,
+      lastByCategory,
+      globalLastAccountId,
+      parsedAccountId,
+      fallbackAccountId,
+      numberHintAccountId,
+      appSignatureAccountId,
+    }) ?? '',
   )
   const [accountTouched, setAccountTouched] = useState(false)
+  const accountTouchedRef = useRef(false)
   const [category, setCategory] = useState('')
   const [datetimeLocal, setDatetimeLocal] = useState(slip.datetime.value ? toDatetimeLocal(slip.datetime.value) : '')
   const [dupWarning, setDupWarning] = useState<string | null>(null)
@@ -73,12 +92,56 @@ export default function BatchSlipCard({
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState<BatchDoneAction | null>(null)
 
-  function handleAccountChange(id: string) { setAccountId(id); setAccountTouched(true) }
+  // M8 top precedence tier — see SlipConfirmForm for the full rationale.
+  useEffect(() => {
+    if (!hasFingerprintSignal(fingerprint)) return
+    let cancelled = false
+    lookupSlipAccountMap(fingerprint).then(({ accountId: learned }) => {
+      if (cancelled) return
+      setLearnedAccountId(learned)
+      const next = reapplyAccountDefault({
+        category: category || undefined,
+        lastByCategory,
+        globalLastAccountId,
+        parsedAccountId,
+        fallbackAccountId,
+        learnedAccountId: learned,
+        numberHintAccountId,
+        appSignatureAccountId,
+        touched: accountTouchedRef.current,
+      })
+      if (next) setAccountId(next)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const slipSignalAccountId =
+    learnedAccountId || numberHintAccountId || appSignatureAccountId || parsedAccountId
+  const showSlipMatchHint =
+    !accountTouched && !!slipSignalAccountId && accountId === slipSignalAccountId
+
+  function handleAccountChange(id: string) {
+    setAccountId(id)
+    setAccountTouched(true)
+    accountTouchedRef.current = true
+  }
 
   function handleCategoryChange(c: string) {
     setCategory(c)
-    if (accountTouched) return
-    const next = resolveAccountDefault({ category: c, lastByCategory, globalLastAccountId, parsedAccountId, fallbackAccountId })
+    const next = reapplyAccountDefault({
+      category: c,
+      lastByCategory,
+      globalLastAccountId,
+      parsedAccountId,
+      fallbackAccountId,
+      learnedAccountId,
+      numberHintAccountId,
+      appSignatureAccountId,
+      touched: accountTouched,
+    })
     if (next) setAccountId(next)
   }
 
@@ -140,7 +203,13 @@ export default function BatchSlipCard({
     const result = await createTransaction({ error: '' }, fd)
     setLoading(false)
     if (result.error) { setError(result.error) }
-    else { setDone('saved'); onDone('saved') }
+    else {
+      // M8 learning loop — see SlipConfirmForm.doCreate for the full rationale.
+      const savedAccountId = (fd.get('account_id') as string) || accountId
+      void recordSlipAccountMapping(fingerprint, savedAccountId)
+      setDone('saved')
+      onDone('saved')
+    }
   }
 
   async function confirmDup() {
@@ -272,14 +341,22 @@ export default function BatchSlipCard({
           </div>
 
           {/* Account */}
-          <Select value={accountId} onValueChange={handleAccountChange} required>
-            <SelectTrigger className="h-9"><SelectValue placeholder={t('account')} /></SelectTrigger>
-            <SelectContent>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>{a.name} ({a.bank})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1">
+            <Select value={accountId} onValueChange={handleAccountChange} required>
+              <SelectTrigger className="h-9"><SelectValue placeholder={t('account')} /></SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.name} ({a.bank})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {showSlipMatchHint && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium text-primary">
+                <Sparkles className="size-2.5" />
+                {t('matchedFromSlip')}
+              </span>
+            )}
+          </div>
 
           {/* Category */}
           <Select value={category} onValueChange={handleCategoryChange}>

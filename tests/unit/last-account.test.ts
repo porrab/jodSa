@@ -3,6 +3,7 @@ import {
   buildLastAccountMap,
   getLastAccountForCategory,
   resolveAccountDefault,
+  reapplyAccountDefault,
 } from '@/lib/last-account'
 
 describe('buildLastAccountMap', () => {
@@ -120,5 +121,103 @@ describe('resolveAccountDefault — precedence (parsed > per-category > global >
         fallbackAccountId: 'first',
       }),
     ).toBe('global')
+  })
+})
+
+describe('resolveAccountDefault — M8 precedence (learned > numberHint > appSignature > parsed > category > global > fallback)', () => {
+  const base = {
+    category: 'food',
+    lastByCategory: { food: 'category-acct' },
+    globalLastAccountId: 'global-acct',
+    parsedAccountId: 'bank-code-acct',
+    fallbackAccountId: 'first-acct',
+  }
+
+  it('a learned fingerprint match outranks every other signal', () => {
+    expect(
+      resolveAccountDefault({
+        ...base,
+        learnedAccountId: 'learned-acct',
+        numberHintAccountId: 'hint-acct',
+        appSignatureAccountId: 'app-acct',
+      }),
+    ).toBe('learned-acct')
+  })
+
+  it('a number_hint match outranks app signature and bank code when nothing is learned yet', () => {
+    expect(
+      resolveAccountDefault({
+        ...base,
+        learnedAccountId: null,
+        numberHintAccountId: 'hint-acct',
+        appSignatureAccountId: 'app-acct',
+      }),
+    ).toBe('hint-acct')
+  })
+
+  it('an app-signature match outranks bank code when there is no learned or number_hint match', () => {
+    expect(
+      resolveAccountDefault({
+        ...base,
+        learnedAccountId: null,
+        numberHintAccountId: null,
+        appSignatureAccountId: 'app-acct',
+      }),
+    ).toBe('app-acct')
+  })
+
+  it('bank code (FIELD-3, existing "parsed" tier) still wins over per-category/global/fallback', () => {
+    expect(
+      resolveAccountDefault({
+        ...base,
+        learnedAccountId: null,
+        numberHintAccountId: null,
+        appSignatureAccountId: null,
+      }),
+    ).toBe('bank-code-acct')
+  })
+
+  it('falls through to per-category/global/fallback exactly as before when no M8 signal fires', () => {
+    expect(
+      resolveAccountDefault({
+        ...base,
+        parsedAccountId: null,
+        learnedAccountId: null,
+        numberHintAccountId: null,
+        appSignatureAccountId: null,
+      }),
+    ).toBe('category-acct')
+  })
+
+  it('omitting the M8 fields entirely (pre-M8 caller) behaves exactly as before', () => {
+    expect(resolveAccountDefault(base)).toBe('bank-code-acct')
+  })
+})
+
+describe('reapplyAccountDefault — never overwrite a user-touched account field (M8)', () => {
+  const opts = {
+    category: 'food',
+    lastByCategory: { food: 'category-acct' },
+    globalLastAccountId: 'global-acct',
+    parsedAccountId: 'bank-code-acct',
+    fallbackAccountId: 'first-acct',
+    learnedAccountId: 'learned-acct',
+  }
+
+  it('returns null (do not change) once the user has touched the account select', () => {
+    expect(reapplyAccountDefault({ ...opts, touched: true })).toBeNull()
+  })
+
+  it('resolves normally (top precedence tier) when the user has not touched it', () => {
+    expect(reapplyAccountDefault({ ...opts, touched: false })).toBe('learned-acct')
+  })
+
+  it('touched=true blocks even a fresh learned-fingerprint result from a late async lookup', () => {
+    // Simulates: initial render resolved from bank code; user then manually picks
+    // an account; the async slip_account_map lookup resolves afterwards and must
+    // NOT silently swap the user's choice back out.
+    expect(
+      reapplyAccountDefault({ ...opts, learnedAccountId: 'late-learned-acct', touched: true }),
+    ).toBeNull()
   })
 })

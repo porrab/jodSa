@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
-import { AlertTriangle, ChevronLeft, Info, LockKeyhole } from 'lucide-react'
+import { AlertTriangle, ChevronLeft, Info, LockKeyhole, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,16 +16,19 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createTransaction, checkNullRefDedup, checkRefCodeDuplicate } from '@/app/actions/transactions'
+import { lookupSlipAccountMap, recordSlipAccountMapping } from '@/app/actions/slip-account-map'
 import { formatTHB } from '@/lib/money'
 import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
-import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
+import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } from '@/lib/last-account'
+import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
 import type { ParsedSlip } from '@/lib/slip/types'
 
 interface Account {
   id: string
   name: string
   bank: string
+  number_hint?: string | null
 }
 
 interface Props {
@@ -68,14 +71,24 @@ export default function SlipConfirmForm({
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
   // Account whose bank matches the slip's detected bank (case-insensitive: account.bank is
-  // e.g. "KBank" while inferBankCode emits "KBANK"). Per precedence in prompt.md §6, this
-  // parsed account wins over the per-category default; if it's null, the per-category /
-  // global last-used fallback chain kicks in.
+  // e.g. "KBank" while inferBankCode emits "KBANK"). Per the M8 precedence, this bank-code
+  // match is now the 4th tier — learned fingerprint / number_hint / app signature outrank
+  // it, since bank code alone can't tell same-bank accounts apart (FIELD-3).
   const parsedAccountId = (() => {
     const code = slip.bankCode.value?.toLowerCase()
     return code ? accounts.find((a) => a.bank.toLowerCase() === code)?.id ?? null : null
   })()
   const fallbackAccountId = accounts[0]?.id ?? null
+
+  // M8: slip signals for Smart Account Mapping.
+  const senderMask = slip.senderMask.value
+  const sourceApp = slip.sourceApp.value
+  const fingerprint = buildFingerprint({ bankCode: slip.bankCode.value, sourceApp, senderMask })
+  const numberHintAccountId = matchAccountByNumberHint(senderMask, accounts)
+  const appSignatureAccountId = matchAccountByAppSignature(sourceApp, accounts)
+  // Resolved once the async slip_account_map lookup returns (top precedence tier).
+  const [learnedAccountId, setLearnedAccountId] = useState<string | null>(null)
+
   const [accountId, setAccountId] = useState(() =>
     resolveAccountDefault({
       category: undefined,
@@ -83,27 +96,73 @@ export default function SlipConfirmForm({
       globalLastAccountId,
       parsedAccountId,
       fallbackAccountId,
+      numberHintAccountId,
+      appSignatureAccountId,
     }) ?? '',
   )
-  // Precedence rule #1 — once the user picks an account themselves, no later category
-  // change is allowed to overwrite their choice.
+  // Precedence rule #1 — once the user picks an account themselves, no later signal
+  // (category change, or the async learned-fingerprint lookup below) is allowed to
+  // overwrite their choice. Mirrored in a ref so the effect's stale closure still
+  // sees an up-to-date value if the user acts before the lookup resolves.
   const [accountTouched, setAccountTouched] = useState(false)
+  const accountTouchedRef = useRef(false)
   const [category, setCategory] = useState('')
+
+  // M8 top precedence tier: has this exact slip fingerprint been confirmed/corrected
+  // to an account before? Runs once; only overrides the account if the user hasn't
+  // already touched the field (reapplyAccountDefault enforces that).
+  useEffect(() => {
+    if (!hasFingerprintSignal(fingerprint)) return
+    let cancelled = false
+    lookupSlipAccountMap(fingerprint).then(({ accountId: learned }) => {
+      if (cancelled) return
+      setLearnedAccountId(learned)
+      const next = reapplyAccountDefault({
+        category: category || undefined,
+        lastByCategory,
+        globalLastAccountId,
+        parsedAccountId,
+        fallbackAccountId,
+        learnedAccountId: learned,
+        numberHintAccountId,
+        appSignatureAccountId,
+        touched: accountTouchedRef.current,
+      })
+      if (next) setAccountId(next)
+    })
+    return () => {
+      cancelled = true
+    }
+    // Runs once on mount — the fingerprint is derived from the (static) slip prop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // The account_id a "from-slip" signal would pick (learned > number_hint > app
+  // signature > bank code) — used only to show the "เลือกจากสลิป" hint, never to
+  // gate saving.
+  const slipSignalAccountId =
+    learnedAccountId || numberHintAccountId || appSignatureAccountId || parsedAccountId
+  const showSlipMatchHint =
+    !accountTouched && !!slipSignalAccountId && accountId === slipSignalAccountId
 
   function handleAccountChange(id: string) {
     setAccountId(id)
     setAccountTouched(true)
+    accountTouchedRef.current = true
   }
 
   function handleCategoryChange(c: string) {
     setCategory(c)
-    if (accountTouched) return
-    const next = resolveAccountDefault({
+    const next = reapplyAccountDefault({
       category: c,
       lastByCategory,
       globalLastAccountId,
       parsedAccountId,
       fallbackAccountId,
+      learnedAccountId,
+      numberHintAccountId,
+      appSignatureAccountId,
+      touched: accountTouched,
     })
     if (next) setAccountId(next)
   }
@@ -176,6 +235,12 @@ export default function SlipConfirmForm({
     if (result.error) {
       setError(result.error)
     } else {
+      // M8 learning loop: record whichever account this fingerprint ended up
+      // saved to — whether the user kept the auto-pick or corrected it — so the
+      // next slip with the same shape auto-selects it. Best-effort; a failure
+      // here must never surface as a save error (the transaction already saved).
+      const savedAccountId = (formData.get('account_id') as string) || accountId
+      void recordSlipAccountMapping(fingerprint, savedAccountId)
       onSuccess()
     }
   }
@@ -308,7 +373,15 @@ export default function SlipConfirmForm({
 
         {/* Account */}
         <div className="space-y-1.5">
-          <Label>{t('account')} <RequiredMark /></Label>
+          <Label>
+            {t('account')} <RequiredMark />
+            {showSlipMatchHint && (
+              <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium text-primary">
+                <Sparkles className="size-2.5" />
+                {t('matchedFromSlip')}
+              </span>
+            )}
+          </Label>
           {accounts.length === 0 ? (
             <p className="text-sm text-destructive">{t('noAccounts')}</p>
           ) : (
