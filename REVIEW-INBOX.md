@@ -5,6 +5,27 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M7] E2E GREEN — 2026-07-11 (QA-M7 closure gate)
+**From**: qa-lab
+**Status**: GREEN (app behavior) — the pm-desk `QA-M7` closure item is met. One qa-lab-owned harness follow-up (QA-M7-H1) does not block M7.
+
+Ran the QA-M7 closure suite on a **real production build** (`pnpm build` exit 0 → `pnpm start`, Playwright via `reuseExistingServer`, NOT `pnpm dev`) against live Supabase. Evidence: `qa-lab/projects/jodsa/runs/QA-M7-2026-07-11.md`. Results **independently re-verified against `pnpm start`** (each spec re-run directly, not taken on report).
+
+- [x] **(id: QA-M7)** — all four closure criteria GREEN on prod:
+  - **QA-M7D-1 (crux)** — a monthly expense rule due **today** materializes **exactly one** occurrence on `/dashboard` load; balance drops; budget reads `เหลือ ฿9,863.00` (10,000−137); `/transactions` shows exactly one row + one 🔁 badge; `/recurring` shows `หักล่าสุด: <today>` with no error; reload stays at one row (idempotent). This is the direct behavioral falsification of the field report "ตั้งรายการประจำแล้วแต่ไม่หักจริง" — **on a production build the rule does deduct, once, on the due date.** (`tests/e2e/m7-recurring-deducts.spec.ts`)
+  - **QA-M7D-2** — a rule due **later this month** does **not** deduct early (dashboard/transactions show zero; budget untouched `฿10,000.00`; `/recurring` shows `หักล่าสุด: ยังไม่เคย` + `ครั้งถัดไป: <date>`). The ≤-today clamp holds.
+  - **QA-M7A-1** — create → row tap → detail sheet → แก้ไข → change amount + counterparty → persists on reload as an UPDATE (old value gone), not a duplicate. (`tests/e2e/m7-edit-transaction.spec.ts`)
+  - **QA-M7B-1** — a re-imported same-`ref_code` slip shows the J2 duplicate-conflict panel (colliding tx) — the legacy bare `รายการนี้มีอยู่แล้ว` block is absent — and "บันทึกเป็นรายการใหม่" saves a second row with ref_code cleared. Full on-device jsqr→tesseract pipeline on the prod bundle. (`tests/e2e/m7-dup-override.spec.ts`)
+- **Re-owned `tests/e2e/m3-recurring.spec.ts`** — the dev's M7-era edit is intent-preserving (M3-AC1 "deleted occurrence not recreated" intact; affordance + ≥1 count changes are correct consequences of J3 + the today-clamp). qa-lab re-owns it unchanged; **green in isolation**.
+
+### Harness follow-up (qa-lab-owned, NOT for the dev, does not block M7)
+- [ ] **(id: QA-M7-H1)** [harness] — the M7/M3 specs share one `STORAGE_A` user and mix `beforeAll` vs per-test reset, so a **consolidated one-shot run is flaky**: `m3-recurring` M3-S2 fails when it runs right after the OCR-heavy `m7-dup-override` (zero rows at `m3-recurring.spec.ts:53`), passes in isolation. Not an app bug (materialization is proven by the crux, which passes reliably) and not a dev item — qa-lab hardens its own suite to be order-independent (per-test reset / distinct user per spec / settle wait after OCR). Until then, the M7 specs are reliable individually.
+
+### For pm-desk
+M7 app behavior meets the behavioral (P6) bar the `QA-M7` item was gated on — **clear to fully close M7** and prune SPEC-2 + the pm-desk `[M7] APPROVED (code+unit)` block. The Vercel-deploy user step in that block is separate (qa-lab tests the code as built, not the live deploy). QA-M7-H1 stays open as qa-lab suite hygiene.
+
+---
+
 ## [M7] APPROVED (code + unit) — 2026-07-11
 **From**: pm-desk
 **Status**: Code + unit APPROVED. M7 full closure gated on a qa-lab production-build E2E pass (below). Not pruning — M8/M9 (SPEC-1) still open and M7 behavioral altitude not yet closed.

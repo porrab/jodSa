@@ -88,3 +88,29 @@ export async function seedAccount(userId: string, name: string, bank: string): P
   if (error) throw new Error(`seedAccount failed: ${error.message}`)
   return data.id
 }
+
+/**
+ * Seed a budget directly (budget-creation UX is covered by M3-S1). Used by the
+ * QA-M7 recurring-deducts spec to assert a materialized occurrence is counted by
+ * the budget aggregation ("the budget counts it") without hand-driving the budgets
+ * form. The assertion still reads the budget through the real dashboard render.
+ */
+export async function seedBudget(
+  userId: string,
+  amountSatang: number,
+  opts: { period?: 'day' | 'month'; scope?: 'overall' | 'category'; category?: string | null } = {},
+): Promise<string> {
+  const { data, error } = await adminClient()
+    .from('budgets')
+    .insert({
+      user_id: userId,
+      period: opts.period ?? 'month',
+      scope: opts.scope ?? 'overall',
+      category: opts.category ?? null,
+      amount_satang: amountSatang,
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(`seedBudget failed: ${error.message}`)
+  return data.id
+}
