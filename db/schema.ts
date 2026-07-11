@@ -24,6 +24,10 @@ export const accounts = pgTable('accounts', {
   // Starting balance of the account (satang). NOT a transaction — kept off
   // income/expense/transfer/budget analysis; only seeds computeAccountBalance.
   openingBalanceSatang: integer('opening_balance_satang').notNull().default(0),
+  // M8: optional user-entered last visible digits ("เลขท้ายบัญชี", design J4).
+  // Disambiguates same-bank accounts (e.g. 3 KTB accounts) via
+  // lib/account-map.ts matchAccountByNumberHint() against a slip's sender mask.
+  numberHint: text('number_hint'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -118,6 +122,21 @@ export const sessionExpenses = pgTable('session_expenses', {
   qrImagePath: text('qr_image_path'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
+
+// M8: learned fingerprint → account mapping (the account-mapping learning loop).
+// fingerprint = `bank_code|app_signature|sender_mask` (lib/account-map.ts).
+// account_id is overwritten to the latest confirmed/corrected choice per
+// fingerprint — a correction immediately takes over future auto-selects.
+export const slipAccountMap = pgTable('slip_account_map', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  fingerprint: text('fingerprint').notNull(),
+  accountId: uuid('account_id').notNull(),
+  hits: integer('hits').default(1).notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+// UNIQUE(user_id, fingerprint) is defined in the SQL migration.
 
 export const sessionSlips = pgTable('session_slips', {
   id: uuid('id').primaryKey().defaultRandom(),

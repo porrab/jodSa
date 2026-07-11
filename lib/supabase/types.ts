@@ -31,6 +31,7 @@ export interface Database {
           bank: string
           qr_image_path: string | null
           opening_balance_satang: number
+          number_hint: string | null
           created_at: string
         }
         Insert: {
@@ -40,6 +41,7 @@ export interface Database {
           bank: string
           qr_image_path?: string | null
           opening_balance_satang?: number
+          number_hint?: string | null
           created_at?: string
         }
         Update: {
@@ -47,6 +49,7 @@ export interface Database {
           bank?: string
           qr_image_path?: string | null
           opening_balance_satang?: number
+          number_hint?: string | null
         }
         Relationships: []
       }
@@ -286,6 +289,32 @@ export interface Database {
         }
         Update: {
           confirmed?: boolean
+        }
+        Relationships: []
+      }
+      slip_account_map: {
+        Row: {
+          id: string
+          user_id: string
+          fingerprint: string
+          account_id: string
+          hits: number
+          last_used_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          fingerprint: string
+          account_id: string
+          hits?: number
+          last_used_at?: string
+          created_at?: string
+        }
+        Update: {
+          account_id?: string
+          hits?: number
+          last_used_at?: string
         }
         Relationships: []
       }
