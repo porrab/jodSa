@@ -5,115 +5,15 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
-## [M7] E2E GREEN — 2026-07-11 (QA-M7 closure gate)
-**From**: qa-lab
-**Status**: GREEN (app behavior) — the pm-desk `QA-M7` closure item is met. One qa-lab-owned harness follow-up (QA-M7-H1) does not block M7.
-
-Ran the QA-M7 closure suite on a **real production build** (`pnpm build` exit 0 → `pnpm start`, Playwright via `reuseExistingServer`, NOT `pnpm dev`) against live Supabase. Evidence: `qa-lab/projects/jodsa/runs/QA-M7-2026-07-11.md`. Results **independently re-verified against `pnpm start`** (each spec re-run directly, not taken on report).
-
-- [x] **(id: QA-M7)** — all four closure criteria GREEN on prod:
-  - **QA-M7D-1 (crux)** — a monthly expense rule due **today** materializes **exactly one** occurrence on `/dashboard` load; balance drops; budget reads `เหลือ ฿9,863.00` (10,000−137); `/transactions` shows exactly one row + one 🔁 badge; `/recurring` shows `หักล่าสุด: <today>` with no error; reload stays at one row (idempotent). This is the direct behavioral falsification of the field report "ตั้งรายการประจำแล้วแต่ไม่หักจริง" — **on a production build the rule does deduct, once, on the due date.** (`tests/e2e/m7-recurring-deducts.spec.ts`)
-  - **QA-M7D-2** — a rule due **later this month** does **not** deduct early (dashboard/transactions show zero; budget untouched `฿10,000.00`; `/recurring` shows `หักล่าสุด: ยังไม่เคย` + `ครั้งถัดไป: <date>`). The ≤-today clamp holds.
-  - **QA-M7A-1** — create → row tap → detail sheet → แก้ไข → change amount + counterparty → persists on reload as an UPDATE (old value gone), not a duplicate. (`tests/e2e/m7-edit-transaction.spec.ts`)
-  - **QA-M7B-1** — a re-imported same-`ref_code` slip shows the J2 duplicate-conflict panel (colliding tx) — the legacy bare `รายการนี้มีอยู่แล้ว` block is absent — and "บันทึกเป็นรายการใหม่" saves a second row with ref_code cleared. Full on-device jsqr→tesseract pipeline on the prod bundle. (`tests/e2e/m7-dup-override.spec.ts`)
-- **Re-owned `tests/e2e/m3-recurring.spec.ts`** — the dev's M7-era edit is intent-preserving (M3-AC1 "deleted occurrence not recreated" intact; affordance + ≥1 count changes are correct consequences of J3 + the today-clamp). qa-lab re-owns it unchanged; **green in isolation**.
-
-### Harness follow-up (qa-lab-owned, NOT for the dev, does not block M7)
-- [ ] **(id: QA-M7-H1)** [harness] — the M7/M3 specs share one `STORAGE_A` user and mix `beforeAll` vs per-test reset, so a **consolidated one-shot run is flaky**: `m3-recurring` M3-S2 fails when it runs right after the OCR-heavy `m7-dup-override` (zero rows at `m3-recurring.spec.ts:53`), passes in isolation. Not an app bug (materialization is proven by the crux, which passes reliably) and not a dev item — qa-lab hardens its own suite to be order-independent (per-test reset / distinct user per spec / settle wait after OCR). Until then, the M7 specs are reliable individually.
-
-### For pm-desk
-M7 app behavior meets the behavioral (P6) bar the `QA-M7` item was gated on — **clear to fully close M7** and prune SPEC-2 + the pm-desk `[M7] APPROVED (code+unit)` block. The Vercel-deploy user step in that block is separate (qa-lab tests the code as built, not the live deploy). QA-M7-H1 stays open as qa-lab suite hygiene.
-
----
-
-## [M7] APPROVED (code + unit) — 2026-07-11
+## [M7] CLOSED — 2026-07-11
 **From**: pm-desk
-**Status**: Code + unit APPROVED. M7 full closure gated on a qa-lab production-build E2E pass (below). Not pruning — M8/M9 (SPEC-1) still open and M7 behavioral altitude not yet closed.
+**Status**: CLOSED — M7 APPROVED (code+unit) + qa-lab E2E GREEN on a production build, both independently gate-verified. Resolved blocks (pm-desk code+unit, qa-lab QA-M7, idea-forge SPEC-2) pruned. Durable records: `pm-desk/projects/jodsa/reviews/M7-review.md` · `qa-lab/projects/jodsa/runs/QA-M7-2026-07-11.md` · `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`.
 
-pm-desk re-ran the gates independently (not on report): `tsc --noEmit` exit 0; `vitest run tests/unit` **180/180, 0 skipped** (RLS suite live, incl. the new "B cannot update A" test). Code-verified every M7 claim against the diffs of `64ad101`/`894ac95`/`71c374b`. Durable record: `pm-desk/projects/jodsa/reviews/M7-review.md`.
+M7 (Ledger Correctness & Editing) shipped in `64ad101`/`894ac95`/`71c374b`: edit transactions (RLS-scoped, `ref_code` structurally immutable, J3 detail sheet); dedup false-positive fix (real EMVCo TLV walk + dropped bare `อ้างอิง` labels + J2 duplicate-conflict override); 2-digit BE year; recurring-actually-deducts (`needsMaterialization` undefined-safe, per-rule insert isolation, ≤-today clamp, J7 last-deducted/next-due/error). Gates re-run by pm-desk: `tsc` 0, `vitest` 180/180 live-RLS. QA-M7 prod-build E2E GREEN (recurring deducts once on the due date · no early deduction · edit persists · dup-override), independently re-verified against `pnpm start`.
 
-**Code + unit APPROVED (evidence in the review file):**
-- **M7-A** — `updateTransaction` writes via supabase-js user session; RLS `transactions_update_own` (migration 0001) scopes it; `ref_code`/`bank_code` excluded *structurally* from `transactionUpdateSchema`; type-switch clears stale fields; J3 detail-sheet UI (delete moved off the row).
-- **M7-B** — real EMVCo TLV walk replaces the `/62\d{2}05/` regex (mid-payload false-match killed); bare `อ้างอิง`/`รหัสอ้างอิง` dropped, per-transaction labels kept; J2 duplicate-conflict UX shows the colliding tx + "บันทึกเป็นรายการใหม่" override that clears `ref_code`.
-- **M7-C** — 2-digit BE year fixed in the Thai-month path (`2 มิ.ย. 69` → 2026); corpus regression tests added.
-- **M7-D** — `needsMaterialization` treats undefined/'' as "needs" (`!materializedThrough`); per-rule insert isolation (poisoned rule no longer starves others; guard-update error checked); ≤-today clamp applied consistently; J7 last-deducted/next-due/error surfaced on the recurring page + 🔁 badge.
-
-**Deviations — ruled ACCEPTABLE (see review file):** (1) dev edited the qa-lab-owned `tests/e2e/m3-recurring.spec.ts` — intent-preserving (M3-S2 skip-exception assertion intact; affordance + count changes are correct consequences of J3/today-clamp) → **qa-lab to re-own**; (2) test-only `server-only` vitest stub; (3) `db/schema.ts` `materialized_through` backfill of a pre-existing drift.
-
-### Closure gate — routed to qa-lab
-- [ ] **(id: QA-M7)** — production-build E2E on `pnpm build && pnpm start` + live Supabase: a rule **due today** materializes **exactly one** expense row on `/dashboard` load and the balance drops; a rule **due later this month** does **not** deduct early; create→edit→verify a transaction persists; duplicate-conflict override saves a new row. **Re-own** the dev-edited `tests/e2e/m3-recurring.spec.ts`. A GREEN run dated after `e374b83` closes M7.
-
-### User step (not automatable here — no local Vercel access)
-- Verify the deployed Vercel bundle is at/after `64ad101` (guard + per-rule isolation + logging) and **redeploy**; check function logs for `[recurrence] occurrence insert failed`. A **stale deploy** is the leading hypothesis for the original "recurring never deducts" field report — the code fixes are correct, but the field failure itself is only confirmed-fixed once prod runs the new bundle.
-
-### Note on SPEC-2
-The SPEC-2 items are dev-resolved and pm-desk has code-verified them; the block stays until qa-lab closes M7 behaviorally (then pm-desk prunes SPEC-2 + this M7 block together on full APPROVED).
-
----
-
-## [SPEC] Spec change — 2026-07-10 (recurring never deducts → M7-D)
-**From**: idea-forge
-**Status**: RESOLVED — M7-D implemented; post-mortem at `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`. Awaiting pm-desk re-review as part of M7.
-
-- [x] **(id: SPEC-2)** — **M7 gains M7-D: recurring rules must actually deduct** (owner field
-  report 2026-07-10: "ตั้งรายการประจำแล้วแต่ไม่ได้หักจริงเลย"; same symptom first logged
-  2026-07-02 in `project/jodsa/PERF-HANDOFF.md` §"Related correctness bug" — still failing in the
-  field after the perf pass). Full spec + acceptance:
-  `idea-forge/ideas/jodsa/docs/04-roadmap.md` (M7-D) · UX rules: `idea-forge/ideas/jodsa/docs/07-design.md` (J7).
-
-  **Facts already established (2026-07-10, this brief's author — do not re-derive):**
-  - Migration `db/migrations/0006_*.sql` **is applied on the live Supabase**: REST probe of
-    `recurring_rules?select=materialized_through` and `rpc/account_balances` both return 200
-    (a missing column would 42703). The unapplied-migration hypothesis is dead.
-  - Confirmed code defects regardless of the field root cause:
-    (1) `lib/recurrence/range.ts` `needsMaterialization(undefined, to)` → **false** — silently
-    disables materialization on any shape drift; (2) `lib/recurrence/materialize.ts` inserts
-    **one all-or-nothing batch across all rules** — one poisoned rule starves every rule and
-    blocks guard advancement; the post-insert guard `.update()` error is unchecked;
-    (3) `lib/recurrence/recurrence.ts` generates the **whole current month up front** — when it
-    works, money looks deducted weeks early (contradicts the due-date mental model; design J7
-    now requires ≤ today materialization).
-  - Materialization fires only on `/dashboard` + `/transactions` loads; failures today are
-    server-log-only (`[recurrence] occurrence insert failed`).
-
-  **Action for dev (debug-mantra, in this order):** verify the deployed Vercel bundle includes
-  `2917b7d`/`e0447d8` (stale deploy = top remaining suspect) → check Vercel function logs for the
-  insert-failed line → reproduce on prod with a due rule → fix the three defects above + adopt
-  the ≤-today behavior + J7 visibility (หักล่าสุด/ครั้งถัดไป + error state, 🔁 badge). Keep
-  idempotency, Asia/Bangkok, skip-exception semantics; `m3-recurring.spec.ts` stays green.
-  Slot into the M7 build (with M7-A/B/C); pm-desk reviews as part of M7.
-
-  **Dev fix (2026-07-10):** ⚠️ **Vercel bundle/log verification step skipped — no `vercel` CLI and
-  no `.vercel` project link found locally, only a GitHub remote** (`github.com/porrab/jodSa`); this
-  step needs the user to check the Vercel dashboard directly (deployment hash + function logs).
-  Confirmed regardless the three code defects and fixed all of them:
-  - `lib/recurrence/range.ts` — `needsMaterialization` now returns
-    `!materializedThrough || materializedThrough < to` (was `materializedThrough === null`), so an
-    `undefined` guard (shape drift) is treated as "never materialized," not "materialized forever."
-  - `lib/recurrence/materialize.ts` — replaced the single-batch insert + single-batch guard update
-    with a per-rule loop: each rule's insert and guard-advance are independent, a failing rule's
-    error is captured in a new `RuleMaterializeResult[]` without blocking any other rule, and the
-    guard-update's own error (previously unchecked) is now checked and reported per rule too.
-  - **≤-today clamp**: added `clampToToday()`/`todayBangkok()` to `range.ts`; `materializeOccurrences`
-    computes `effectiveTo = clampToToday(to)` once and uses it everywhere (stale filter, occurrence
-    generation, existing-row range query, guard value) — a rule due later this month no longer
-    deducts early, and the guard never advances past today.
-  - **J7 visibility**: `/recurring` now also calls `materializeOccurrences` (previously only
-    `/dashboard` + `/transactions` did) and shows per-rule `หักล่าสุด: <date> · ครั้งถัดไป: <date>`
-    (or an explicit error line on materialization failure) via new `lib/recurrence/status.ts`
-    (`computeNextDue`, pure) + `components/recurring-form.tsx`. A 🔁 badge now marks materialized
-    rows in `app/(app)/transactions/transactions-client.tsx`.
-  - **Tests**: new `tests/unit/materialize.test.ts` (3 tests, mocks `@/lib/supabase/server` since
-    `materialize.ts` is server-only — required a `vitest.config.ts` alias for the bare `server-only`
-    specifier, which Next's bundler resolves internally but Vite/Vitest cannot) proves per-rule
-    isolation and the today-clamp against the real code. `tests/unit/recurrence.test.ts` gained
-    `needsMaterialization(undefined, …)` + `clampToToday`/`todayBangkok`/`computeNextDue` tests.
-    `tests/e2e/m3-recurring.spec.ts` re-run live against `pnpm dev` + Supabase → passes (had to
-    update its delete-interaction locator — see M7-A note below, an unrelated UI change in the same
-    session moved the delete affordance off the row).
-  - Post-mortem: `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`.
-  - **User step remaining**: check the Vercel dashboard for the deployed bundle hash + function logs
-    (tooling unavailable locally); re-deploy after this fix lands.
+Two residuals carried forward (neither blocks M8):
+- [ ] **(id: M7-USER-1)** [user step] — verify the deployed **Vercel** bundle is at/after `64ad101` and **redeploy**; check function logs for `[recurrence] occurrence insert failed`. A stale deploy is the leading hypothesis for the original "recurring never deducts" field report; the fix is proven on a local production build, but the live site only confirms-fixed once it runs the new bundle. (No local Vercel access — user action.)
+- [ ] **(id: QA-M7-H1)** [qa-lab harness] — the M7/M3 E2E specs share one test user + mixed reset strategy, so a consolidated one-shot run is order-flaky (`m3-recurring` fails right after the OCR-heavy `m7-dup-override`, passes in isolation). qa-lab hardens its own suite; not an app/dev defect.
 
 ---
 
