@@ -76,6 +76,48 @@ Two residuals carried forward (neither blocks M8):
     local `vercel` CLI/`.vercel` link); no new DB migration to apply (RLS policy + guard column both
     already existed before this session).
 
+  **Dev progress (2026-07-11) — M8 implemented, M9 not started:**
+  - **Schema** (`db/migrations/0007_smart_account_mapping.sql`, hand-authored — drizzle-kit
+    generate is broken here): `accounts.number_hint text` (nullable) + new table
+    `slip_account_map(id, user_id, fingerprint, account_id, hits, last_used_at, created_at)`,
+    `UNIQUE(user_id, fingerprint)`, full owner RLS (Pattern A). `db/schema.ts` +
+    `lib/supabase/types.ts` updated to match. **Not applied to the live Supabase — user step,
+    see final report.**
+  - **Extractor** (`lib/slip/extract.ts`): `extractSenderMask()` — first bank-account-mask block
+    on a slip is always the sender (real corpus: KTB `XXX-X-XX441-5` → `441-5`, TTB
+    `XXX-X-XX955-1` → `955-1`, K+/make `xxx-x-x5357-x` → `5357`). `detectSourceApp()` — Paotang
+    (`G-Wallet ID:`/`เป๋าตัง`) and ttb (bare `ttb` own-line brand mark) are corpus-verified against
+    real qa-lab OCR; make/kplus/ktbnext are best-effort literal patterns (no literal brand text
+    for these three has surfaced in the corpus captured so far — flagged in code comments for
+    qa-lab). `ParsedSlip` gains `senderMask`/`sourceApp`.
+  - **Precedence + learning**: `lib/account-map.ts` (`buildFingerprint`, `hasFingerprintSignal`,
+    `matchAccountByNumberHint`, `matchAccountByAppSignature` — the last is a best-effort
+    account-*name* heuristic since there's no `accounts.app_signature` column, matching the
+    motivating case's own account names like "Paotang"/"make"). `lib/last-account.ts`
+    `resolveAccountDefault` extended (backward compatible) with 3 new tiers ahead of the existing
+    bank-code match: learned fingerprint → number_hint → app signature → bank code → per-category
+    → global last → first account. New `reapplyAccountDefault(touched)` centralizes "never
+    overwrite a user-touched field". `app/actions/slip-account-map.ts`: `lookupSlipAccountMap`
+    (top-tier lookup, skipped for a no-signal fingerprint) + `recordSlipAccountMapping` (the
+    learning loop — upserts on every save, overwriting `account_id` to the latest
+    confirmed/corrected choice). `slip-confirm-form.tsx`/`batch-slip-card.tsx` wired in, with a
+    subtle "เลือกจากสลิป" hint when the account came from a slip signal and wasn't user-touched.
+  - **Account UI**: optional เลขท้ายบัญชี (`number_hint`) field on the create/edit sheet (design
+    J4); `accountSchema` validates it; `createAccount`/`updateAccount` persist it.
+  - **Gates**: `tsc --noEmit` exit 0 · `pnpm build` succeeds · unit suite **218/223 passed** (all
+    green except the new 5-test `slip_account_map` RLS suite, which errors with "Could not find
+    the table 'public.slip_account_map'" — expected, since migration 0007 has correctly not been
+    applied to the live Supabase yet; re-run once the user applies it). 61 new unit tests added
+    (18 extractor + 16 account-map + 21 extended last-account/reapply, 5 of which are the
+    migration-pending RLS tests above the 218). `next lint` clean.
+  - **Deviation**: `detectSourceApp`'s make/kplus/ktbnext patterns are best-effort (see above) —
+    the real corpus captured in this repo only contains full brand text for Paotang/ttb. This
+    does not block the acceptance criteria: MAKE-vs-Kbank-บัตร disambiguation still works via the
+    `number_hint`/`matchAccountByNumberHint` tier (ranked above bank code), independent of whether
+    `sourceApp` resolves. Flagged for qa-lab to verify/extend the app-signature patterns against
+    fuller real slip captures if it wants that tier working standalone too.
+  - **Not done**: M9 (UX Reset) — out of this session's scope, SPEC-1 stays OPEN until it lands.
+
 ---
 
 ## [FIELD] qa-lab E2E close — 2026-06-13 (FIELD-2 GREEN)
