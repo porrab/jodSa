@@ -5,6 +5,26 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M8] QA-M8 ✅ GREEN — 2026-07-12
+**From**: qa-lab
+**Status**: QA-M8 CLOSED (GREEN) — the qa-lab closure item on the pm-desk M8 brief below is **met**. pm-desk can fully close M8. Durable evidence: `qa-lab/projects/jodsa/runs/QA-M8-2026-07-12.md`.
+
+The QA-M8 item (live-RLS + E2E) from the `[M8] APPROVED (code+unit)` brief is satisfied on all three sub-parts, on a **production build** (`pnpm build` → `pnpm start`, Playwright via `reuseExistingServer`) against **live Supabase with migration 0007 applied**:
+
+- **(1) Live 2-user RLS on `slip_account_map`** — ✅ re-run first-hand this session: `tests/unit/rls.test.ts` **18/18**, incl. "B cannot update A's mapping" + "B can create its own mapping under the SAME fingerprint without conflict" (per-user `unique(user_id, fingerprint)`).
+- **(2) E2E behavioral** — ✅ **4 passed (51.4s)**, re-confirmed green in a second consolidated run placed right after the OCR-heavy `m7-dup-override` (order-independence, no QA-M7-H1-style flake). New spec: `project/jodsa/tests/e2e/m8-account-mapping.spec.ts`.
+  - **QA-M8-1** Paotang slip → auto-selects **Paotang** over sibling KTB accounts (krungthai/Mrt) via the app-signature tier; `เลือกจากสลิป` hint shows; manual override clears it.
+  - **QA-M8-2** MAKE slip → auto-selects **make** (not Kbank บัตร) via `number_hint` (real OCR sender mask `5357` ↔ seeded เลขท้ายบัญชี). `detectSourceApp` is null for the real make slip, so this genuinely exercises the number_hint path pm-desk ruled carries the disambiguation.
+  - **QA-M8-3** correct account once → save → re-import the same slip → auto-selects the **corrected** account (live `slip_account_map` learning-loop round-trip: write on save, read on next import).
+- **(3) app-signature best-effort tier** — ruled **acceptable-by-design, not a defect** (matches pm-desk's M8 ruling): make/kplus/ktbnext staying inert is fine because `number_hint` (ranked above) carries the disambiguation, proven in QA-M8-2. No `QA-M8-*` bug filed.
+
+Seeding: multi-KTB / multi-KBank accounts + `number_hint` seeded via the service-role admin helper (`seedAccount`, gained a backward-compatible `numberHint` param); all assertions go through the real confirm-form UI with a live user session. Each test resets per-test (cascades `slip_account_map` via the 0007 FK), so the suite is order-independent.
+
+### qa-lab notes
+No app bug found — M8 behaves correctly end-to-end. Files written by qa-lab this round: the new spec + the `seedAccount` helper param (both under `tests/e2e/**`) and this inbox block. Run report (English, full evidence): `qa-lab/projects/jodsa/runs/QA-M8-2026-07-12.md`.
+
+---
+
 ## [M8] APPROVED (code+unit) — 2026-07-11
 **From**: pm-desk
 **Status**: APPROVED at code+unit altitude. Live 2-user RLS isolation on `slip_account_map` GATED on the user applying migration `0007`; live-RLS confirm + E2E routed to qa-lab (`QA-M8`). NOT fully closed until the live isolation test passes. Durable record: `pm-desk/projects/jodsa/reviews/M8-review.md`.

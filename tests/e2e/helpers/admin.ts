@@ -78,11 +78,24 @@ export async function deleteUserByEmail(email: string): Promise<void> {
   if (error) throw new Error(`deleteUser ${email} failed: ${error.message}`)
 }
 
-/** Seed an account directly (account-creation UX is already covered by M1 specs). */
-export async function seedAccount(userId: string, name: string, bank: string): Promise<string> {
+/**
+ * Seed an account directly (account-creation UX is already covered by M1 specs).
+ * Optional `numberHint` (M8, design J4 "เลขท้ายบัญชี") lets a spec seed the
+ * last-visible-digits used by the number_hint precedence tier — the account
+ * create/edit UI for it is covered at code+unit; here we seed it directly so the
+ * behavioral mapping assertion is what's under test, not the form.
+ */
+export async function seedAccount(
+  userId: string,
+  name: string,
+  bank: string,
+  numberHint?: string,
+): Promise<string> {
+  const row: Record<string, unknown> = { user_id: userId, name, bank }
+  if (numberHint !== undefined) row.number_hint = numberHint
   const { data, error } = await adminClient()
     .from('accounts')
-    .insert({ user_id: userId, name, bank })
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`seedAccount failed: ${error.message}`)
