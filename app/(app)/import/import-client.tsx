@@ -12,7 +12,7 @@ import BatchSlipCard, { type BatchDoneAction } from '@/components/batch-slip-car
 import type { ParsedSlip } from '@/lib/slip/types'
 import type { LastAccountMap } from '@/lib/last-account'
 
-interface Account { id: string; name: string; bank: string }
+interface Account { id: string; name: string; bank: string; number_hint: string | null }
 
 interface Props {
   displayName: string | null

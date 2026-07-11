@@ -12,7 +12,11 @@ export default async function ImportPage() {
 
   const [{ data: profile }, { data: accounts }, { data: history }] = await Promise.all([
     supabase.from('users').select('display_name').eq('id', user.id).single(),
-    supabase.from('accounts').select('id, name, bank').eq('user_id', user.id).order('created_at'),
+    supabase
+      .from('accounts')
+      .select('id, name, bank, number_hint')
+      .eq('user_id', user.id)
+      .order('created_at'),
     // Per-category default seed — the slip-confirm form uses this as the
     // fallback after the parsed bank_code match (precedence: parsed >
     // per-category > global > fallback, prompt.md §6).

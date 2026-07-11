@@ -13,6 +13,12 @@ function readOpeningBalance(formData: FormData): number {
   return parseInputToSatang(raw) ?? 0
 }
 
+// M8: optional "เลขท้ายบัญชี" hint — free text, empty means null (not "").
+function readNumberHint(formData: FormData): string | null {
+  const raw = (formData.get('number_hint') as string | null)?.trim()
+  return raw ? raw : null
+}
+
 export async function createAccount(_prev: { error: string }, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -21,12 +27,17 @@ export async function createAccount(_prev: { error: string }, formData: FormData
   const parsed = accountSchema.safeParse({
     name: formData.get('name'),
     bank: formData.get('bank'),
+    number_hint: formData.get('number_hint') || undefined,
   })
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { error } = await supabase
-    .from('accounts')
-    .insert({ user_id: user.id, ...parsed.data, opening_balance_satang: readOpeningBalance(formData) })
+  const { error } = await supabase.from('accounts').insert({
+    user_id: user.id,
+    name: parsed.data.name,
+    bank: parsed.data.bank,
+    opening_balance_satang: readOpeningBalance(formData),
+    number_hint: readNumberHint(formData),
+  })
 
   if (error) return { error: error.message }
 
@@ -44,12 +55,18 @@ export async function updateAccount(_prev: { error: string }, formData: FormData
   const parsed = accountSchema.safeParse({
     name: formData.get('name'),
     bank: formData.get('bank'),
+    number_hint: formData.get('number_hint') || undefined,
   })
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
   const { error } = await supabase
     .from('accounts')
-    .update({ ...parsed.data, opening_balance_satang: readOpeningBalance(formData) })
+    .update({
+      name: parsed.data.name,
+      bank: parsed.data.bank,
+      opening_balance_satang: readOpeningBalance(formData),
+      number_hint: readNumberHint(formData),
+    })
     .eq('id', id)
 
   if (error) return { error: error.message }

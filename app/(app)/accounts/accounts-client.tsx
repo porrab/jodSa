@@ -28,6 +28,7 @@ type Account = {
   bank: string
   balance: number
   opening_balance_satang: number
+  number_hint: string | null
   qr_image_path: string | null
   qrUrl: string | null
 }
@@ -37,7 +38,13 @@ function AccountForm({
   action,
   onSuccess,
 }: {
-  defaultValues?: { name: string; bank: string; id?: string; openingBalanceSatang?: number }
+  defaultValues?: {
+    name: string
+    bank: string
+    id?: string
+    openingBalanceSatang?: number
+    numberHint?: string | null
+  }
   action: typeof createAccount | typeof updateAccount
   onSuccess: () => void
 }) {
@@ -91,6 +98,16 @@ function AccountForm({
           }
         />
         <p className="text-xs text-muted-foreground">{t('openingBalanceHint')}</p>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="number_hint">{t('numberHint')}</Label>
+        <Input
+          id="number_hint"
+          name="number_hint"
+          defaultValue={defaultValues?.numberHint ?? ''}
+          placeholder="4415"
+        />
+        <p className="text-xs text-muted-foreground">{t('numberHintHint')}</p>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
@@ -233,6 +250,7 @@ export default function AccountsClient({
                               name: acct.name,
                               bank: acct.bank,
                               openingBalanceSatang: acct.opening_balance_satang,
+                              numberHint: acct.number_hint,
                             }}
                             action={updateAccount}
                             onSuccess={() => setEditId(null)}
