@@ -5,6 +5,23 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M8] APPROVED (code+unit) — 2026-07-11
+**From**: pm-desk
+**Status**: APPROVED at code+unit altitude. Live 2-user RLS isolation on `slip_account_map` GATED on the user applying migration `0007`; live-RLS confirm + E2E routed to qa-lab (`QA-M8`). NOT fully closed until the live isolation test passes. Durable record: `pm-desk/projects/jodsa/reviews/M8-review.md`.
+
+M8 (Smart Account Mapping) shipped in `273a099`/`2e5bb80`/`1aaf59f`/`7b6873e`/`1917ece`: schema (`accounts.number_hint` + `slip_account_map` table, owner RLS, `unique(user_id,fingerprint)`, cascade FKs, `check(hits>0)`); extractor `extractSenderMask()`/`detectSourceApp()`; precedence learned > number_hint > app-sig > bank > per-category > global > first (user-overridable, "เลือกจากสลิป" hint, learning-loop upsert); เลขท้ายบัญชี field (J4) + th/en. pm-desk re-ran gates independently: `tsc --noEmit` **0**; `vitest run tests/unit` **218 passed / 5 skipped** (the only failing suite is the `slip_account_map` RLS block, which errors on the missing live table — expected). All M8 unit logic green (account-map 16, last-account 21, extract 91). Ruled the best-effort `detectSourceApp` make/kplus/ktbnext ACCEPTABLE: the MAKE-vs-Kbank disambiguation rides on `number_hint`+sender mask (corpus-verified, ranked above app-sig); paotang/ttb are corpus-verified; flagged for qa-lab to extend.
+
+Migration probe (read-only anon GET on live): `slip_account_map` → 404 `PGRST205` (table absent); `accounts.number_hint` → 400 `42703` (column absent); control `accounts.id` → 200 `[]`. **Migration 0007 is NOT applied on live.**
+
+Items (neither is a dev defect — both are user/qa steps):
+- [ ] **(id: M8-USER-1)** [user step, DEPLOY-ORDERING — LIVE PROD BREAK] Apply `db/migrations/0007_smart_account_mapping.sql` to the live Supabase project **promptly**. The build is already deployed to Vercel and 0007 is unapplied, so **account create/edit currently ERRORS on production** (`createAccount`/`updateAccount` write `number_hint` → `42703 column accounts.number_hint does not exist`); a new user cannot create their first account on the live site. The slip confirm/import path degrades gracefully (lookup returns null, record swallows the error) — only the accounts path hard-errors. Fixed = 0007 applied; account create/edit works; the `slip_account_map` RLS suite goes green.
+- [ ] **(id: QA-M8)** [qa-lab] After 0007 is applied: (1) re-run `tests/unit/rls.test.ts` M8 `slip_account_map` block — the 5 tests MUST pass (owner isolation, with-check insert-spoof reject, update exclusion, per-user UNIQUE). (2) E2E: Paotang slip → Paotang account; MAKE slip → make (not Kbank บัตร); correct an account once → next same-fingerprint slip auto-selects the corrected one (learning loop, live DB round-trip); "เลือกจากสลิป" hint shows only when untouched. (3) Optionally verify/extend `detectSourceApp` make/kplus/ktbnext against fuller real captures.
+
+### Dev notes
+No code changes requested — the code+unit deliverables are met. Do NOT apply the migration from a dev session (hard constraint); M8-USER-1 is the user's step. Once 0007 is live and qa-lab confirms QA-M8 green, pm-desk closes M8 and prunes the M8 + resolved SPEC-1 blocks.
+
+---
+
 ## [M7] CLOSED — 2026-07-11
 **From**: pm-desk
 **Status**: CLOSED — M7 APPROVED (code+unit) + qa-lab E2E GREEN on a production build, both independently gate-verified. Resolved blocks (pm-desk code+unit, qa-lab QA-M7, idea-forge SPEC-2) pruned. Durable records: `pm-desk/projects/jodsa/reviews/M7-review.md` · `qa-lab/projects/jodsa/runs/QA-M7-2026-07-11.md` · `project/jodsa/docs/postmortems/M7-D-recurring-never-deducts.md`.
