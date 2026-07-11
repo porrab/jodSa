@@ -1,4 +1,4 @@
-import type { FieldConfidence, ParsedSlip } from './types'
+import type { FieldConfidence, ParsedSlip, SourceApp } from './types'
 
 function normalizeThaiDigits(s: string): string {
   // Also normalise decomposed sara am (U+0E4D U+0E32) → precomposed (U+0E33).
@@ -221,6 +221,72 @@ export function inferBankCode(text: string): FieldConfidence<string> {
   return { value: null, confidence: 0 }
 }
 
+// ─── M8: sender mask + source app (Smart Account Mapping) ────────────────────
+
+// Bank-account mask shape shared by TTB and KBank make/K+ slips: two fully
+// masked groups, then a group mixing mask chars with 3–5 visible digits, then
+// a final single char (a visible digit on TTB/KTB, still masked on K+/make).
+// This is deliberately narrower than the PromptPay-phone mask (`xxx-xxx-NNNN`,
+// 3-char middle group) or the nat-ID mask (`x-xxxx-xxxxN-NN-N`, 5 groups) used
+// for the RECIPIENT on the same slips — see TTB_POSITIONAL/COUNTERPARTY_PATTERNS
+// above — so `.match()` (first occurrence) reliably lands on the SENDER block,
+// which is always printed first (real corpus: KTB "XXX-X-XX441-5", TTB
+// "XXX-X-XX955-1", K+/make "xxx-x-x5357-x").
+const SENDER_MASK_PATTERN = /[xX]{3}[-–][xX][-–][xX]*(\d{3,5})[-–]([xX]|\d)/
+
+/**
+ * Last visible digits of the SENDER's masked account number (M8). The first
+ * account-mask block on a slip is always the sender (see module comment
+ * above) — e.g. TTB "XXX-X-XX441-5" → "441-5"; K+/make "xxx-x-x5357-x" → "5357"
+ * (the trailing group is still masked, so no digit is appended). Combined with
+ * bankCode + sourceApp into the slip_account_map fingerprint (lib/account-map.ts)
+ * and matched against accounts.number_hint to disambiguate same-bank accounts.
+ */
+export function extractSenderMask(text: string): FieldConfidence<string> {
+  const t = normalizeThaiDigits(text)
+  const m = t.match(SENDER_MASK_PATTERN)
+  if (!m) return { value: null, confidence: 0 }
+  const digits = m[1]
+  const last = m[2]
+  const value = /\d/.test(last) ? `${digits}-${last}` : digits
+  return { value, confidence: 0.75 }
+}
+
+// Source-app signatures, most-reliable first. Paotang and ttb are confirmed
+// against real qa-lab OCR corpus strings (see tests/unit/extract.test.ts):
+// the `G-Wallet ID:` anchor (tolerating OCR mangling, same as PAOTANG_SECTION)
+// and a bare "ttb" line printed between the sender's mask and the destination
+// bank name. make/kplus/ktbnext have no literal brand text in the corpus
+// captured so far (the existing fixtures are narrow counterparty-focused
+// excerpts, not full raw OCR) — these three are best-effort literal matches,
+// flagged here for qa-lab to verify/extend against fuller real slip text.
+// Even when these three don't fire, the account-mapping precedence still
+// resolves correctly for same-bank accounts via number_hint + sender mask.
+const SOURCE_APP_PATTERNS: Array<[RegExp, SourceApp]> = [
+  [/G-?Wallet\s*[I!1l][D0]|เป๋าตัง/i, 'paotang'],
+  [/^ttb$/im, 'ttb'],
+  [/Krungthai\s*NEXT|กรุงไทย\s*เน็กซ์/i, 'ktbnext'],
+  [/\bMAKE\b/, 'make'], // case-sensitive: avoid matching incidental lowercase "make"
+  [/\bK\s?\+|K\s?PLUS\b/i, 'kplus'],
+]
+
+/**
+ * Detect the consumer app that produced the slip (M8), when a recognizable
+ * signature is present. Separates wallet/app accounts sharing one bank_code
+ * (e.g. the Paotang wallet vs. a plain KTB bank account) — see module comment
+ * on SOURCE_APP_PATTERNS for which signatures are corpus-verified vs. best-effort.
+ */
+export function detectSourceApp(text: string): FieldConfidence<SourceApp> {
+  const t = normalizeThaiDigits(text)
+  for (const [pattern, app] of SOURCE_APP_PATTERNS) {
+    if (pattern.test(t)) {
+      const confidence = app === 'paotang' || app === 'ttb' ? 0.7 : 0.5
+      return { value: app, confidence }
+    }
+  }
+  return { value: null, confidence: 0 }
+}
+
 // EMVCo QR payloads are a flat sequence of tag(2)+len(2)+value(len) records
 // (BER-TLV style); tag 62 ("Additional Data Field Template") nests another such
 // sequence as its value. Walking this structure from position 0 (rather than
@@ -302,6 +368,8 @@ export function extractFields(
   const datetime = extractDateTime(ocrText)
   const counterparty = extractCounterparty(ocrText)
   const bankCode = inferBankCode(ocrText)
+  const senderMask = extractSenderMask(ocrText)
+  const sourceApp = detectSourceApp(ocrText)
 
   // ref_code precedence: a per-transaction reference from the QR (highest trust),
   // else the transaction number printed on the slip (OCR). The OCR fallback runs
@@ -333,6 +401,8 @@ export function extractFields(
     counterparty,
     refCode,
     bankCode,
+    senderMask,
+    sourceApp,
     suggestedType,
     rawTextDebug: process.env.NODE_ENV === 'development' ? ocrText : undefined,
   }

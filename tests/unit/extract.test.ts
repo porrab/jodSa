@@ -4,6 +4,8 @@ import {
   extractDateTime,
   extractCounterparty,
   inferBankCode,
+  extractSenderMask,
+  detectSourceApp,
   extractRefCodeFromQR,
   extractRefCodeFromText,
   extractFields,
@@ -355,6 +357,107 @@ describe('inferBankCode', () => {
   it('returns TTB when TTB appears at earlier position in header than KBANK destination (M2-8b)', () => {
     const text = 'ธนาคารทหารไทยธนชาต\nโอนเงิน\nไปยัง KBANK xxx-x-xxxxx-x'
     expect(inferBankCode(text).value).toBe('TTB')
+  })
+})
+
+// ─── M8: sender mask + source app (Smart Account Mapping) ───────────────────
+// The owner's real setup — 3 KTB accounts (krungthai/Mrt/Paotang) + 2 KBank
+// (make/Kbank บัตร) — can't be told apart by bank_code alone. These fixtures
+// reuse the SAME real qa-lab OCR strings as the counterparty tests above.
+
+describe('extractSenderMask', () => {
+  it('extracts the sender mask digits from a KTB slip (real OCR, FIELD-2 KTB corpus)', () => {
+    const r = extractSenderMask(
+      'นายธนภูมิ เสนีวงศ์ ญ อ* **\nกรุงไทย\nXXX-X-XX441-5\nไปยัง\nนางปราณี แสงตระการ\nพร้อมเพย์\nX XXXX XXXX5 94 0\nจํานวนเงิน                             55.00 บาท',
+    )
+    expect(r.value).toBe('441-5')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.7)
+  })
+
+  it('extracts the SENDER mask (first block), not the recipient, from a TTB transfer (real OCR)', () => {
+    const r = extractSenderMask(
+      'โอนเงินสําเร็จ\n2 มิ.ย. 69, 20:58 น.\nยะ๒ นาย รนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\n๐  นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX357-1\nKBANK',
+    )
+    expect(r.value).toBe('955-1')
+  })
+
+  it('extracts a K+/make bank-account mask (real OCR) — trailing group still masked, no digit appended', () => {
+    const r = extractSenderMask('ธนภูมิ เสนีวงศ์ ณ อ\nxxx-x-x5357-x\nโชติสิริ บุญเต็ม\nxxx-xxx-1535')
+    expect(r.value).toBe('5357')
+  })
+
+  it('returns null when no bank-account mask is present (Paotang G-Wallet layout, real OCR)', () => {
+    const r = extractSenderMask(
+      'fc)   ธนภูมิ เสน็วงศ์ ณ p***\nG-Wallet ID: **** **%**** 1840\n¥    รานสุก รสเดด\nLE      อาหาร ของหวาน เครื่องดื่ม\nค่าสินค้า/บริการ               65 บาท',
+    )
+    expect(r.value).toBeNull()
+  })
+
+  it('does not mistake the PromptPay-phone or nat-ID recipient mask for a sender mask', () => {
+    // xxx-xxx-NNNN (3-char middle group) is the K+ recipient's phone mask — a
+    // different shape from the xxx-x-xNNNN-x sender mask; must not match.
+    const r = extractSenderMask('โชติสิริ บุญเต็ม\nxxx-xxx-1535')
+    expect(r.value).toBeNull()
+  })
+})
+
+describe('detectSourceApp', () => {
+  it('detects paotang from the G-Wallet ID anchor (real OCR)', () => {
+    const r = detectSourceApp(
+      'fc)   ธนภูมิ เสน็วงศ์ ณ p***\nG-Wallet ID: **** **%**** 1840\n¥    รานสุก รสเดด\nLE      อาหาร ของหวาน เครื่องดื่ม\nค่าสินค้า/บริการ               65 บาท',
+    )
+    expect(r.value).toBe('paotang')
+    expect(r.confidence).toBeGreaterThanOrEqual(0.5)
+  })
+
+  it('detects paotang tolerating the `G-Wallet !0:` OCR variant (real OCR, QA-FIELD-2b corpus)', () => {
+    const r = detectSourceApp(
+      'ธนภูมิ เสน็วงศ์\nG-Wallet !0: **** **** **** 1840\n¥    ปราณี\nLE      บริการ\nค่าสินค้า/บริการ               100 บาท',
+    )
+    expect(r.value).toBe('paotang')
+  })
+
+  it('detects ttb from the bare "ttb" own-line brand mark (real OCR, TTB transfer corpus)', () => {
+    const r = detectSourceApp(
+      'โอนเงินสําเร็จ\n2 มิ.ย. 69, 20:58 น.\nยะ๒ นาย รนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX955-1\nttb\n๐  นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\nXXX-X-XX357-1\nKBANK',
+    )
+    expect(r.value).toBe('ttb')
+  })
+
+  it('returns null on a KTB slip with no recognizable app signature (real OCR)', () => {
+    // Confirms KTB's own 3-account disambiguation (krungthai/Mrt) falls to
+    // number_hint + sender mask, not app signature — there is no real "Krungthai
+    // NEXT" literal in the captured corpus.
+    const r = detectSourceApp(
+      'นายธนภูมิ เสนีวงศ์ ญ อ* **\nกรุงไทย\nXXX-X-XX441-5\nไปยัง\nนางปราณี แสงตระการ\nพร้อมเพย์\nX XXXX XXXX5 94 0\nจํานวนเงิน                             55.00 บาท',
+    )
+    expect(r.value).toBeNull()
+  })
+
+  // make/kplus/ktbnext: no literal brand text has surfaced in the real qa-lab
+  // corpus captured so far (the existing fixtures are narrow counterparty-only
+  // excerpts, not full raw OCR) — these three patterns are best-effort literal
+  // matches. Exercised here with constructed text; flagged for qa-lab to
+  // verify/replace once a fuller real slip capture is available. Even when
+  // these three don't fire, account-mapping precedence still resolves
+  // correctly via number_hint + sender mask (see tests/unit/account-map.test.ts).
+  it('detects make from a best-effort literal "MAKE" brand marker (not corpus-verified)', () => {
+    const r = detectSourceApp('MAKE by KBank\nธนภูมิ เสนีวงศ์ ณ อ\nxxx-x-x5357-x\nโชติสิริ บุญเต็ม\nxxx-xxx-1535')
+    expect(r.value).toBe('make')
+  })
+
+  it('detects kplus from a best-effort literal "K PLUS" brand marker (not corpus-verified)', () => {
+    const r = detectSourceApp('K PLUS\nธนภูมิ เสนีวงศ์ ณ อ\nxxx-x-x5357-x\nนางปราณี แสงตระการ\nxxx-xxx-1535')
+    expect(r.value).toBe('kplus')
+  })
+
+  it('detects ktbnext from a best-effort literal "Krungthai NEXT" brand marker (not corpus-verified)', () => {
+    const r = detectSourceApp('Krungthai NEXT\nกรุงไทย\nXXX-X-XX441-5\nไปยัง\nนางปราณี แสงตระการ')
+    expect(r.value).toBe('ktbnext')
+  })
+
+  it('returns null when nothing matches', () => {
+    expect(detectSourceApp('PromptPay transfer 100.00 บาท').value).toBeNull()
   })
 })
 
