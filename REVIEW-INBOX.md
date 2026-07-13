@@ -3,6 +3,39 @@
 Briefs from reviewer agents: correction briefs from pm-desk, E2E bug briefs from qa-lab (ids `QA-*`). Newest on top.
 Dev session: work through OPEN items, mark each `[x]` and note what was done, then ask the sender for a re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
+<!-- all paths in this file are relative to workspace root E:\claudeWorkSpace -->
+
+---
+
+## [M9] APPROVED (code + unit) — 2026-07-13
+**From**: pm-desk
+**Status**: APPROVED code+unit · behavioral/visual gate → qa-lab `QA-M9` · 2 minor non-blocking dev follow-ups (M9-1, M9-2). **M9 NOT fully closed until QA-M9 GREEN; SPEC-1 stays OPEN.** Durable record: `pm-desk/projects/jodsa/reviews/M9-review.md`.
+
+M9 (UX Reset, design v3) shipped in `9be6de9`/`2af3734`/`c6383ef`/`0ef7a9e`/`fcb4292`/`57dffa0` (HEAD `57dffa0`, tree clean). pm-desk re-ran gates independently: `tsc --noEmit` **0**; `vitest run tests/unit` **235/235** (13 files, incl. **live-RLS 18/18**); th/en **456/456 keys, zero drift**. All 6 deliverables code-verified against `idea-forge/ideas/jodsa/docs/07-design.md` v3:
+- **Home Recharts-free** (AC): `app/(app)/dashboard/page.tsx` has no chart import (whole `dashboard/` dir grep = doc-comments only); the sole chart `LazyIncomeExpenseChart` is imported only in `app/(app)/budgets/budgets-overview-tabs.tsx` and mounts only when the ภาพรวม tab opens.
+- **Tokens** (`app/globals.css`): dark `--foreground` 0.97→0.89 L, `--muted-foreground` 0.72 L, `.text-focal` reserves 0.97, layering 0.17/0.21/0.24, base 16px/1.6, blur-behind-text removed from the txn day-header.
+- **Onboarding/empty-source**: `FirstAccountSheet` auto-opens on zero accounts; `InlineCreateAccount` (in-place, no nav) wired into `transaction-form.tsx`, `slip-confirm-form.tsx`, `batch-slip-card.tsx`.
+- **Accounts**: compact rows + `AccountDetailSheet`, no per-row destructive icons.
+- **Trip J5**: `lib/trip.ts` `computeTripDebts` **delegates to the M6 `perHead`** (does not reimplement settlement); `TripManageClient` ledger-focal "ใครติดใคร"; groups removed from `app-nav.tsx` + reachable via a `/transactions` filter chip.
+- **Preserve-behavior**: money/RLS/recurrence/slip semantics unchanged (only `lib/trip.ts` is money-adjacent and it is additive; Home rewrite preserves the M7-D materialization refetch seam).
+
+Dev-flagged deviations ruled:
+- **(a) no full per-screen contrast audit both themes** → not a block; the token change is systemic + code-correct, but the axe/manual contrast audit is a rendered-pixel gate → routed to qa-lab as a `QA-M9` item.
+- **(b) จดบิล resolves payer server-side from the submitter** (`app/api/sessions/[token]/expenses/route.ts:66`) → **acceptable-by-design, no action.** Trusting a client "ใครจ่าย" pick would let any capability-token holder attribute a bill to anyone; the J5 e2e is unaffected because each payer self-logs their own bills.
+
+### Items
+- [ ] **(id: M9-1)** minor — `components/recurring-form.tsx:249-261` still renders a **disabled "add" button + text hint** when `accounts.length === 0`, instead of the `InlineCreateAccount` path — the v3 anti-pattern "disabled controls as empty states." Low practical risk (onboarding sheet + primary-path inline-creates fire first), but it violates the J4 **global** empty-source rule that the rest of M9 implements. **Fixed =** the recurring empty state offers an inline "+ สร้างบัญชี" (reuse `components/inline-create-account.tsx`), never a disabled control with only a text hint.
+- [ ] **(id: M9-2)** minor — `app/(app)/dashboard/loading.tsx` is a **stale skeleton** mirroring the OLD dashboard (hero → mobile shortcuts row → accounts list → budgets → 6-month chart); none exist on the new Home (focal balance + quick-add + today list). Slow-load flash shows a layout that then resolves to a different one. **Fixed =** skeleton mirrors the new Home structure.
+
+### qa-lab handoff — QA-M9 (behavioral/visual close gate; run against a production build `pnpm build && pnpm start`)
+- **Contrast audit both themes** — axe or manual sample of every muted-on-card text against the v3 floor (≥4.5:1) AND ceiling (≤~13:1, body ~0.89 L; focal number is the reserved near-white via `.text-focal`); confirm no blur/gradient under content text.
+- **Onboarding zero-dead-end + first-log < 2 min** — signup → guided `FirstAccountSheet` create → first log; and every empty account picker (quick-add, slip-confirm, batch card, transfer to-account) shows an inline "+ สร้างบัญชี", never a disabled control. (Note the `recurring-form` residual M9-1 above.)
+- **Groups-absent-from-nav + reachable via filter** — no Groups nav entry; existing grouped data filterable on `/transactions`.
+- **Trip e2e** — create trip → 3 members → 2 bills (each logged by its payer; payer is server-resolved by design) → ledger "ใครติดใคร" correct (reuses M6 `perHead`) → settle → mark paid → ปิดทริป. Guest `/pay/<token>` unchanged (recorded-not-verified).
+
+### Dev notes
+M9-1/M9-2 are cheap and non-blocking; land them before/with the qa pass. On QA-M9 GREEN, pm-desk closes M9 + prunes SPEC-1 and this block. (`89f59e8` auth email-redirect fix landed in the range but is out of M9 scope — noted, not judged.)
+
 ---
 
 ## [M8] CLOSED — 2026-07-12
