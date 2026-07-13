@@ -90,6 +90,8 @@
     "createInline": "+ Add account",
     "onboardingTitle": "Create your first account",
     "onboardingHint": "Add a bank account so you can start logging — name and bank are enough to get going.",
+    "qrManage": "Manage QR",
+    "deleteAction": "Delete account",
     "qrAriaLabel": "Receiving QR",
     "qrTitle": "Receiving QR — {name}",
     "qrHint": "Upload this account's receiving QR so friends can scan it during group pay",

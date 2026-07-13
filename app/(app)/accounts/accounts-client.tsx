@@ -3,15 +3,17 @@
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, QrCode } from 'lucide-react'
+import { Plus, QrCode, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from '@/components/ui/sheet'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -117,7 +119,7 @@ function AccountForm({
   )
 }
 
-function QrDialog({ account, onClose }: { account: Account; onClose: () => void }) {
+function QrManageDialog({ account, onClose }: { account: Account; onClose: () => void }) {
   const t = useTranslations('account')
   const tc = useTranslations('common')
   const [state, formAction, isPending] = useActionState(
@@ -190,6 +192,109 @@ function QrDialog({ account, onClose }: { account: Account; onClose: () => void 
   )
 }
 
+/**
+ * J3-style detail sheet (design v3): row tap opens this instead of always-on
+ * per-row icon actions. แก้ไข/QR live inside; ลบ is destructive, separated
+ * from the primary action, never an inline row icon.
+ */
+function AccountDetailSheet({
+  account,
+  open,
+  onOpenChange,
+}: {
+  account: Account | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const t = useTranslations('account')
+  const [editing, setEditing] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
+
+  function close() {
+    setEditing(false)
+    onOpenChange(false)
+  }
+
+  async function handleDelete() {
+    if (!account) return
+    if (!confirm(t('deleteConfirm'))) return
+    try {
+      await deleteAccount(account.id)
+      toast.success(t('deleted'))
+      close()
+    } catch {
+      toast.error(t('deleteFailed'))
+    }
+  }
+
+  if (!account) return null
+
+  return (
+    <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
+      <SheetContent side="bottom" className="mx-auto max-h-[85vh] max-w-lg overflow-y-auto rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle>{account.name}</SheetTitle>
+        </SheetHeader>
+
+        {editing ? (
+          <div className="px-4 pb-6">
+            <AccountForm
+              defaultValues={{
+                id: account.id,
+                name: account.name,
+                bank: account.bank,
+                openingBalanceSatang: account.opening_balance_satang,
+                numberHint: account.number_hint,
+              }}
+              action={updateAccount}
+              onSuccess={close}
+            />
+          </div>
+        ) : (
+          <div className="space-y-3 px-4 pb-6">
+            <p className={`text-2xl font-bold tabular-nums text-focal ${account.balance < 0 ? 'text-destructive' : ''}`}>
+              {formatTHB(account.balance)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {account.bank}
+              {account.number_hint && ` · ${t('numberHint')} ${account.number_hint}`}
+            </p>
+
+            <div className="rounded-lg border p-3 text-center">
+              {account.qrUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={account.qrUrl} alt={t('qrAlt', { name: account.name })} className="mx-auto max-h-40 rounded-lg" />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('qrEmpty')}</p>
+              )}
+              <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="mt-2">
+                    <QrCode className="mr-1.5 size-3.5" />
+                    {t('qrManage')}
+                  </Button>
+                </DialogTrigger>
+                <QrManageDialog account={account} onClose={() => setQrOpen(false)} />
+              </Dialog>
+            </div>
+
+            <Button className="w-full" onClick={() => setEditing(true)}>
+              {t('edit')}
+            </Button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="block w-full pt-1 text-left text-sm text-destructive hover:underline"
+            >
+              {t('deleteAction')}
+            </button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
 export default function AccountsClient({
   accounts,
 }: {
@@ -197,18 +302,8 @@ export default function AccountsClient({
 }) {
   const t = useTranslations('account')
   const [addOpen, setAddOpen] = useState(false)
-  const [editId, setEditId] = useState<string | null>(null)
-  const [qrId, setQrId] = useState<string | null>(null)
-
-  async function handleDelete(id: string) {
-    if (!confirm(t('deleteConfirm'))) return
-    try {
-      await deleteAccount(id)
-      toast.success(t('deleted'))
-    } catch {
-      toast.error(t('deleteFailed'))
-    }
-  }
+  const [detailId, setDetailId] = useState<string | null>(null)
+  const detailAccount = accounts.find((a) => a.id === detailId) ?? null
 
   return (
     <div className="space-y-4">
@@ -228,60 +323,35 @@ export default function AccountsClient({
           <p className="text-sm mt-1">{t('addFirst')}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {accounts.map((acct) => {
-            return (
-              <Card key={acct.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <span>{acct.name}</span>
-                    <div className="flex gap-1">
-                      <Dialog open={editId === acct.id} onOpenChange={(o) => setEditId(o ? acct.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon-sm">
-                            <Pencil className="size-3.5" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
-                          <AccountForm
-                            defaultValues={{
-                              id: acct.id,
-                              name: acct.name,
-                              bank: acct.bank,
-                              openingBalanceSatang: acct.opening_balance_satang,
-                              numberHint: acct.number_hint,
-                            }}
-                            action={updateAccount}
-                            onSuccess={() => setEditId(null)}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                      <Dialog open={qrId === acct.id} onOpenChange={(o) => setQrId(o ? acct.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon-sm" aria-label={t('qrAriaLabel')}>
-                            <QrCode className={`size-3.5 ${acct.qr_image_path ? 'text-primary' : ''}`} />
-                          </Button>
-                        </DialogTrigger>
-                        <QrDialog account={acct} onClose={() => setQrId(null)} />
-                      </Dialog>
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(acct.id)}>
-                        <Trash2 className="size-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Badge variant="secondary" className="mb-2">{acct.bank}</Badge>
-                  <p className={`text-lg font-semibold tabular-nums ${acct.balance < 0 ? 'text-destructive' : ''}`}>
-                    {formatTHB(acct.balance)}
-                  </p>
-                </CardContent>
-              </Card>
-            )
-          })}
+        // Compact rows (design v3) — replaces the tall per-account cards with
+        // 3 always-visible icon actions. Density budget: single line, amount
+        // right/tabular; tap opens the detail sheet for edit/QR/delete.
+        <div className="divide-y rounded-lg border">
+          {accounts.map((acct) => (
+            <button
+              key={acct.id}
+              type="button"
+              onClick={() => setDetailId(acct.id)}
+              className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{acct.name}</p>
+                <Badge variant="secondary" className="mt-0.5 text-xs">{acct.bank}</Badge>
+              </div>
+              <p className={`shrink-0 text-sm font-semibold tabular-nums ${acct.balance < 0 ? 'text-destructive' : ''}`}>
+                {formatTHB(acct.balance)}
+              </p>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </button>
+          ))}
         </div>
       )}
+
+      <AccountDetailSheet
+        account={detailAccount}
+        open={detailId !== null}
+        onOpenChange={(o) => { if (!o) setDetailId(null) }}
+      />
     </div>
   )
 }
