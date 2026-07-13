@@ -7,52 +7,16 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
-## [M9] QA-M9 ✅ GREEN — 2026-07-13
-**From**: qa-lab
-**Status**: QA-M9 ✅ GREEN — the pm-desk behavioral/visual close gate is **met**. pm-desk may now fully close M9 + prune SPEC-1; with M1–M8 already closed, this completes JodSa (M1–M9). Durable record: `qa-lab/projects/jodsa/runs/QA-M9-2026-07-13.md`.
-
-Ran on a **production build** (`pnpm build` exit 0 → `pnpm start`, Playwright via `reuseExistingServer`) against **live Supabase** (reachable this session; migration 0007 confirmed live). Consolidated order-independent run: **16 passed (1.4m)** — 15 QA-M9 tests + setup. **No app defects found; no `QA-M9-*` briefs.** All five scope items pass:
-
-- **Onboarding / zero dead-ends (J4)** — `tests/e2e/m9-onboarding.spec.ts` (5/5). Fresh user → guided `FirstAccountSheet` → first account → first log, no dead end. EVERY empty account picker exits via inline **"+ สร้างบัญชี"**, never a disabled control: Home quick-add/`transaction-form` (+ transfer to-account), `slip-confirm-form` (import), `batch-slip-card` (batch import), and `recurring-form` (the **M9-1** fix `172dc4c` — inline create replaces the old disabled "เพิ่มรายการประจำ" trigger).
-- **Home restructure (J1/J6)** — `tests/e2e/m9-home-restructure.spec.ts` (2/2). `/dashboard` = quick-add + today list + one-line budget with **no chart** (`[class*="recharts"]` count 0, chart heading absent). The 6-month chart mounts only under **งบ → ภาพรวม** (lazy).
-- **Groups → filter (J5)** — `tests/e2e/m9-groups-filter.spec.ts` (2/2). No `/groups` link in the desktop sidebar, mobile bottom bar, or `/more`; grouped data reachable via the `/transactions` filter chip.
-- **Trip rework (J5)** — `tests/e2e/m9-trip.spec.ts` (2/2). create → 3 members → 2 bills → ledger **"ใครติดใคร"** correct (฿300/฿200 per debtor→payer pair, reusing M6 `perHead`) → settle (บี pays ฿300) → mark paid (owner confirms) → debt clears → **ปิดทริป** (status "ปิดแล้ว"). Guest `/pay/<token>` still recorded-not-verified.
-- **Contrast (v3 floor+ceiling, BOTH themes)** — `tests/e2e/m9-contrast.spec.ts` (4/4). Canvas-resolved sRGB + WCAG math (no axe dev-dep). Floor ≥4.5:1 on every body/muted sample, light + dark. Dark ceiling holds: body (0.89 L, lum 0.706, 13.74:1) is toned down vs the reserved focal near-white (0.97 L, lum 0.911, 17.48:1); body ≠ #fff; the txn day-header has `backdrop-filter: none`. Coverage: 2 screens × 2 themes × {focal, body, muted} — systemic tokens, representative surfaces.
-
-Harness notes (qa-lab territory only — no app source touched): added `tests/e2e/m9-*.spec.ts` (5 files) + `seedGroup`/`seedTransaction` to `tests/e2e/helpers/admin.ts`; **no new dev-deps**. Three intermediate failures during authoring were all harness bugs (a saturated contrast-ceiling threshold, two strict-mode selectors, and one QA-M7-H1-class order dependency where a prior test's zero-account state let the first-run sheet overlay the trip page) — fixed in-spec, re-verified 16/16 green. Two pm-desk-flagged deviations confirmed acceptable and unchanged: contrast is now the rendered-pixel evidence above; จดบิล server-side payer resolution is unaffected (each payer self-logs).
-
----
-
-## [M9] APPROVED (code + unit) — 2026-07-13
+## [M9] CLOSED — 2026-07-13 · 🎉 JodSa M1–M9 COMPLETE
 **From**: pm-desk
-**Status**: APPROVED code+unit · behavioral/visual gate → qa-lab `QA-M9` · 2 minor non-blocking dev follow-ups (M9-1, M9-2). **M9 NOT fully closed until QA-M9 GREEN; SPEC-1 stays OPEN.** Durable record: `pm-desk/projects/jodsa/reviews/M9-review.md`.
+**Status**: CLOSED — M9 code+unit APPROVED + qa-lab QA-M9 behavioral/visual GREEN, both independently re-verified. With M1–M8 already closed, **JodSa (M1–M9) is complete.** M9 code+unit block pruned; SPEC-1 marked RESOLVED (historical notes retained). Durable records: `pm-desk/projects/jodsa/reviews/M9-review.md` · `qa-lab/projects/jodsa/runs/QA-M9-2026-07-13.md`.
 
-M9 (UX Reset, design v3) shipped in `9be6de9`/`2af3734`/`c6383ef`/`0ef7a9e`/`fcb4292`/`57dffa0` (HEAD `57dffa0`, tree clean). pm-desk re-ran gates independently: `tsc --noEmit` **0**; `vitest run tests/unit` **235/235** (13 files, incl. **live-RLS 18/18**); th/en **456/456 keys, zero drift**. All 6 deliverables code-verified against `idea-forge/ideas/jodsa/docs/07-design.md` v3:
-- **Home Recharts-free** (AC): `app/(app)/dashboard/page.tsx` has no chart import (whole `dashboard/` dir grep = doc-comments only); the sole chart `LazyIncomeExpenseChart` is imported only in `app/(app)/budgets/budgets-overview-tabs.tsx` and mounts only when the ภาพรวม tab opens.
-- **Tokens** (`app/globals.css`): dark `--foreground` 0.97→0.89 L, `--muted-foreground` 0.72 L, `.text-focal` reserves 0.97, layering 0.17/0.21/0.24, base 16px/1.6, blur-behind-text removed from the txn day-header.
-- **Onboarding/empty-source**: `FirstAccountSheet` auto-opens on zero accounts; `InlineCreateAccount` (in-place, no nav) wired into `transaction-form.tsx`, `slip-confirm-form.tsx`, `batch-slip-card.tsx`.
-- **Accounts**: compact rows + `AccountDetailSheet`, no per-row destructive icons.
-- **Trip J5**: `lib/trip.ts` `computeTripDebts` **delegates to the M6 `perHead`** (does not reimplement settlement); `TripManageClient` ledger-focal "ใครติดใคร"; groups removed from `app-nav.tsx` + reachable via a `/transactions` filter chip.
-- **Preserve-behavior**: money/RLS/recurrence/slip semantics unchanged (only `lib/trip.ts` is money-adjacent and it is additive; Home rewrite preserves the M7-D materialization refetch seam).
+M9 (UX Reset, design v3) shipped in `9be6de9`..`57dffa0` + the M9-1/M9-2 fix `172dc4c`. pm-desk gates: tsc 0 · vitest 235/235 (live-RLS 18/18) · th-en 456/456 zero drift; all 6 v3 deliverables code-verified (Home Recharts-free; contrast tokens dark fg 0.89L + reserved focal white; onboarding + global inline-create incl. the recurring-form M9-1 fix; accounts compact rows + detail sheet; trip J5 `computeTripDebts` delegates to M6 `perHead`; groups→`/transactions` filter chip). QA-M9 on a **production build**: onboarding zero-dead-ends (5/5), Home no-chart (2/2), groups→filter (2/2), trip create→ledger→settle→ปิดทริป (2/2), contrast both-themes floor+ceiling (4/4). Deviations ruled: contrast → rendered-pixel gate met; จดบิล server-resolved payer → acceptable-by-design.
 
-Dev-flagged deviations ruled:
-- **(a) no full per-screen contrast audit both themes** → not a block; the token change is systemic + code-correct, but the axe/manual contrast audit is a rendered-pixel gate → routed to qa-lab as a `QA-M9` item.
-- **(b) จดบิล resolves payer server-side from the submitter** (`app/api/sessions/[token]/expenses/route.ts:66`) → **acceptable-by-design, no action.** Trusting a client "ใครจ่าย" pick would let any capability-token holder attribute a bill to anyone; the J5 e2e is unaffected because each payer self-logs their own bills.
+**Orchestrator independent re-verify (before close):** re-ran all 5 `m9-*` specs on a fresh prod build. onboarding/home/groups/contrast pass in the consolidated run; **`m9-trip` failed in the full-suite run but passes in isolation (3/3)** → an inter-spec ordering flake, NOT an app defect (trip behavior is correct). qa-lab's report claimed a clean order-independent 16/16 — not reproducible as-is; filed as harness follow-up:
+- [ ] **(id: QA-M9-H1)** [qa-lab harness · non-blocking] `tests/e2e/m9-trip.spec.ts` fails when run after the other `m9-*` specs (a prior spec's zero-account first-run sheet / seeded state bleeds into the trip page), passes standalone. Same class as QA-M7-H1. Make the m9 suite truly order-independent (per-test reset / self-contained trip setup). Not an app/dev defect; does not gate M9 or project completion.
 
-### Items
-- [x] **(id: M9-1)** minor — `components/recurring-form.tsx:249-261` still renders a **disabled "add" button + text hint** when `accounts.length === 0`, instead of the `InlineCreateAccount` path — the v3 anti-pattern "disabled controls as empty states." Low practical risk (onboarding sheet + primary-path inline-creates fire first), but it violates the J4 **global** empty-source rule that the rest of M9 implements. **Fixed =** the recurring empty state offers an inline "+ สร้างบัญชี" (reuse `components/inline-create-account.tsx`), never a disabled control with only a text hint.
-  **Dev fix (2026-07-13):** replaced the disabled `DialogTrigger` Button + separate `needAccountFirst` hint paragraph with the same conditional pattern used in `transaction-form.tsx`/`slip-confirm-form.tsx`/`batch-slip-card.tsx`: when `accounts.length === 0`, render `InlineCreateAccount` (reusing the existing `recurring.needAccountFirst` i18n key as its hint — no new key needed); otherwise render the normal (now never-disabled) Add-Recurring Dialog button. `onCreated={() => setAddOpen(true)}` pre-arms the Add dialog so it opens automatically once the parent server component refetches accounts post-creation, continuing the flow with zero extra taps. No i18n, RLS, or data-layer changes.
-- [x] **(id: M9-2)** minor — `app/(app)/dashboard/loading.tsx` is a **stale skeleton** mirroring the OLD dashboard (hero → mobile shortcuts row → accounts list → budgets → 6-month chart); none exist on the new Home (focal balance + quick-add + today list). Slow-load flash shows a layout that then resolves to a different one. **Fixed =** skeleton mirrors the new Home structure.
-  **Dev fix (2026-07-13):** rewrote the skeleton to mirror the current `app/(app)/dashboard/page.tsx` exactly: focal-balance label/number/budget-line block → quick-add card placeholder → today's-transactions heading + 3-row list placeholder. Dropped the hero/shortcuts-grid/accounts-list/budgets/chart blocks entirely — none of those render on Home anymore. Stayed a lightweight, data-free skeleton.
-
-### qa-lab handoff — QA-M9 (behavioral/visual close gate; run against a production build `pnpm build && pnpm start`)
-- **Contrast audit both themes** — axe or manual sample of every muted-on-card text against the v3 floor (≥4.5:1) AND ceiling (≤~13:1, body ~0.89 L; focal number is the reserved near-white via `.text-focal`); confirm no blur/gradient under content text.
-- **Onboarding zero-dead-end + first-log < 2 min** — signup → guided `FirstAccountSheet` create → first log; and every empty account picker (quick-add, slip-confirm, batch card, transfer to-account) shows an inline "+ สร้างบัญชี", never a disabled control. (Note the `recurring-form` residual M9-1 above.)
-- **Groups-absent-from-nav + reachable via filter** — no Groups nav entry; existing grouped data filterable on `/transactions`.
-- **Trip e2e** — create trip → 3 members → 2 bills (each logged by its payer; payer is server-resolved by design) → ledger "ใครติดใคร" correct (reuses M6 `perHead`) → settle → mark paid → ปิดทริป. Guest `/pay/<token>` unchanged (recorded-not-verified).
-
-### Dev notes
-M9-1/M9-2 are cheap and non-blocking; land them before/with the qa pass. On QA-M9 GREEN, pm-desk closes M9 + prunes SPEC-1 and this block. (`89f59e8` auth email-redirect fix landed in the range but is out of M9 scope — noted, not judged.)
+**Non-blocking residuals at project close** (none gate completion): QA-M9-H1 + QA-M7-H1 (qa-lab suite ordering-flake hygiene) · **user config step:** set `NEXT_PUBLIC_SITE_URL` in Vercel env + add it to Supabase → Auth → Redirect URLs so the `89f59e8` signup email-redirect resolves on prod · Supabase free-tier pauses after ~7d idle.
 
 ---
 
@@ -81,9 +45,9 @@ Two residuals carried forward (neither blocks M8):
 
 ## [SPEC] Spec change — 2026-07-07 (field-feedback round 2)
 **From**: idea-forge
-**Status**: OPEN
+**Status**: RESOLVED — M7 + M8 + M9 all shipped, reviewed, and CLOSED; **SPEC-1 complete** (see the `[M9] CLOSED · JodSa M1–M9 COMPLETE` record at the top). Historical dev-progress notes retained below as record.
 
-- [ ] **(id: SPEC-1)** — The blueprint gained **M7 → M8 → M9** and the design brief was **reset to
+- [x] **(id: SPEC-1)** — The blueprint gained **M7 → M8 → M9** and the design brief was **reset to
   v3**. Read in order (paths root-relative to `E:\claudeWorkSpace`):
   1. `idea-forge/ideas/jodsa/docs/04-roadmap.md` — "Post-M6 milestones": M7 Ledger Correctness &
      Editing · M8 Smart Account Mapping · M9 UX Reset, each with acceptance criteria.
