@@ -24,6 +24,7 @@ import {
 import { WEEKDAYS } from '@/lib/validators/recurring'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { formatTHB } from '@/lib/money'
+import InlineCreateAccount from '@/components/inline-create-account'
 
 type Account = { id: string; name: string; bank: string }
 
@@ -244,20 +245,23 @@ export default function RecurringClient({
 
   return (
     <div className="space-y-4">
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
-          <Button disabled={accounts.length === 0}>
-            <Plus className="size-4 mr-2" />{t('add')}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
-          <RuleForm accounts={accounts} action={createRecurringRule} onSuccess={() => setAddOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
-      {accounts.length === 0 && (
-        <p className="text-sm text-muted-foreground">{t('needAccountFirst')}</p>
+      {/* Account — global empty-source rule (design v3, J4): an empty list
+          renders an inline "+ สร้าง…" create action, never a disabled control
+          with only a text hint. */}
+      {accounts.length === 0 ? (
+        <InlineCreateAccount hint={t('needAccountFirst')} onCreated={() => setAddOpen(true)} />
+      ) : (
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="size-4 mr-2" />{t('add')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
+            <RuleForm accounts={accounts} action={createRecurringRule} onSuccess={() => setAddOpen(false)} />
+          </DialogContent>
+        </Dialog>
       )}
 
       {rules.length === 0 ? (
