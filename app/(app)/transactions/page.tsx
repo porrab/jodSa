@@ -38,7 +38,14 @@ export default async function TransactionsPage() {
   // It runs concurrently with the list reads; when it inserted rows the reads
   // re-run so the list includes the new occurrences.
   const { from, to } = currentMonthRange()
-  const [mat, first] = await Promise.all([materializeOccurrences(from, to), fetchData()])
+  const [mat, first, { data: groups }] = await Promise.all([
+    materializeOccurrences(from, to),
+    fetchData(),
+    // Groups (M3) left the nav in the design v3 reset (J5 — one "ทริป" concept
+    // instead of two overlapping ones); existing grouped data stays reachable
+    // here as a filter chip instead.
+    supabase.from('groups').select('id, title').order('title'),
+  ])
   const [{ data: transactions }, { data: accounts }, { data: history }] = mat.inserted
     ? await fetchData(true)
     : first
@@ -52,6 +59,7 @@ export default async function TransactionsPage() {
       <TransactionsClient
         transactions={transactions ?? []}
         accounts={accounts ?? []}
+        groups={groups ?? []}
         lastByCategory={lastByCategory}
         globalLastAccountId={globalLastAccountId}
       />

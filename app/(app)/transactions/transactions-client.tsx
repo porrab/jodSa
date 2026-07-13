@@ -27,14 +27,18 @@ const TYPE_STYLE: Record<string, { key: string; badgeCls: string; textCls: strin
   transfer: { key: 'transfer', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer', prefix: '' },
 }
 
+type Group = { id: string; title: string }
+
 export default function TransactionsClient({
   transactions,
   accounts,
+  groups = [],
   lastByCategory,
   globalLastAccountId,
 }: {
   transactions: Transaction[]
   accounts: Account[]
+  groups?: Group[]
   lastByCategory: LastAccountMap
   globalLastAccountId: string | null
 }) {
@@ -43,7 +47,13 @@ export default function TransactionsClient({
   const dateLocale = locale === 'th' ? th : enUS
   const [addOpen, setAddOpen] = useState(false)
   const [detailTx, setDetailTx] = useState<Transaction | null>(null)
+  // M3 "groups" left the nav in the design v3 reset (J5) — existing grouped
+  // data stays reachable as a filter chip here instead of its own nav item.
+  const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
+  const filteredTransactions = activeGroup
+    ? transactions.filter((tx) => tx.group_id === activeGroup)
+    : transactions
 
   // Bangkok calendar-day key (YYYY-MM-DD) — groups the list by the day the money
   // actually moved, not the viewer's UTC day.
@@ -60,12 +70,12 @@ export default function TransactionsClient({
 
   // Transactions arrive already sorted datetime-desc, so walking them keeps each
   // day's rows contiguous — collect them into ordered day groups.
-  const groups: { key: string; label: string; items: Transaction[] }[] = []
-  for (const tx of transactions) {
+  const dayGroups: { key: string; label: string; items: Transaction[] }[] = []
+  for (const tx of filteredTransactions) {
     const key = bangkokDayKey(tx.datetime)
-    const last = groups[groups.length - 1]
+    const last = dayGroups[dayGroups.length - 1]
     if (last && last.key === key) last.items.push(tx)
-    else groups.push({ key, label: dayLabel(key, tx.datetime), items: [tx] })
+    else dayGroups.push({ key, label: dayLabel(key, tx.datetime), items: [tx] })
   }
 
   return (
@@ -85,7 +95,35 @@ export default function TransactionsClient({
         </DialogContent>
       </Dialog>
 
-      {transactions.length === 0 ? (
+      {groups.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveGroup(null)}
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              activeGroup === null ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {t('filterAll')}
+          </button>
+          {groups.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setActiveGroup(g.id)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                activeGroup === g.id ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {g.title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filteredTransactions.length === 0 ? (
         <div className="rounded-xl border border-dashed p-10 text-center text-muted-foreground">
           <Mascot expr="sleepy" className="mx-auto mb-3 h-20 w-20 opacity-80" />
           <p>{t('noTransactions')}</p>
@@ -93,7 +131,7 @@ export default function TransactionsClient({
         </div>
       ) : (
         <div className="space-y-4">
-          {groups.map((group) => (
+          {dayGroups.map((group) => (
             <div key={group.key}>
               {/* Day header — sticks under the top bar while its rows scroll.
                   Flat bg (no blur-behind-text — design v3 anti-pattern). */}

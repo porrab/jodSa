@@ -6,7 +6,7 @@
     "budgets": "งบ",
     "recurring": "รายการประจำ",
     "groups": "กลุ่ม/ทริป",
-    "sessions": "จ่ายกลุ่ม",
+    "sessions": "ทริป",
     "accounts": "บัญชี",
     "settings": "ตั้งค่า",
     "more": "เพิ่มเติม",
@@ -73,7 +73,8 @@
     "deleteAction": "ลบรายการ",
     "refCode": "อ้างอิงสลิป: {code}",
     "noAccountsInlineHint": "ยังไม่มีบัญชี — สร้างบัญชีก่อนเริ่มบันทึกรายการ",
-    "transferNeedsSecondAccount": "ต้องมีอย่างน้อย 2 บัญชีเพื่อโอนเงินระหว่างกัน"
+    "transferNeedsSecondAccount": "ต้องมีอย่างน้อย 2 บัญชีเพื่อโอนเงินระหว่างกัน",
+    "filterAll": "ทั้งหมด"
   },
   "account": {
     "title": "บัญชี",
@@ -227,7 +228,7 @@
     "removedFromGroup": "นำออกจากกลุ่มแล้ว"
   },
   "session": {
-    "title": "จ่ายกลุ่ม",
+    "title": "ทริป",
     "subtitle": "สร้างลิงก์ให้เพื่อนสแกน QR จ่ายเงิน แล้วบันทึกสลิปเข้ามาเอง — ยอดที่บันทึกมาจากสลิปของเพื่อน ไม่ได้ตรวจสอบกับธนาคาร",
     "targetInvalid": "จำนวนเงินเป้าหมายไม่ถูกต้อง",
     "noQrPrefix": "ยังไม่มีบัญชีที่มี QR รับเงิน —",
@@ -305,6 +306,10 @@
     "notFound": "ไม่พบทริปนี้",
     "notFoundHint": "ลิงก์อาจไม่ถูกต้อง หรือเจ้าของปิดทริปแล้ว",
     "members": "สมาชิก {count} คน",
+    "debtsHeading": "ใครติดใคร",
+    "debtLine": "{from} ติด {to}",
+    "closeTrip": "ปิดทริป",
+    "reopenTrip": "เปิดทริปอีกครั้ง",
     "joinTitle": "เข้าร่วมทริป",
     "joinHint": "ตั้งชื่อเล่นของคุณเพื่อเข้าร่วมและเริ่มหารกัน",
     "nickname": "ชื่อเล่น",
@@ -319,8 +324,8 @@
     "summaryOwed": "รอรับคืน {amount}",
     "allSettled": "จ่ายครบแล้ว 🎉",
     "ledgerTitle": "รายการในทริป",
-    "addExpense": "เพิ่มรายการที่จ่าย",
-    "addExpenseTitle": "เพิ่มรายการที่คุณจ่ายไปก่อน",
+    "addExpense": "จดบิล",
+    "addExpenseTitle": "จดบิลที่คุณจ่ายไปก่อน",
     "expenseName": "ชื่อรายการ",
     "expenseNamePlaceholder": "เช่น ค่าอาหาร",
     "total": "ยอดที่จ่ายไป (บาท)",

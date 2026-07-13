@@ -12,10 +12,12 @@ import { Badge } from '@/components/ui/badge'
 import ShareLink from '@/components/share-link'
 import TripClient from '@/app/pay/[token]/trip-client'
 import { setSessionStatus, deleteSession, addTripExpenseAsOwner } from '@/app/actions/sessions'
-import type {
-  Participant as TripParticipant,
-  Expense as TripExpense,
-  Slip as TripSlip,
+import { formatTHB } from '@/lib/money'
+import {
+  computeTripDebts,
+  type Participant as TripParticipant,
+  type Expense as TripExpense,
+  type Slip as TripSlip,
 } from '@/lib/trip'
 
 type Ledger = {
@@ -38,16 +40,22 @@ export default function TripManageClient({
   accountsWithQr: { id: string; name: string; bank: string }[]
 }) {
   const t = useTranslations('session')
+  const tt = useTranslations('trip')
   const tc = useTranslations('common')
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const payPath = `/pay/${session.id}`
 
+  // J5 — the trip home's focal element: "ใครติดใคร เท่าไหร่", reusing the M6
+  // settlement math (computeTripDebts wraps perHead — see lib/trip.ts).
+  const nicknameOf = (id: string) => ledger.participants.find((p) => p.id === id)?.nickname ?? '—'
+  const debts = computeTripDebts(ledger.participants, ledger.expenses, ledger.slips)
+
   async function toggleStatus() {
     setBusy(true)
     try {
       await setSessionStatus(session.id, session.status === 'open' ? 'closed' : 'open')
-      toast.success(session.status === 'open' ? t('closedToast') : t('reopenedToast'))
+      toast.success(session.status === 'open' ? tt('closeTrip') : tt('reopenTrip'))
     } catch {
       toast.error(t('statusFailed'))
     } finally {
@@ -74,6 +82,7 @@ export default function TripManageClient({
             <ArrowLeft className="size-3.5" /> {t('title')}
           </Link>
           <h1 className="truncate text-2xl font-bold">{session.title}</h1>
+          <p className="text-sm text-muted-foreground">{tt('members', { count: ledger.participants.length })}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <Badge variant="outline">{t('tripBadge')}</Badge>
@@ -83,6 +92,28 @@ export default function TripManageClient({
         </div>
       </div>
 
+      {/* J5 — trip home is ledger-focal: "ใครติดใคร เท่าไหร่" front and center,
+          not the expense list. One accent (the amount), flat surface. */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{tt('debtsHeading')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {debts.length === 0 ? (
+            <p className="text-sm font-medium text-income">{tt('allSettled')}</p>
+          ) : (
+            <div className="space-y-2">
+              {debts.map((d) => (
+                <div key={`${d.fromId}>${d.toId}`} className="flex items-center justify-between text-sm">
+                  <span>{tt('debtLine', { from: nicknameOf(d.fromId), to: nicknameOf(d.toId) })}</span>
+                  <span className="font-semibold tabular-nums text-expense">{formatTHB(d.amountSatang)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">{t('friendLink')}</CardTitle>
@@ -91,8 +122,8 @@ export default function TripManageClient({
           <ShareLink path={payPath} title={session.title} />
           <Button variant="outline" size="sm" onClick={toggleStatus} disabled={busy}>
             {session.status === 'open'
-              ? <><Lock className="size-3.5 mr-1.5" />{t('close')}</>
-              : <><LockOpen className="size-3.5 mr-1.5" />{t('reopen')}</>}
+              ? <><Lock className="size-3.5 mr-1.5" />{tt('closeTrip')}</>
+              : <><LockOpen className="size-3.5 mr-1.5" />{tt('reopenTrip')}</>}
           </Button>
         </CardContent>
       </Card>

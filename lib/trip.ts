@@ -61,3 +61,41 @@ export function computeTripLedger(
 
   return summary
 }
+
+export type TripDebt = { fromId: string; toId: string; amountSatang: number }
+
+/**
+ * J5 — "ใครติดใคร เท่าไหร่": the trip home's focal element. Reuses the same
+ * per-head math as `computeTripLedger` (perHead), just re-aggregated per
+ * debtor→payer pair instead of per participant, so it can render directly as
+ * "บอส → ธนภูมิ ฿420" lines. Only the remaining (unpaid-toward-that-expense)
+ * amount counts; fully-settled pairs are omitted. Sorted largest first.
+ */
+export function computeTripDebts(
+  participants: Participant[],
+  expenses: Expense[],
+  slips: Slip[],
+): TripDebt[] {
+  const debts = new Map<string, number>() // key: `${fromId}>${toId}`
+
+  for (const e of expenses) {
+    const share = perHead(e)
+    for (const p of participants) {
+      if (p.id === e.payer_participant_id) continue
+      const paidTowardThis = slips
+        .filter((s) => s.confirmed && s.expense_id === e.id && s.payer_participant_id === p.id)
+        .reduce((sum, s) => sum + s.amount_satang, 0)
+      const remaining = Math.max(0, share - paidTowardThis)
+      if (remaining <= 0) continue
+      const key = `${p.id}>${e.payer_participant_id}`
+      debts.set(key, (debts.get(key) ?? 0) + remaining)
+    }
+  }
+
+  return [...debts.entries()]
+    .map(([key, amountSatang]) => {
+      const [fromId, toId] = key.split('>')
+      return { fromId, toId, amountSatang }
+    })
+    .sort((a, b) => b.amountSatang - a.amountSatang)
+}

@@ -6,7 +6,7 @@
     "budgets": "Budgets",
     "recurring": "Recurring",
     "groups": "Groups/Trips",
-    "sessions": "Group Pay",
+    "sessions": "Trip",
     "accounts": "Accounts",
     "settings": "Settings",
     "more": "More",
@@ -73,7 +73,8 @@
     "deleteAction": "Delete transaction",
     "refCode": "Slip reference: {code}",
     "noAccountsInlineHint": "No accounts yet — add one to start logging",
-    "transferNeedsSecondAccount": "You need a second account to transfer between"
+    "transferNeedsSecondAccount": "You need a second account to transfer between",
+    "filterAll": "All"
   },
   "account": {
     "title": "Accounts",
@@ -227,7 +228,7 @@
     "removedFromGroup": "Removed from group"
   },
   "session": {
-    "title": "Group Pay",
+    "title": "Trips",
     "subtitle": "Create a link for friends to scan your QR, pay, and submit their slips — recorded amounts come from your friends' slips and are not bank-verified",
     "targetInvalid": "Invalid target amount",
     "noQrPrefix": "No account has a receiving QR yet —",
@@ -305,6 +306,10 @@
     "notFound": "Trip not found",
     "notFoundHint": "The link may be wrong, or the owner closed the trip",
     "members": "{count} members",
+    "debtsHeading": "Who owes whom",
+    "debtLine": "{from} owes {to}",
+    "closeTrip": "Close trip",
+    "reopenTrip": "Reopen trip",
     "joinTitle": "Join the trip",
     "joinHint": "Add your nickname to join and start splitting",
     "nickname": "Nickname",
@@ -319,8 +324,8 @@
     "summaryOwed": "You're owed {amount} back",
     "allSettled": "All settled 🎉",
     "ledgerTitle": "Trip expenses",
-    "addExpense": "Add an expense",
-    "addExpenseTitle": "Add what you paid for",
+    "addExpense": "Log a bill",
+    "addExpenseTitle": "Log what you paid for",
     "expenseName": "What was it",
     "expenseNamePlaceholder": "e.g. Food",
     "total": "Amount you paid (THB)",

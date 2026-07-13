@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest'
 import {
   perHead,
   computeTripLedger,
+  computeTripDebts,
   type Participant,
   type Expense,
   type Slip,
@@ -134,5 +135,78 @@ describe('computeTripLedger — slips', () => {
       slip({ id: 's2', payer_participant_id: B.id, amount_satang: 20000, confirmed: true }),
     ])
     expect(ledger.get(B.id)!.paid).toBe(30000)
+  })
+})
+
+// J5 (design v3) — "ใครติดใคร เท่าไหร่" is the trip home's focal element.
+// computeTripDebts reuses perHead (the same M6 settlement math) and just
+// re-aggregates it per debtor→payer pair for direct "X → Y ฿amount" display.
+describe('computeTripDebts', () => {
+  const oneExpense = [expense({ total_amount_satang: 90000, split_among: 3 })] // A paid, 30000 each
+
+  it('lists each non-payer owing the payer their share', () => {
+    const debts = computeTripDebts(TRIO, oneExpense, [])
+    expect(debts).toEqual(
+      expect.arrayContaining([
+        { fromId: B.id, toId: A.id, amountSatang: 30000 },
+        { fromId: C.id, toId: A.id, amountSatang: 30000 },
+      ]),
+    )
+    expect(debts).toHaveLength(2)
+  })
+
+  it('sorts largest debt first', () => {
+    const debts = computeTripDebts(
+      TRIO,
+      [
+        expense({ id: 'e1', payer_participant_id: A.id, total_amount_satang: 90000, split_among: 3 }),
+        expense({ id: 'e2', payer_participant_id: B.id, total_amount_satang: 300000, split_among: 3 }),
+      ],
+      [],
+    )
+    // A: paid e1 (owed 60000 total from B+C); B: paid e2 (owed 200000 from A+C, but
+    // also owes A 30000 from e1) — pairs stay separate (no cross-payer netting).
+    expect(debts[0]).toEqual({ fromId: A.id, toId: B.id, amountSatang: 100000 })
+  })
+
+  it('reduces a debt by confirmed slips paid toward that specific expense', () => {
+    const debts = computeTripDebts(TRIO, oneExpense, [
+      slip({ id: 's1', payer_participant_id: B.id, amount_satang: 30000, confirmed: true }),
+    ])
+    expect(debts).toEqual([{ fromId: C.id, toId: A.id, amountSatang: 30000 }])
+  })
+
+  it('ignores unconfirmed slips (still owed in full)', () => {
+    const debts = computeTripDebts(TRIO, oneExpense, [
+      slip({ id: 's1', payer_participant_id: B.id, amount_satang: 30000, confirmed: false }),
+    ])
+    expect(debts).toEqual(
+      expect.arrayContaining([{ fromId: B.id, toId: A.id, amountSatang: 30000 }]),
+    )
+  })
+
+  it('omits a fully-settled pair entirely', () => {
+    const debts = computeTripDebts(TRIO, oneExpense, [
+      slip({ id: 's1', payer_participant_id: B.id, amount_satang: 30000, confirmed: true }),
+      slip({ id: 's2', payer_participant_id: C.id, amount_satang: 30000, confirmed: true }),
+    ])
+    expect(debts).toEqual([])
+  })
+
+  it('accumulates the same debtor→payer pair across multiple expenses', () => {
+    const debts = computeTripDebts(
+      TRIO,
+      [
+        expense({ id: 'e1', payer_participant_id: A.id, total_amount_satang: 90000, split_among: 3 }),
+        expense({ id: 'e2', payer_participant_id: A.id, total_amount_satang: 60000, split_among: 3 }),
+      ],
+      [],
+    )
+    expect(debts).toEqual(
+      expect.arrayContaining([
+        { fromId: B.id, toId: A.id, amountSatang: 50000 },
+        { fromId: C.id, toId: A.id, amountSatang: 50000 },
+      ]),
+    )
   })
 })

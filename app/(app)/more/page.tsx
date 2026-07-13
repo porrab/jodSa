@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { CreditCard, HandCoins, Repeat, Settings, Upload, Users } from 'lucide-react'
+import { CreditCard, HandCoins, Repeat, Settings, Upload } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
+// "Groups" (M3) left the nav in the design v3 reset (J5) — one concept
+// "ทริป" now, existing grouped data reachable via the /transactions filter.
 const items = [
   { href: '/import',    key: 'import',    icon: Upload },
   { href: '/accounts',  key: 'accounts',  icon: CreditCard },
   { href: '/recurring', key: 'recurring', icon: Repeat },
-  { href: '/groups',    key: 'groups',    icon: Users },
   { href: '/sessions',  key: 'sessions',  icon: HandCoins },
   { href: '/settings',  key: 'settings',  icon: Settings },
 ] as const

@@ -11,7 +11,6 @@ import {
   PiggyBank,
   Plus,
   Repeat,
-  Users,
   HandCoins,
   MoreHorizontal,
   Settings,
@@ -23,13 +22,15 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { openQuickAdd } from '@/lib/quick-add'
 
+// "Groups" (M3) left the nav in the design v3 reset (J5) — it's one overlapping
+// mental model with trip sessions; existing grouped data stays reachable via a
+// filter chip on /transactions instead of its own nav entry.
 const navItems = [
   { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
   { href: '/transactions', key: 'transactions', icon: ArrowLeftRight },
   { href: '/import', key: 'import', icon: Upload },
   { href: '/budgets', key: 'budgets', icon: PiggyBank },
   { href: '/recurring', key: 'recurring', icon: Repeat },
-  { href: '/groups', key: 'groups', icon: Users },
   { href: '/sessions', key: 'sessions', icon: HandCoins },
   { href: '/accounts', key: 'accounts', icon: CreditCard },
   { href: '/settings', key: 'settings', icon: Settings },
