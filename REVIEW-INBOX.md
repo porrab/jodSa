@@ -7,6 +7,22 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [M9] QA-M9 ✅ GREEN — 2026-07-13
+**From**: qa-lab
+**Status**: QA-M9 ✅ GREEN — the pm-desk behavioral/visual close gate is **met**. pm-desk may now fully close M9 + prune SPEC-1; with M1–M8 already closed, this completes JodSa (M1–M9). Durable record: `qa-lab/projects/jodsa/runs/QA-M9-2026-07-13.md`.
+
+Ran on a **production build** (`pnpm build` exit 0 → `pnpm start`, Playwright via `reuseExistingServer`) against **live Supabase** (reachable this session; migration 0007 confirmed live). Consolidated order-independent run: **16 passed (1.4m)** — 15 QA-M9 tests + setup. **No app defects found; no `QA-M9-*` briefs.** All five scope items pass:
+
+- **Onboarding / zero dead-ends (J4)** — `tests/e2e/m9-onboarding.spec.ts` (5/5). Fresh user → guided `FirstAccountSheet` → first account → first log, no dead end. EVERY empty account picker exits via inline **"+ สร้างบัญชี"**, never a disabled control: Home quick-add/`transaction-form` (+ transfer to-account), `slip-confirm-form` (import), `batch-slip-card` (batch import), and `recurring-form` (the **M9-1** fix `172dc4c` — inline create replaces the old disabled "เพิ่มรายการประจำ" trigger).
+- **Home restructure (J1/J6)** — `tests/e2e/m9-home-restructure.spec.ts` (2/2). `/dashboard` = quick-add + today list + one-line budget with **no chart** (`[class*="recharts"]` count 0, chart heading absent). The 6-month chart mounts only under **งบ → ภาพรวม** (lazy).
+- **Groups → filter (J5)** — `tests/e2e/m9-groups-filter.spec.ts` (2/2). No `/groups` link in the desktop sidebar, mobile bottom bar, or `/more`; grouped data reachable via the `/transactions` filter chip.
+- **Trip rework (J5)** — `tests/e2e/m9-trip.spec.ts` (2/2). create → 3 members → 2 bills → ledger **"ใครติดใคร"** correct (฿300/฿200 per debtor→payer pair, reusing M6 `perHead`) → settle (บี pays ฿300) → mark paid (owner confirms) → debt clears → **ปิดทริป** (status "ปิดแล้ว"). Guest `/pay/<token>` still recorded-not-verified.
+- **Contrast (v3 floor+ceiling, BOTH themes)** — `tests/e2e/m9-contrast.spec.ts` (4/4). Canvas-resolved sRGB + WCAG math (no axe dev-dep). Floor ≥4.5:1 on every body/muted sample, light + dark. Dark ceiling holds: body (0.89 L, lum 0.706, 13.74:1) is toned down vs the reserved focal near-white (0.97 L, lum 0.911, 17.48:1); body ≠ #fff; the txn day-header has `backdrop-filter: none`. Coverage: 2 screens × 2 themes × {focal, body, muted} — systemic tokens, representative surfaces.
+
+Harness notes (qa-lab territory only — no app source touched): added `tests/e2e/m9-*.spec.ts` (5 files) + `seedGroup`/`seedTransaction` to `tests/e2e/helpers/admin.ts`; **no new dev-deps**. Three intermediate failures during authoring were all harness bugs (a saturated contrast-ceiling threshold, two strict-mode selectors, and one QA-M7-H1-class order dependency where a prior test's zero-account state let the first-run sheet overlay the trip page) — fixed in-spec, re-verified 16/16 green. Two pm-desk-flagged deviations confirmed acceptable and unchanged: contrast is now the rendered-pixel evidence above; จดบิล server-side payer resolution is unaffected (each payer self-logs).
+
+---
+
 ## [M9] APPROVED (code + unit) — 2026-07-13
 **From**: pm-desk
 **Status**: APPROVED code+unit · behavioral/visual gate → qa-lab `QA-M9` · 2 minor non-blocking dev follow-ups (M9-1, M9-2). **M9 NOT fully closed until QA-M9 GREEN; SPEC-1 stays OPEN.** Durable record: `pm-desk/projects/jodsa/reviews/M9-review.md`.

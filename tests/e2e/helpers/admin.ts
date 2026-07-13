@@ -127,3 +127,54 @@ export async function seedBudget(
   if (error) throw new Error(`seedBudget failed: ${error.message}`)
   return data.id
 }
+
+/**
+ * Seed a group directly (M3 group-creation UX is covered by M3-S2). Used by the
+ * QA-M9 groups→filter spec: with "groups" gone from the nav (design v3 J5),
+ * existing grouped data must stay reachable via the /transactions filter chip —
+ * this seeds the group whose chip is under test.
+ */
+export async function seedGroup(userId: string, title: string): Promise<string> {
+  const { data, error } = await adminClient()
+    .from('groups')
+    .insert({ user_id: userId, title })
+    .select('id')
+    .single()
+  if (error) throw new Error(`seedGroup failed: ${error.message}`)
+  return data.id
+}
+
+/**
+ * Seed a transaction directly (manual-logging UX is covered by M1 specs). Used by
+ * QA-M9 for rendered-state assertions (the Home budget one-liner, the group filter
+ * chip) where the transaction is context, not the thing under test.
+ */
+export async function seedTransaction(
+  userId: string,
+  accountId: string,
+  opts: {
+    type?: 'income' | 'expense' | 'transfer'
+    amountSatang: number
+    datetime?: string
+    category?: string | null
+    counterparty?: string | null
+    groupId?: string | null
+  },
+): Promise<string> {
+  const { data, error } = await adminClient()
+    .from('transactions')
+    .insert({
+      user_id: userId,
+      account_id: accountId,
+      type: opts.type ?? 'expense',
+      amount_satang: opts.amountSatang,
+      datetime: opts.datetime ?? new Date().toISOString(),
+      category: opts.category ?? null,
+      counterparty: opts.counterparty ?? null,
+      group_id: opts.groupId ?? null,
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(`seedTransaction failed: ${error.message}`)
+  return data.id
+}
