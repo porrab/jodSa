@@ -105,6 +105,8 @@
   "budget": {
     "title": "งบประมาณ",
     "subtitle": "ยอดใช้จริงเทียบกับงบ (เฉพาะรายจ่าย)",
+    "tabBudgets": "งบประมาณ",
+    "tabOverview": "ภาพรวม",
     "period": "รอบ",
     "periodMonth": "รายเดือน",
     "periodDay": "รายวัน",
@@ -183,7 +185,11 @@
     "viewAll": "ดูทั้งหมด",
     "chart6m": "รายรับ/รายจ่าย 6 เดือนล่าสุด",
     "chartIncome": "รายรับ",
-    "chartExpense": "รายจ่าย"
+    "chartExpense": "รายจ่าย",
+    "monthExpenseLine": "เดือนนี้ใช้ไป {amount}",
+    "budgetRemainingLine": "งบเหลือ {amount}",
+    "todayTransactions": "รายการวันนี้ ({count})",
+    "noTransactionsToday": "ยังไม่มีรายการวันนี้"
   },
   "group": {
     "title": "กลุ่ม / ทริป",

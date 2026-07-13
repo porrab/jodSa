@@ -1,93 +1,68 @@
 import { getTranslations } from 'next-intl/server'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
+import { buildLastAccountMap } from '@/lib/last-account'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import { formatTHB } from '@/lib/money'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import BudgetBar from '@/components/budget-bar'
 import QuickAddCard from '@/components/quick-add-card'
-import DashboardShortcuts from '@/components/dashboard-shortcuts'
-import { Mascot } from '@/components/mascot'
-import { HeroBalance } from '@/components/hero-balance'
-import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
-import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
-import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import HomeTodayList from '@/components/home-today-list'
 
+/**
+ * Home — J1 "one glance + one action" (design v3, replaces the old
+ * dashboard-as-home). No chart, no gradient hero, no mascot block, no
+ * account list, no shortcuts grid: quick-add + today's transactions only.
+ * Budget status is a single plain-text line linking to งบ (charts + full
+ * budget bars live there now, per J6). Keeping this route Recharts-free is
+ * itself an M9 acceptance criterion — do not import the chart components here.
+ */
 export default async function DashboardPage() {
   const t = await getTranslations('dashboard')
   const supabase = await createClient()
 
   const now = new Date()
-  const monthStartDate = startOfMonth(now)
-  const monthEnd = endOfMonth(now).toISOString()
+  const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+  const todayStart = `${todayStr}T00:00:00+07:00`
+  const todayEnd = `${todayStr}T23:59:59.999+07:00`
+  const month = todayStr.slice(0, 7)
+  const monthStart = `${month}-01T00:00:00+07:00`
 
-  const chartStart = startOfMonth(subMonths(now, 5))
-
-  const tPage = performance.now()
-
-  // Balances come from the account_balances RPC (a Postgres aggregate honoring
-  // transfer in/out + opening balance) so cost stays flat as history grows.
-  // One 6-month income/expense window serves both the chart and this month's
-  // totals/budget math (transfers are excluded from all of those anyway).
   // The refetch pass must attach an AbortSignal: Next memoizes identical GET
-  // fetches within one render, so without it the re-run would be handed the
-  // pre-insert response instead of hitting Supabase again.
-  const fetchTxData = (fresh = false) => {
-    const sixMo = supabase
+  // fetches within one render, so without it a re-run after materialization
+  // would be handed the pre-insert response instead of hitting Supabase again.
+  const fetchData = (fresh = false) => {
+    const today = supabase
       .from('transactions')
-      .select('type, amount_satang, category, datetime')
+      .select('*')
+      .gte('datetime', todayStart)
+      .lte('datetime', todayEnd)
+      .order('datetime', { ascending: false })
+    // This month's income/expense — feeds both the budget one-liner and the
+    // per-category last-used-account default the detail sheet's edit form uses.
+    const monthTx = supabase
+      .from('transactions')
+      .select('amount_satang, category, datetime, account_id, type')
       .in('type', ['income', 'expense'])
-      .gte('datetime', chartStart.toISOString())
-      .lte('datetime', monthEnd)
+      .gte('datetime', monthStart)
+      .order('datetime', { ascending: false })
     return Promise.all([
-      supabase.rpc('account_balances'),
-      fresh ? sixMo.abortSignal(new AbortController().signal) : sixMo,
+      fresh ? today.abortSignal(new AbortController().signal) : today,
+      fresh ? monthTx.abortSignal(new AbortController().signal) : monthTx,
     ])
   }
 
-  // Lazy-on-read materialization runs concurrently with the reads instead of in
-  // front of them; when it actually inserted occurrences (first load of a new
-  // window, or after a rule change) the reads re-run so they see the new rows.
   const { from: matFrom, to: matTo } = currentMonthRange(now)
-  const [[{ data: accounts }, { data: budgets }], mat, txFirst] = await Promise.all([
+  const [[{ data: accounts }, { data: budgets }, { data: balances }], mat, first] = await Promise.all([
     Promise.all([
       supabase.from('accounts').select('*').order('created_at'),
       supabase.from('budgets').select('*'),
+      supabase.rpc('account_balances'),
     ]),
     materializeOccurrences(matFrom, matTo),
-    fetchTxData(),
+    fetchData(),
   ])
-  const [{ data: balances }, { data: sixMoTx }] = mat.inserted ? await fetchTxData(true) : txFirst
-
-  if (process.env.PERF_LOG) {
-    console.log(
-      `[perf] dashboard: total=${(performance.now() - tPage).toFixed(0)}ms refetch=${mat.inserted} sixMoTx=${sixMoTx?.length ?? 0} balances=${balances?.length ?? 0}`,
-    )
-  }
-
-  const chartSeries: MonthlyPoint[] = Array.from({ length: 6 }, (_, i) => {
-    const month = format(subMonths(now, 5 - i), 'yyyy-MM')
-    return { month, income: 0, expense: 0 }
-  })
-  const byMonth = new Map(chartSeries.map((p) => [p.month, p]))
-  for (const tx of sixMoTx ?? []) {
-    const point = byMonth.get(format(new Date(tx.datetime), 'yyyy-MM'))
-    if (!point) continue
-    if (tx.type === 'income') point.income += tx.amount_satang
-    else point.expense += tx.amount_satang
-  }
-
-  const monthTx = (sixMoTx ?? []).filter((t) => new Date(t.datetime) >= monthStartDate)
-
-  const monthExpenses = monthTx.filter((t) => t.type === 'expense') as ExpenseRow[]
-  const budgetItems = ((budgets ?? []) as BudgetRow[])
-    .map((budget) => ({ budget, status: budgetStatus(budget, monthExpenses, now) }))
-    .sort((a) => (a.budget.scope === 'overall' ? -1 : 1))
-    .slice(0, 3)
+  const [{ data: todayTx }, { data: monthTx }] = mat.inserted ? await fetchData(true) : first
 
   const balanceByAccount = new Map((balances ?? []).map((b) => [b.account_id, b.balance_satang]))
   const totalBalance = (accounts ?? []).reduce(
@@ -95,104 +70,43 @@ export default async function DashboardPage() {
     0,
   )
 
-  const monthIncome = monthTx
-    .filter((t) => t.type === 'income')
-    .reduce((s, t) => s + t.amount_satang, 0)
+  const monthExpense = (monthTx ?? [])
+    .filter((r) => r.type === 'expense')
+    .reduce((s, r) => s + r.amount_satang, 0)
 
-  const monthExpense = monthTx
-    .filter((t) => t.type === 'expense')
-    .reduce((s, t) => s + t.amount_satang, 0)
+  const overallBudget = ((budgets ?? []) as BudgetRow[]).find((b) => b.scope === 'overall')
+  const overallStatus = overallBudget
+    ? budgetStatus(overallBudget, (monthTx ?? []) as ExpenseRow[], now)
+    : null
+
+  const lastByCategory = buildLastAccountMap(monthTx ?? [])
+  const globalLastAccountId = monthTx?.[0]?.account_id ?? null
 
   return (
     <div className="space-y-6">
-      {/* Hero — total balance as the focal point: elevated gradient card + deadpan
-          mascot watching over the money (design 07 rev 2026-06-30: Calm-Elevated). */}
-      <div className="bg-hero relative isolate overflow-hidden rounded-2xl px-5 py-5 text-white shadow-float">
-        <Mascot
-          expr="deadpan"
-          className="pointer-events-none absolute -right-2 -top-3 -z-10 h-28 w-28 opacity-90"
-        />
-        <p className="text-sm font-medium text-white/80">{t('totalBalance')}</p>
-        <HeroBalance
-          satang={totalBalance}
-          className="mt-1 block text-[2.15rem] font-bold leading-tight tabular-nums"
-        />
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums">
-          <span>
-            <span className="text-white/70">{t('monthIncome')} </span>
-            <span className="font-semibold">+{formatTHB(monthIncome)}</span>
-          </span>
-          <span>
-            <span className="text-white/70">{t('monthExpense')} </span>
-            <span className="font-semibold">-{formatTHB(monthExpense)}</span>
-          </span>
-        </div>
+      {/* Focal total balance — flat, one accent (the number itself), no
+          gradient/mascot behind it. Budget status is plain text underneath. */}
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">{t('totalBalance')}</p>
+        <p className="text-focal text-4xl font-bold leading-tight tabular-nums">
+          {formatTHB(totalBalance)}
+        </p>
+        <Link href="/budgets" className="block text-sm text-muted-foreground hover:text-foreground">
+          {t('monthExpenseLine', { amount: formatTHB(monthExpense) })}
+          {overallStatus && (
+            <> · {t('budgetRemainingLine', { amount: formatTHB(overallStatus.remaining) })}</>
+          )}
+        </Link>
       </div>
 
-      {/* Quick-add: amount + type + scan/save; the rest expands in the sheet. */}
       <QuickAddCard />
 
-      {/* Mobile quick-access — desktop has the full sidebar instead. */}
-      <div className="md:hidden">
-        <DashboardShortcuts />
-      </div>
-
-      {/* Account balances */}
-      {(accounts ?? []).length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">{t('accounts')}</h2>
-            <Link href="/accounts" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              {t('viewAll')} <ArrowRight className="size-3" />
-            </Link>
-          </div>
-          <div className="divide-y rounded-xl border bg-card shadow-soft">
-            {(accounts ?? []).map((acct) => {
-              const bal = balanceByAccount.get(acct.id) ?? acct.opening_balance_satang ?? 0
-              return (
-                <div key={acct.id} className="flex items-center justify-between p-3">
-                  <div>
-                    <p className="text-sm font-medium">{acct.name}</p>
-                    <Badge variant="secondary" className="text-xs mt-0.5">{acct.bank}</Badge>
-                  </div>
-                  <p className={`text-sm font-semibold tabular-nums ${bal < 0 ? 'text-destructive' : ''}`}>
-                    {formatTHB(bal)}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Budgets summary */}
-      {budgetItems.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">{t('budgets')}</h2>
-            <Link href="/budgets" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              {t('viewAll')} <ArrowRight className="size-3" />
-            </Link>
-          </div>
-          <Card>
-            <CardContent className="space-y-4 py-4">
-              {budgetItems.map(({ budget, status }) => (
-                <BudgetBar key={budget.id} budget={budget} status={status} />
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Income vs expense — last 6 months (Recharts, lazy client chunk) */}
-      <div>
-        <h2 className="mb-3 font-semibold">{t('chart6m')}</h2>
-        <Card>
-          <CardContent className="pt-4">
-            <LazyIncomeExpenseChart data={chartSeries} />
-          </CardContent>
-        </Card>
-      </div>
+      <HomeTodayList
+        transactions={todayTx ?? []}
+        accounts={accounts ?? []}
+        lastByCategory={lastByCategory}
+        globalLastAccountId={globalLastAccountId}
+      />
     </div>
   )
 }

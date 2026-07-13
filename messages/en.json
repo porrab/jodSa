@@ -105,6 +105,8 @@
   "budget": {
     "title": "Budgets",
     "subtitle": "Actual spend vs. budget (expenses only)",
+    "tabBudgets": "Budgets",
+    "tabOverview": "Overview",
     "period": "Period",
     "periodMonth": "Monthly",
     "periodDay": "Daily",
@@ -183,7 +185,11 @@
     "viewAll": "View all",
     "chart6m": "Income vs expenses — last 6 months",
     "chartIncome": "Income",
-    "chartExpense": "Expense"
+    "chartExpense": "Expense",
+    "monthExpenseLine": "Spent this month {amount}",
+    "budgetRemainingLine": "budget left {amount}",
+    "todayTransactions": "Today ({count})",
+    "noTransactionsToday": "Nothing logged today yet"
   },
   "group": {
     "title": "Groups / Trips",
