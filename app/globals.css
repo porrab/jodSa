@@ -71,20 +71,24 @@
 }
 
 .dark {
+  /* Contrast CEILING (design v3): body text reads as glare above ~13:1 on this
+     background — dropped from a near-white 0.97 to 0.89 L. Reserve pure-white
+     for the single focal number per screen via `.text-focal` below. Surface
+     layering: background 0.17 → card 0.21 → raised sheet/popover 0.24. */
   --background: oklch(0.17 0.02 260);
-  --foreground: oklch(0.97 0.005 250);
+  --foreground: oklch(0.89 0.006 250);
   --card: oklch(0.21 0.02 260);
-  --card-foreground: oklch(0.97 0.005 250);
-  --popover: oklch(0.21 0.02 260);
-  --popover-foreground: oklch(0.97 0.005 250);
+  --card-foreground: oklch(0.89 0.006 250);
+  --popover: oklch(0.24 0.02 260);
+  --popover-foreground: oklch(0.89 0.006 250);
   --primary: oklch(0.70 0.12 162);
   --primary-foreground: oklch(0.15 0.03 162);
   --secondary: oklch(0.27 0.025 260);
-  --secondary-foreground: oklch(0.97 0.005 250);
+  --secondary-foreground: oklch(0.89 0.006 250);
   --muted: oklch(0.27 0.025 260);
-  --muted-foreground: oklch(0.70 0.03 256);
+  --muted-foreground: oklch(0.72 0.03 256);
   --accent: oklch(0.27 0.025 260);
-  --accent-foreground: oklch(0.97 0.005 250);
+  --accent-foreground: oklch(0.89 0.006 250);
   --destructive: oklch(0.70 0.19 22);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -105,13 +109,27 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Density budget (design v3): base body 16px, line-height >= 1.5 so tall
+       Thai vowels/tone marks never clip. */
+    font-size: 1rem;
+    line-height: 1.6;
   }
 }
 
 @layer components {
-  /* Emerald→teal brand gradient for the dashboard hero (white text passes AA on it) */
+  /* Deprecated by design v3 (no gradients on content surfaces — the dashboard
+     hero that used this read as glare/haze on dark). Kept only so any
+     stray reference doesn't 404 on the class; do not use on new surfaces. */
   .bg-hero {
     background-image: linear-gradient(135deg, oklch(0.53 0.12 166) 0%, oklch(0.51 0.095 202) 100%);
+  }
+  /* Reserve near-white for the ONE focal number per screen (design v3 ceiling
+     rule) — everything else uses the toned-down --foreground/--card-foreground. */
+  .text-focal {
+    color: var(--foreground);
+  }
+  .dark .text-focal {
+    color: oklch(0.97 0.004 250);
   }
   /* Tactile press feedback (UI/UX-pro-max: scale-feedback 0.95–1.05, 150ms, spring) */
   .press {

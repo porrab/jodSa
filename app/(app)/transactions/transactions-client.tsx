@@ -95,8 +95,9 @@ export default function TransactionsClient({
         <div className="space-y-4">
           {groups.map((group) => (
             <div key={group.key}>
-              {/* Day header — sticks under the top bar while its rows scroll. */}
-              <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-background/85 px-1 py-1 backdrop-blur">
+              {/* Day header — sticks under the top bar while its rows scroll.
+                  Flat bg (no blur-behind-text — design v3 anti-pattern). */}
+              <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-background px-1 py-1">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {group.label}
                 </h2>
