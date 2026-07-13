@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getSiteURL } from '@/lib/site-url'
 
 export async function signupAction(
   _prev: { error: string; success: boolean },
@@ -16,7 +17,7 @@ export async function signupAction(
     password,
     options: {
       data: { full_name: displayName },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('supabase.co', 'vercel.app')}/auth/callback`,
+      emailRedirectTo: `${getSiteURL()}/auth/callback`,
     },
   })
 
