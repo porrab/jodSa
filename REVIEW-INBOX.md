@@ -129,6 +129,78 @@ Two residuals carried forward (neither blocks M8):
     fuller real slip captures if it wants that tier working standalone too.
   - **Not done**: M9 (UX Reset) — out of this session's scope, SPEC-1 stays OPEN until it lands.
 
+  **Dev progress (2026-07-13) — M9 implemented, all 6 deliverables shipped. This is the last
+  milestone — SPEC-1 is ready for pm-desk review; on APPROVED this closes SPEC-1 entirely.**
+  Commits `9be6de9`/`2af3734`/`c6383ef`/`0ef7a9e`/`fcb4292`, built in order against
+  `docs/07-design.md` v3:
+  - **Unit 1 — contrast/density tokens** (`9be6de9`, `app/globals.css`): dark-theme body/card/
+    popover foreground dropped 0.97L → 0.89L (the reported glare source), reserving near-white
+    for the single focal number via a new `.text-focal` utility. Surface layering: popover bumped
+    to 0.24L (distinct from card's 0.21L) and `Sheet`/`Dialog` now use `bg-popover` as the "raised"
+    layer. Explicit base body 16px / line-height 1.6. Removed backdrop-blur behind the transactions
+    day-header text (blur-under-text anti-pattern). **Not done as a separate step**: a full axe/
+    manual contrast audit sampling every muted-on-card instance across every screen — the fix is a
+    systemic CSS-variable change (every card/text derives from the same tokens) but I did not
+    visually re-verify each screen in both themes; flagging for qa-lab/pm-desk to sample.
+  - **Unit 2 — Home restructure** (`2af3734`): `app/(app)/dashboard/page.tsx` rewritten to
+    quick-add + `HomeTodayList` (today's transactions, J3 detail-sheet on tap) only — no chart, no
+    gradient hero, no mascot, no account list, no shortcuts grid. Budget status is one plain-text
+    line ("เดือนนี้ใช้ไป ฿X · งบเหลือ ฿Y") linking to งบ. Deleted `hero-balance.tsx` +
+    `dashboard-shortcuts.tsx` (unreferenced after the rewrite). The 6-month chart moved to
+    `app/(app)/budgets/` as a lazy "ภาพรวม" segment (`budgets-overview-tabs.tsx`) that only mounts
+    the chart chunk when opened. **Verified, not just claimed**: inspected `.next/app-build-
+    manifest.json`'s full chunk list for `/dashboard` (14 files) — grepped every one for
+    "recharts", zero matches; the actual lazy chart chunk (`599.4bf6b01b26b11032.js`) is not among
+    them.
+  - **Unit 3 — first-run onboarding + global empty-source rule** (`c6383ef`, J4):
+    `FirstAccountSheet` auto-opens in `AppShell` when the signed-in user has zero accounts
+    (dismissable, not a hard block) with a new minimal `AccountQuickCreateForm` (ชื่อ + ธนาคาร,
+    optional เลขท้ายบัญชี). New `InlineCreateAccount` (one-line explanation + "+ สร้างบัญชี",
+    no page navigation so in-progress form state isn't lost) replaces every dead-end empty-accounts
+    state I could find: `transaction-form.tsx` (account picker + the transfer to-account picker,
+    which needs ≥2 accounts), `slip-confirm-form.tsx` (was a bare unactionable message — the exact
+    tester complaint), `batch-slip-card.tsx` (had **no** guard at all — a literal empty `Select`).
+    `createAccount()` now also returns the new row's `id` so these flows select it immediately.
+    Also fixed a bookkeeping slip in the Unit 2 commit: its `git add -A --` used an explicit
+    pathspec that silently excluded the already-`rm`'d hero-balance/dashboard-shortcuts files, so
+    that commit message claimed a deletion that wasn't actually staged; corrected here.
+  - **Unit 4 — accounts compact rows + detail sheet** (`0ef7a9e`): replaced the tall per-account
+    cards (~200px, 3 always-visible icon actions) with single-line rows (name, bank badge, balance
+    right/tabular, chevron); tap opens `AccountDetailSheet` (J3-style) with balance as the focal
+    number, QR preview + manage dialog, แก้ไข (same form, prefilled), and ลบบัญชี as a separated
+    destructive ghost action inside the sheet. Presentation-only — same server actions underneath.
+  - **Unit 5 — trip rework per J5 + groups leaves the nav** (`fcb4292`): "Groups" (M3) removed from
+    `app-nav.tsx`'s desktop sidebar and `/more`; existing grouped data reachable via a new filter-
+    chip row on `/transactions` (fetches `groups(id,title)`, filters client-side by `group_id`).
+    `nav.sessions`/`session.title` relabeled "ทริป"/"Trip". `lib/trip.ts` gains `computeTripDebts`
+    (additive — wraps the existing `perHead`/M6 settlement math, does **not** reimplement it),
+    aggregating each expense's unpaid share per debtor→payer pair; `TripManageClient` (the owner's
+    trip page) now shows this "ใครติดใคร" card front-and-center, above the friend-link/QR card and
+    expense list, matching the J5 mock — plus member count in the header and trip-specific
+    "ปิดทริป"/"เปิดทริปอีกครั้ง" wording (the non-trip "collect" session type is untouched). "จดบิล"
+    replaces "เพิ่มรายการที่จ่าย" as the add-bill label. 6 new unit tests for `computeTripDebts`.
+    **Deviation (documented, not fixed)**: จดบิล still records the *submitting* participant as
+    payer — `app/api/sessions/[token]/expenses/route.ts` explicitly resolves payer server-side and
+    never trusts a client-supplied one (a deliberate safeguard, per its own comment). Adding J5's
+    literal "ใครจ่าย" picker so any participant could log a bill on someone else's behalf would
+    remove that safeguard; flagging for a product decision rather than changing the trust model
+    unasked. Guest `/pay/<token>` flow is otherwise unchanged, still "recorded, not verified".
+  - **Unit 6 — th/en strings**: done incrementally with every unit above (each new key added to
+    both files in the same edit), not as a separate pass. Verified by parity check: `en.json` and
+    `th.json` have **456/456** identical keys, zero drift either direction. Grepped every new/
+    changed component for hardcoded literal UI text outside a `t()`/`tt()`/`td()`/`tc()` call —
+    none found.
+  - **Gates (re-run clean on the final commit `fcb4292`)**: `pnpm exec tsc --noEmit` exit 0 ·
+    `next lint` clean · `pnpm dlx dotenv-cli -e .env.test -- vitest run tests/unit` = **235/235**
+    passed (incl. live RLS 18/18) · `pnpm build` succeeds, all 19 routes generated.
+  - **Schema**: no migration needed — matches the roadmap's expectation ("groups→filter needs
+    none"; trip tables already exist from M6).
+  - **Not verified this session (E2E/visual altitude — qa-lab's job per my brief)**: the M9
+    acceptance criteria's "signup → guided create → first log in < 2 min" flow and the trip E2E
+    (create → 3 members → 2 bills → ledger correct → settle → mark paid → ปิดทริป) were validated
+    via unit tests + code inspection only, not a live browser run (no interactive Supabase login
+    available in this session). Requesting pm-desk code+unit review, then qa-lab E2E as usual.
+
 ---
 
 ## [FIELD] qa-lab E2E close — 2026-06-13 (FIELD-2 GREEN)
