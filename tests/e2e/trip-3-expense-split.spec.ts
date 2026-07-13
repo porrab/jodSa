@@ -44,7 +44,9 @@ test('TRIP-3 add expense + QR; others see equal split + the QR; object lands in 
 
   // เอ fronts ฿900 split 3 → per-head ฿300, with a receiving QR.
   await guestA.reload()
-  await guestA.getByRole('button', { name: 'เพิ่มรายการที่จ่าย' }).click()
+  await guestA.waitForLoadState('networkidle') // hydrate before interacting (prod build)
+  // M9 (design v3, J5): the add-expense trigger was renamed to "จดบิล".
+  await guestA.getByRole('button', { name: 'จดบิล', exact: true }).click()
   const sheet = guestA.getByRole('dialog')
   await sheet.getByLabel('ชื่อรายการ').fill('ค่าอาหาร')
   await sheet.getByLabel('ยอดที่จ่ายไป (บาท)').fill('900')

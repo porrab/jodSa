@@ -3,7 +3,8 @@ import { env, STORAGE_A } from './helpers/env'
 import { findUserByEmail, adminClient, resetAllUserData, seedAccount } from './helpers/admin'
 import {
   seedTripSession, deleteTripSession, clearOwnerSessions,
-  apiCtx, joinTrip, addExpense, sendTripSlip, type SeededTrip,
+  apiCtx, joinTrip, addExpense, sendTripSlip,
+  ensureSwitchOn, clickUntilVisible, type SeededTrip,
 } from './helpers/trip'
 
 /**
@@ -118,8 +119,7 @@ test('M9-trip owner: 3 members, จดบิล, ledger correct, settle+mark-pai
   await page.waitForLoadState('networkidle')
   const confirmSwitch = page.getByRole('switch', { name: 'ยืนยันสลิป' })
   await expect(confirmSwitch).toBeVisible()
-  await confirmSwitch.click()
-  await expect(confirmSwitch).toBeChecked()
+  await ensureSwitchOn(confirmSwitch) // defeat a swallowed first click (prod hydration)
 
   // Ledger recomputes: บี's debt to the owner clears; ซี's remains.
   await page.reload()
@@ -127,12 +127,15 @@ test('M9-trip owner: 3 members, จดบิล, ledger correct, settle+mark-pai
   await expect(page.getByText('บี ติด เจ้าของทริป')).toHaveCount(0)
   await expect(page.getByText('ซี ติด เจ้าของทริป')).toBeVisible()
 
-  // ปิดทริป → closed status persists.
-  await page.getByRole('button', { name: 'ปิดทริป', exact: true }).click()
+  // ปิดทริป → wait for the in-place status flip (setSessionStatus revalidates)
+  // before reloading, so the reload can't race the in-flight close action.
+  await clickUntilVisible(
+    page.getByRole('button', { name: 'ปิดทริป', exact: true }),
+    page.getByRole('button', { name: 'เปิดทริปอีกครั้ง', exact: true }),
+  )
   await page.reload()
   await page.waitForLoadState('networkidle')
   await expect(page.getByText('ปิดแล้ว', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'เปิดทริปอีกครั้ง', exact: true })).toBeVisible()
 
   await ctx.close()
 })

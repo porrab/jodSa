@@ -1,6 +1,31 @@
 import { nanoid } from 'nanoid'
-import { request as pwRequest, type APIRequestContext } from '@playwright/test'
+import { request as pwRequest, expect, type APIRequestContext, type Locator } from '@playwright/test'
 import { adminClient } from './admin'
+
+/**
+ * Prod-build hydration race guard. On `next start` under load, the FIRST
+ * interaction after a navigation/reload can be swallowed before React attaches
+ * its onClick handler (the DOM node is visible+stable, but not yet hydrated), so
+ * a single click silently no-ops. Both helpers are STATE-GUARDED: they act only
+ * while the expected effect is absent and retry until it's observed — idempotent,
+ * so a click that DID register (just slowly) is never toggled back off.
+ */
+
+/** Turn a shadcn Switch ON, defeating a swallowed first click. */
+export async function ensureSwitchOn(sw: Locator, timeout = 20_000): Promise<void> {
+  await expect(async () => {
+    if (!(await sw.isChecked())) await sw.click()
+    await expect(sw).toBeChecked({ timeout: 3_000 })
+  }).toPass({ timeout })
+}
+
+/** Click `trigger` until `appears` becomes visible (e.g. a status/label flip). */
+export async function clickUntilVisible(trigger: Locator, appears: Locator, timeout = 20_000): Promise<void> {
+  await expect(async () => {
+    if (!(await appears.isVisible())) await trigger.click()
+    await expect(appears).toBeVisible({ timeout: 3_000 })
+  }).toPass({ timeout })
+}
 
 /**
  * Trip-session test helpers (M6 / TRIP). Setup-only admin seeding mirrors the

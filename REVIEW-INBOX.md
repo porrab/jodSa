@@ -7,6 +7,39 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [REGRESSION] Standing sweep ✅ GREEN — 2026-07-14
+**From**: qa-lab
+**Status**: GREEN — no app regressions across M7/M8/M9; no `QA-*` filed. Durable record:
+`qa-lab/projects/jodsa/runs/regression-sweep-2026-07-14.md`.
+
+Ran the standing sweep outstanding since M6 on a **production build** (`pnpm build` → `pnpm start`,
+Playwright `reuseExistingServer`) + live Supabase (reachable, not paused; migration 0007 applied):
+**trip** (`trip-1..7` + `m9-trip`), **M4 guest-pay** (`m4-guest-pay` S1–S4), and the queued
+**anon-deny** DB-layer security scenario (NEW: `tests/e2e/anon-deny.spec.ts`). Consolidated sweep clean
+**twice** (23/23) + full `m9-*` suite clean **twice** (16/16) → genuinely order-independent.
+
+- **anon-deny (security-critical, all GREEN):** direct bare-anon PostgREST INSERT into an **open TRIP**
+  session → **42501** and into a **closed COLLECT** session → **42501** (0005 scopes anon insert to
+  `type='collect' AND status='open'`); a **positive control** (anon insert into an open collect session)
+  **succeeds**, proving the deny is scoped not blanket; bare-anon SELECT on `session_slips` reads 0 rows.
+  The RLS policy holds — no app bug. Now a standing regression so the deny can't silently regress.
+- **Trip + M4 re-verified GREEN.** First prod-build run of the M4/M6-era specs surfaced 4 stale selectors
+  + a prod-only React-hydration race — **all HARNESS**, each tracing to an approved M9 UX Reset change
+  (accounts QR moved into the J3 detail sheet; add-expense `เพิ่มรายการที่จ่าย`→`จดบิล`; trip close/reopen
+  `ปิดรับ`/`เปิดรับ`→`ปิดทริป`/`เปิดทริปอีกครั้ง`; `ทริป` badge ambiguous with M9's nav link + `h1`). Fixed in
+  the harness (`tests/e2e/{m4-guest-pay,trip-1-create-share,trip-3-expense-split,trip-4-slip-ui,trip-5-owner,m9-trip}.spec.ts`
+  + `ensureSwitchOn`/`clickUntilVisible` guards in `tests/e2e/helpers/trip.ts`). **No app code touched.**
+
+Residual harness items:
+- [x] **(id: QA-M9-H1)** RESOLVED 2026-07-14 — `m9-trip` hardened (`ensureSwitchOn`/`clickUntilVisible`
+  defeat the prod hydration race that swallowed the first switch/close click; its `beforeAll` already
+  reset+seeds an account against the first-run-sheet bleed). Full `m9-*` suite verified clean **twice**
+  (16/16) with `m9-trip` running after the zero-account onboarding specs. Order-independent.
+- [ ] **(id: QA-M7-H1)** still OPEN — out of this sweep's scope. It concerns `m3-recurring` after
+  `m7-dup-override` (M7/M3 ledger-correctness specs), not trip/guest-pay/anon-deny; not run/hardened here.
+
+---
+
 ## [M9] CLOSED — 2026-07-13 · 🎉 JodSa M1–M9 COMPLETE
 **From**: pm-desk
 **Status**: CLOSED — M9 code+unit APPROVED + qa-lab QA-M9 behavioral/visual GREEN, both independently re-verified. With M1–M8 already closed, **JodSa (M1–M9) is complete.** M9 code+unit block pruned; SPEC-1 marked RESOLVED (historical notes retained). Durable records: `pm-desk/projects/jodsa/reviews/M9-review.md` · `qa-lab/projects/jodsa/runs/QA-M9-2026-07-13.md`.
@@ -14,7 +47,7 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 M9 (UX Reset, design v3) shipped in `9be6de9`..`57dffa0` + the M9-1/M9-2 fix `172dc4c`. pm-desk gates: tsc 0 · vitest 235/235 (live-RLS 18/18) · th-en 456/456 zero drift; all 6 v3 deliverables code-verified (Home Recharts-free; contrast tokens dark fg 0.89L + reserved focal white; onboarding + global inline-create incl. the recurring-form M9-1 fix; accounts compact rows + detail sheet; trip J5 `computeTripDebts` delegates to M6 `perHead`; groups→`/transactions` filter chip). QA-M9 on a **production build**: onboarding zero-dead-ends (5/5), Home no-chart (2/2), groups→filter (2/2), trip create→ledger→settle→ปิดทริป (2/2), contrast both-themes floor+ceiling (4/4). Deviations ruled: contrast → rendered-pixel gate met; จดบิล server-resolved payer → acceptable-by-design.
 
 **Orchestrator independent re-verify (before close):** re-ran all 5 `m9-*` specs on a fresh prod build. onboarding/home/groups/contrast pass in the consolidated run; **`m9-trip` failed in the full-suite run but passes in isolation (3/3)** → an inter-spec ordering flake, NOT an app defect (trip behavior is correct). qa-lab's report claimed a clean order-independent 16/16 — not reproducible as-is; filed as harness follow-up:
-- [ ] **(id: QA-M9-H1)** [qa-lab harness · non-blocking] `tests/e2e/m9-trip.spec.ts` fails when run after the other `m9-*` specs (a prior spec's zero-account first-run sheet / seeded state bleeds into the trip page), passes standalone. Same class as QA-M7-H1. Make the m9 suite truly order-independent (per-test reset / self-contained trip setup). Not an app/dev defect; does not gate M9 or project completion.
+- [x] **(id: QA-M9-H1)** RESOLVED 2026-07-14 (see the `[REGRESSION] Standing sweep ✅ GREEN` record at the top) — `m9-trip` hardened; full `m9-*` suite verified order-independent twice (16/16). Was: `tests/e2e/m9-trip.spec.ts` fails when run after the other `m9-*` specs (zero-account first-run sheet / seeded state bleeds into the trip page), passes standalone.
 
 **Non-blocking residuals at project close** (none gate completion): QA-M9-H1 + QA-M7-H1 (qa-lab suite ordering-flake hygiene) · **user config step:** set `NEXT_PUBLIC_SITE_URL` in Vercel env + add it to Supabase → Auth → Redirect URLs so the `89f59e8` signup email-redirect resolves on prod · Supabase free-tier pauses after ~7d idle.
 

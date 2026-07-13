@@ -45,10 +45,12 @@ test('TRIP-1 trip create hides account/QR/target; share card shows the absolute 
   await dialog.getByRole('button', { name: 'สร้างลิงก์จ่ายกลุ่ม' }).click()
   await expect(dialog).toBeHidden()
 
-  // List card carries the trip badge.
+  // List card carries the trip badge. Scope to the card: M9's nav renamed the
+  // sessions nav link + page heading to "ทริป" too, so an unscoped exact-text
+  // match is now ambiguous (nav link + h1 + badge).
   const card = page.locator('a', { hasText: TITLE })
   await expect(card).toBeVisible()
-  await expect(page.getByText('ทริป', { exact: true })).toBeVisible()
+  await expect(card.getByText('ทริป', { exact: true })).toBeVisible()
 
   // Open the in-app trip management view.
   await card.click()

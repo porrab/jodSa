@@ -3,7 +3,8 @@ import { env, STORAGE_A } from './helpers/env'
 import { findUserByEmail, adminClient } from './helpers/admin'
 import {
   seedTripSession, deleteTripSession, clearOwnerSessions, apiCtx,
-  joinTrip, addExpense, sendTripSlip, adminSlipsForExpense, type SeededTrip,
+  joinTrip, addExpense, sendTripSlip, adminSlipsForExpense,
+  ensureSwitchOn, clickUntilVisible, type SeededTrip,
 } from './helpers/trip'
 
 /**
@@ -40,13 +41,17 @@ test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reo
   page.on('dialog', (d) => d.accept()) // accept the delete confirm()
 
   await page.goto(`/sessions/${trip.token}`)
+  // Prod-build hydration guard: let the client components hydrate before any
+  // interaction, else the first click can be swallowed (matches m9-trip's pattern).
+  await page.waitForLoadState('networkidle')
   // Owner management view: seeded as a participant (no join form), owner controls present.
   await expect(page.getByRole('heading', { name: 'เข้าร่วมทริป' })).toBeHidden()
   await expect(page.getByText('ลิงก์สำหรับเพื่อน')).toBeVisible()
   await expect(page.getByText('รายการในทริป')).toBeVisible()
 
   // Owner fronts their own expense through the embedded sheet.
-  await page.getByRole('button', { name: 'เพิ่มรายการที่จ่าย' }).click()
+  // M9 (design v3, J5): the add-expense trigger was renamed to "จดบิล".
+  await page.getByRole('button', { name: 'จดบิล', exact: true }).click()
   const sheet = page.getByRole('dialog')
   await sheet.getByLabel('ชื่อรายการ').fill('ค่าทางด่วน')
   await sheet.getByLabel('ยอดที่จ่ายไป (บาท)').fill('300')
@@ -62,10 +67,10 @@ test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reo
   await api.dispose()
 
   await page.reload()
+  await page.waitForLoadState('networkidle')
   const confirmSwitch = page.getByRole('switch', { name: 'ยืนยันสลิป' })
   await expect(confirmSwitch).not.toBeChecked()
-  await confirmSwitch.click()
-  await expect(confirmSwitch).toBeChecked()
+  await ensureSwitchOn(confirmSwitch) // defeat a swallowed first click (prod hydration)
   // Persisted server-side.
   const ownedSlips = await adminSlipsForExpense(trip.token, ownerExp!.id)
   expect(ownedSlips[0]?.confirmed).toBe(true)
@@ -79,9 +84,16 @@ test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reo
   await page.getByRole('button', { name: 'ส่งสลิป' }).click()
   await expect(page.getByText('ส่งสลิปแล้ว')).toBeVisible()
 
-  // Close gates all anon writes.
-  await page.getByRole('button', { name: 'ปิดรับ' }).click()
-  await expect(page.getByText('ปิดรับสลิปแล้ว')).toBeVisible()
+  // Close gates all anon writes (M9/J5: trip close → "ปิดทริป"). Wait for the
+  // status to flip IN-PLACE (setSessionStatus revalidates) before the API checks,
+  // so the close is guaranteed committed and a swallowed first click is retried.
+  await clickUntilVisible(
+    page.getByRole('button', { name: 'ปิดทริป', exact: true }),
+    page.getByRole('button', { name: 'เปิดทริปอีกครั้ง', exact: true }),
+  )
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByText('ปิดแล้ว', { exact: true })).toBeVisible()
   const closedApi = await apiCtx('198.51.100.32')
   expect((await joinTrip(closedApi, trip.token, 'สาย')).status, 'join closed').toBe(403)
   expect((await addExpense(closedApi, trip.token, bToken, { title: 'x', amountSatang: 100, split: 2 })).status, 'expense closed').toBe(403)
@@ -89,9 +101,11 @@ test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reo
   await closedApi.dispose()
 
   // Reopen, then delete → back to the sessions list.
-  await page.getByRole('button', { name: 'เปิดรับ' }).click()
-  await expect(page.getByText('เปิดรับสลิปอีกครั้ง')).toBeVisible()
-  await page.getByRole('button', { name: 'ลบ' }).click()
+  await clickUntilVisible(
+    page.getByRole('button', { name: 'เปิดทริปอีกครั้ง', exact: true }),
+    page.getByRole('button', { name: 'ปิดทริป', exact: true }),
+  )
+  await page.getByRole('button', { name: 'ลบ', exact: true }).click()
   await page.waitForURL('**/sessions')
   await expect(page.getByRole('button', { name: 'สร้างรายการ' })).toBeVisible()
 

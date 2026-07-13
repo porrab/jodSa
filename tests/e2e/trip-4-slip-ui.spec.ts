@@ -4,7 +4,7 @@ import { env, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { findUserByEmail } from './helpers/admin'
 import {
   seedTripSession, deleteTripSession, clearOwnerSessions, apiCtx,
-  addExpense, type SeededTrip,
+  addExpense, ensureSwitchOn, type SeededTrip,
 } from './helpers/trip'
 
 /**
@@ -93,8 +93,8 @@ test('TRIP-4 ower sends slip (read + manual), payer confirms, no image on the wi
   const a = await aCtx.newPage()
   await a.goto(`/sessions/${trip.token}`)
   await expect(a.getByText('สลิปที่ได้รับ (2)')).toBeVisible()
-  await a.getByRole('switch', { name: 'ยืนยันสลิป' }).first().click()
-  await expect(a.getByRole('switch', { name: 'ยืนยันสลิป' }).first()).toBeChecked()
+  // Prod-build hydration race: the first switch click can be swallowed pre-hydration.
+  await ensureSwitchOn(a.getByRole('switch', { name: 'ยืนยันสลิป' }).first())
 
   // ── Confirming flips the ower's view to "settled"
   await b.reload()

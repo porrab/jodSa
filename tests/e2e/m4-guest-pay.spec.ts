@@ -27,8 +27,13 @@ test.beforeAll(async () => {
 
 async function uploadAccountQr(page: Page): Promise<void> {
   await page.goto('/accounts')
-  await page.getByRole('button', { name: 'QR รับเงิน' }).click()
-  const dialog = page.getByRole('dialog')
+  await page.waitForLoadState('networkidle') // hydrate before interacting (prod build)
+  // M9 (design v3, unit 4): accounts are compact rows and QR upload moved into
+  // the per-account detail sheet ("จัดการ QR" → QrManageDialog) — there is no
+  // longer a top-level "QR รับเงิน" button on the list.
+  await page.getByRole('button', { name: /QA-M4/ }).click() // open the account detail sheet
+  await page.getByRole('button', { name: 'จัดการ QR' }).click() // open the QR manage dialog
+  const dialog = page.getByRole('dialog').filter({ hasText: 'QR รับเงิน —' })
   await dialog.locator('input[name="file"]').setInputFiles(QR_IMAGE)
   await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click()
   await expect(page.getByText('บันทึก QR แล้ว')).toBeVisible()
