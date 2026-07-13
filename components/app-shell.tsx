@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet'
 import AppNav from '@/components/app-nav'
 import TransactionForm from '@/components/transaction-form'
+import FirstAccountSheet from '@/components/first-account-sheet'
 import type { LastAccountMap } from '@/lib/last-account'
 import { QUICK_ADD_EVENT, type QuickAddPrefill } from '@/lib/quick-add'
 import type { Database } from '@/lib/supabase/types'
@@ -46,6 +47,7 @@ export default function AppShell({
 
   return (
     <>
+      <FirstAccountSheet hasAccounts={accounts.length > 0} />
       <div className="flex min-h-svh">
         <AppNav />
         <main className="flex-1 overflow-auto">

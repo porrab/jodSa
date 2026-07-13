@@ -15,6 +15,7 @@ import {
 import { createTransaction, updateTransaction } from '@/app/actions/transactions'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
+import InlineCreateAccount from '@/components/inline-create-account'
 import type { Database } from '@/lib/supabase/types'
 
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -160,41 +161,57 @@ export default function TransactionForm({
         </div>
       </div>
 
-      {/* Account */}
+      {/* Account — global empty-source rule (design v3, J4): an empty list
+          renders an inline "+ สร้าง…" create action, never a disabled/dead
+          control (the outside tester's exact zero-account dead end). */}
       <div className="space-y-1">
         <Label>{type === 'transfer' ? t('fromAccount') : t('account')} <RequiredMark /></Label>
-        <Select value={accountId} onValueChange={handleAccountChange} required>
-          <SelectTrigger>
-            <SelectValue placeholder={t('selectAccount')} />
-          </SelectTrigger>
-          <SelectContent>
-            {accounts.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
-                {a.name} — {a.bank}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {accounts.length === 0 ? (
+          <InlineCreateAccount
+            hint={t('noAccountsInlineHint')}
+            onCreated={(id) => { setAccountId(id); setAccountTouched(true) }}
+          />
+        ) : (
+          <Select value={accountId} onValueChange={handleAccountChange} required>
+            <SelectTrigger>
+              <SelectValue placeholder={t('selectAccount')} />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name} — {a.bank}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* To account (transfer only) */}
       {type === 'transfer' && (
         <div className="space-y-1">
           <Label>{t('toAccount')} <RequiredMark /></Label>
-          <Select value={toAccountId} onValueChange={setToAccountId} required>
-            <SelectTrigger>
-              <SelectValue placeholder={t('selectToAccount')} />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts
-                .filter((a) => a.id !== accountId)
-                .map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name} — {a.bank}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          {accounts.filter((a) => a.id !== accountId).length === 0 ? (
+            <InlineCreateAccount
+              hint={t('transferNeedsSecondAccount')}
+              onCreated={(id) => setToAccountId(id)}
+            />
+          ) : (
+            <Select value={toAccountId} onValueChange={setToAccountId} required>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectToAccount')} />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts
+                  .filter((a) => a.id !== accountId)
+                  .map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name} — {a.bank}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 

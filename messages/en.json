@@ -71,7 +71,9 @@
     "recurringBadge": "From a recurring rule",
     "edit": "Edit",
     "deleteAction": "Delete transaction",
-    "refCode": "Slip reference: {code}"
+    "refCode": "Slip reference: {code}",
+    "noAccountsInlineHint": "No accounts yet — add one to start logging",
+    "transferNeedsSecondAccount": "You need a second account to transfer between"
   },
   "account": {
     "title": "Accounts",
@@ -85,6 +87,9 @@
     "deleteFailed": "Could not delete account",
     "noAccounts": "No accounts yet",
     "addFirst": "Add your first account to start logging",
+    "createInline": "+ Add account",
+    "onboardingTitle": "Create your first account",
+    "onboardingHint": "Add a bank account so you can start logging — name and bank are enough to get going.",
     "qrAriaLabel": "Receiving QR",
     "qrTitle": "Receiving QR — {name}",
     "qrHint": "Upload this account's receiving QR so friends can scan it during group pay",

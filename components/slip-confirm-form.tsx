@@ -22,6 +22,7 @@ import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
+import InlineCreateAccount from '@/components/inline-create-account'
 import type { ParsedSlip } from '@/lib/slip/types'
 
 interface Account {
@@ -383,7 +384,9 @@ export default function SlipConfirmForm({
             )}
           </Label>
           {accounts.length === 0 ? (
-            <p className="text-sm text-destructive">{t('noAccounts')}</p>
+            // Global empty-source rule (design v3, J4) — inline create, never
+            // a dead-end message with no way out.
+            <InlineCreateAccount hint={t('noAccounts')} onCreated={handleAccountChange} />
           ) : (
             <Select value={accountId} onValueChange={handleAccountChange}>
               <SelectTrigger>

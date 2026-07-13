@@ -18,6 +18,7 @@ import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
 import { cn } from '@/lib/utils'
+import InlineCreateAccount from '@/components/inline-create-account'
 import type { ParsedSlip } from '@/lib/slip/types'
 
 interface Account { id: string; name: string; bank: string; number_hint?: string | null }
@@ -340,16 +341,21 @@ export default function BatchSlipCard({
             </div>
           </div>
 
-          {/* Account */}
+          {/* Account — global empty-source rule (design v3, J4): inline
+              create, never a dead empty Select. */}
           <div className="space-y-1">
-            <Select value={accountId} onValueChange={handleAccountChange} required>
-              <SelectTrigger className="h-9"><SelectValue placeholder={t('account')} /></SelectTrigger>
-              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>{a.name} ({a.bank})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {accounts.length === 0 ? (
+              <InlineCreateAccount hint={t('noAccounts')} onCreated={handleAccountChange} />
+            ) : (
+              <Select value={accountId} onValueChange={handleAccountChange} required>
+                <SelectTrigger className="h-9"><SelectValue placeholder={t('account')} /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name} ({a.bank})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {showSlipMatchHint && (
               <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium text-primary">
                 <Sparkles className="size-2.5" />

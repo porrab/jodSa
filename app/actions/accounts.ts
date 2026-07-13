@@ -19,7 +19,7 @@ function readNumberHint(formData: FormData): string | null {
   return raw ? raw : null
 }
 
-export async function createAccount(_prev: { error: string }, formData: FormData) {
+export async function createAccount(_prev: { error: string; id?: string }, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -31,19 +31,26 @@ export async function createAccount(_prev: { error: string }, formData: FormData
   })
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { error } = await supabase.from('accounts').insert({
-    user_id: user.id,
-    name: parsed.data.name,
-    bank: parsed.data.bank,
-    opening_balance_satang: readOpeningBalance(formData),
-    number_hint: readNumberHint(formData),
-  })
+  // .select().single() so callers (the J4 first-account onboarding sheet + the
+  // global empty-source "+ สร้าง…" inline create) can immediately select the
+  // new account without a second round trip.
+  const { data, error } = await supabase
+    .from('accounts')
+    .insert({
+      user_id: user.id,
+      name: parsed.data.name,
+      bank: parsed.data.bank,
+      opening_balance_satang: readOpeningBalance(formData),
+      number_hint: readNumberHint(formData),
+    })
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/accounts')
   revalidatePath('/dashboard')
-  return { error: '' }
+  return { error: '', id: data.id }
 }
 
 export async function updateAccount(_prev: { error: string }, formData: FormData) {
