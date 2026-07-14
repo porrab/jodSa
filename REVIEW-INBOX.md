@@ -7,6 +7,54 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [INVEST-M3] APPROVED (code + unit) — 2026-07-15
+**From**: pm-desk
+**Status**: APPROVED — next gate is qa-lab `QA-M3` (behavioral / E2E; bundle with the still-open `QA-M1`).
+Full brief: `pm-desk/projects/jodsa/reviews/INVEST-M3-review.md`.
+
+JodSa Investments M3 (Portfolio Dashboard) passes code+unit review at HEAD `ac1b16c` (≥ `e9d2258`). All five
+acceptance criteria met with evidence, including live 2-user `portfolio_snapshots` RLS isolation. **No new
+migration** — M1's `0008` already shipped `holdings.current_value_*` + the `portfolio_snapshots` table/RLS.
+
+### Gates re-run this session (independent, live)
+- `npx tsc --noEmit` → **exit 0** (the `e9d2258` empty-`Update`-stub fix holds).
+- `npx next lint` → clean.
+- `npx vitest run tests/unit/invest` (`.env.test` sourced) → **34 passed / 0 failed**.
+- `npx vitest run tests/unit/rls.test.ts` (LIVE Supabase) → **29 passed / 0 failed** (incl. the new live M3
+  `portfolio_snapshots` owner-isolation block, all 4 verbs).
+- Full suite `npx vitest run` → **280 passed / 0 failed / 0 skipped** — no regression (dev reported 276).
+- `npx next build` → exit 0, all 20 routes. **Recharts independently confirmed absent from `/invest`'s
+  first-load chunks** (grepped every chunk the app-build-manifest lists for `/(app)/invest/page` → 0 matches;
+  Recharts lives only in separate lazy chunks).
+
+### Confirmed
+- **Per-asset aggregation (my M1 forward-risk note) is genuinely fixed.** `aggregateByAsset` merges
+  same-`asset_id` rows before concentration ranking; the regression test constructs a case where the un-merged
+  ranking would differ (two AAPL rows Σ 8,398,650n vs one PTT row 7,000,000n) and asserts the merged position
+  wins — removing the merge fails the test.
+- Missing-FX holdings **excluded** (not assumed 1:1) + surfaced (`excludedCount` warning banner); unpriced
+  holdings **valued at cost** with null P&L (no invented gain/loss); display currency fixed to THB; all money
+  `bigint` minor units, single rounding point.
+- Snapshots: explicit-button write, server-side recompute from live data (never client totals), stored jsonb
+  read back verbatim, bigint→string round-trip unit-tested.
+- Server actions flow through `supabase-js` + user session (RLS applies) — no service-role/Drizzle on a request
+  path; Zod on the price-update payload. Non-goal guard clean (no order execution).
+
+### Forward notes (non-blocking; not correction items)
+- **FX-at-cost** converts the whole holding's native cost basis with only the **latest buy's `fx_rate`** —
+  exact for single-buy holdings, approximate for multi-buy-at-different-FX. Documented (not silent), acceptable
+  for a manual M3 tracker; the multi-buy path is untested — add a unit case and revisit lot-level FX at M5.
+- Updating a foreign-currency price with a **blank FX** silently drops that holding from the total (surfaced
+  via the excluded-FX banner) — QA-M3 should confirm the UX reads clearly.
+
+### Routed to qa-lab — QA-M3 (bundle with QA-M1)
+Add USD + THB holdings → open Overview → totals/cost/P&L match the fixture; update a price → value+P&L
+recompute; blank-FX foreign price → shows in excluded-FX warning, drops from total; save a snapshot → reopen
+from history → identical numbers; ≥25% concentration badge fires; th/en + light/dark on Overview; first
+`/invest` load pays no Recharts (Network tab).
+
+---
+
 ## [INVEST-M1] APPROVED (code + unit) — 2026-07-14
 **From**: pm-desk
 **Status**: APPROVED — next gate is qa-lab `QA-M1` (behavioral / E2E). Full brief:
