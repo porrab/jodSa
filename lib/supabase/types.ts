@@ -425,7 +425,16 @@ export interface Database {
           allocation: Json
           created_at?: string
         }
-        Update: { [_ in never]: never }
+        Update: {
+          id?: string
+          user_id?: string
+          taken_at?: string
+          display_currency?: string
+          holdings?: Json
+          totals?: Json
+          allocation?: Json
+          created_at?: string
+        }
         Relationships: []
       }
       slip_account_map: {
