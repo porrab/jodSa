@@ -1,0 +1,84 @@
+import { expect, type Page } from '@playwright/test'
+
+/**
+ * /invest UI helpers — drive holding creation / overview / price-update through the
+ * REAL app UI (no direct DB seeding of holdings: the app must compute cost basis and
+ * totals so the behavioral fixture stays honest). Mirrors the selector/helper style of
+ * helpers/ui.ts. Thai UI strings (default locale) — see messages/th.json `invest`.
+ */
+
+export type AddHoldingOpts = {
+  /** Unique substring of the asset picker option's visible text, e.g. '(AAPL)' or 'ทองคำแท่ง'. */
+  asset: string
+  /** Sleeve option label (th). Omit for the default 'core'. e.g. 'เงินเสี่ยงสูง (Risk Capital)'. */
+  sleeve?: string
+  qty: string
+  price: string
+  fees?: string
+  /** 'YYYY-MM-DDTHH:mm' for the datetime-local input. */
+  datetime?: string
+  /** FX-at-cost rate (only used when the asset currency !== THB). */
+  fx?: string
+}
+
+/** Open /invest, add one holding via the Add-Holding dialog, wait for it to close. */
+export async function addHolding(page: Page, opts: AddHoldingOpts): Promise<void> {
+  await page.goto('/invest')
+  await page.getByRole('button', { name: 'เพิ่มสินทรัพย์' }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+
+  // Asset picker is the only combobox until an asset is chosen (the rest of the form
+  // renders once selectedAsset is truthy).
+  await dialog.getByRole('combobox').first().click()
+  await page.getByRole('option', { name: opts.asset }).click()
+
+  const form = dialog.locator('form')
+  await expect(form).toBeVisible()
+
+  if (opts.sleeve) {
+    // The sleeve Select is the only combobox INSIDE the form (asset picker sits above it).
+    await form.getByRole('combobox').click()
+    await page.getByRole('option', { name: opts.sleeve, exact: true }).click()
+  }
+
+  await dialog.locator('#h-qty').fill(opts.qty)
+  await dialog.locator('#h-price').fill(opts.price)
+  if (opts.fees !== undefined) await dialog.locator('#h-fees').fill(opts.fees)
+  await dialog.locator('#h-datetime').fill(opts.datetime ?? '2025-05-15T14:30')
+  if (opts.fx !== undefined && (await dialog.locator('#h-fx').count())) {
+    await dialog.locator('#h-fx').fill(opts.fx)
+  }
+
+  await dialog.getByRole('button', { name: 'เพิ่มสินทรัพย์' }).click()
+  await expect(dialog).toBeHidden({ timeout: 30_000 })
+}
+
+/** Switch to the Overview (ภาพรวม) dashboard tab, waiting for the total-value surface. */
+export async function openOverview(page: Page): Promise<void> {
+  await page.goto('/invest')
+  await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
+}
+
+/**
+ * Open the "Update Prices" sheet, set one holding's current value (+ FX when the block
+ * exposes an FX input), and save. `fx` omitted → leaves the FX field blank (exercises the
+ * blank-FX exclusion path). Assumes the Overview tab is already open.
+ */
+export async function updatePrice(
+  page: Page,
+  opts: { asset: string; value: string; fx?: string },
+): Promise<void> {
+  await page.getByRole('button', { name: 'อัปเดตราคา' }).click()
+  const sheet = page.getByRole('dialog')
+  await expect(sheet).toBeVisible()
+  // Each holding renders in its own bordered block (space-y-2 rounded-lg border p-3),
+  // value input first, FX input (foreign currency only) second.
+  const block = sheet.locator('div.rounded-lg.border').filter({ hasText: opts.asset })
+  await block.getByRole('textbox').first().fill(opts.value)
+  if (opts.fx !== undefined) {
+    await block.getByRole('textbox').nth(1).fill(opts.fx)
+  }
+  await sheet.getByRole('button', { name: 'บันทึก', exact: true }).click()
+  await expect(sheet).toBeHidden({ timeout: 30_000 })
+}

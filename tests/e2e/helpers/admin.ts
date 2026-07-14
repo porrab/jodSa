@@ -70,6 +70,26 @@ export async function resetAllUserData(userId: string): Promise<void> {
   }
 }
 
+/**
+ * Wipe a test user's /invest module rows so every invest spec starts empty.
+ * FK-safe order: asset_transactions (→ holdings, cascade) and portfolio_snapshots
+ * first, then holdings (→ assets ON DELETE RESTRICT, so must precede custom-asset
+ * delete), then the user's OWN custom assets (never the shared is_system rows).
+ * Used by invest-m1/invest-m3 specs the way resetAllUserData is used by M3/M4.
+ */
+export async function resetInvestData(userId: string): Promise<void> {
+  const a = adminClient()
+  const { error: txErr } = await a.from('asset_transactions').delete().eq('user_id', userId)
+  if (txErr) throw new Error(`reset asset_transactions failed: ${txErr.message}`)
+  const { error: snapErr } = await a.from('portfolio_snapshots').delete().eq('user_id', userId)
+  if (snapErr) throw new Error(`reset portfolio_snapshots failed: ${snapErr.message}`)
+  const { error: hErr } = await a.from('holdings').delete().eq('user_id', userId)
+  if (hErr) throw new Error(`reset holdings failed: ${hErr.message}`)
+  // custom (owned) assets only — leave the 19 shared is_system reference rows intact
+  const { error: aErr } = await a.from('assets').delete().eq('user_id', userId).eq('is_system', false)
+  if (aErr) throw new Error(`reset custom assets failed: ${aErr.message}`)
+}
+
 export async function deleteUserByEmail(email: string): Promise<void> {
   const user = await findUserByEmail(email)
   if (!user) return

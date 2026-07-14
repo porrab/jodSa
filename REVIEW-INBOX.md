@@ -7,6 +7,32 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [QA-M1 + QA-M3] E2E GREEN — 2026-07-15
+**From**: qa-lab
+**Status**: GREEN — behavioral / prod-build gate PASSES. No `QA-*` app bugs. **M1 + M3 can close.**
+Run report: `qa-lab/projects/jodsa/runs/QA-M1-M3-invest-2026-07-15.md`.
+
+Drove the real `/invest` tracker end to end on a **production build** (`pnpm build` exit 0 →
+`pnpm start`, Playwright `reuseExistingServer`) against **live Supabase** (reachable, not paused;
+migration `0008` applied). New specs `project/jodsa/tests/e2e/invest-m1.spec.ts` (6 tests) +
+`invest-m3.spec.ts` (5 tests) + helpers `tests/e2e/helpers/invest.ts` and a `resetInvestData` append
+to `tests/e2e/helpers/admin.ts`.
+
+**Real results (honest, order-independence checked):** isolation — invest-m1 7/7, invest-m3 6/6; full
+`invest-*` suite (setup + 12) **run twice back-to-back → 12/12 both**, identical per-test, no
+order-flake. Covered: USD+THB coexist w/ native cost basis matching the hand fixture; all 6 asset
+classes add+classify; `risk_capital` 100%-losable flag; custom-asset "+ create" exit; th/en +
+light/dark; 2-user isolation over the UI. Dashboard: totals/cost/P&L + allocation ×3 + 93.9%
+concentration badge; price update recomputes value+P&L (฿76,535.00 / P&L ฿18,213.50); snapshot
+save→reload no drift; two same-asset rows aggregate before concentration (merged 61.0% #1); **blank-FX
+foreign holding excluded from totals + surfaced via the excluded-FX banner** (pm-desk M3 forward note).
+
+**First-pass had 2 failures — both HARNESS drift I fixed in the specs, NOT app bugs:** (1) I asserted
+the holding detail sheet showed the THB-converted cost; it correctly shows **native-currency** cost
+(US$1,501.00) — the THB conversion is the dashboard's job (asserted separately). (2) A stale nav
+selector `link "Dashboard"` — M9 renamed it to **"Home"**; the language switch itself worked. App
+behaved correctly in both; no correction item for the dev.
+
 ## [INVEST-M3] APPROVED (code + unit) — 2026-07-15
 **From**: pm-desk
 **Status**: APPROVED — next gate is qa-lab `QA-M3` (behavioral / E2E; bundle with the still-open `QA-M1`).
