@@ -7,10 +7,58 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
-## [SPEC-3] Phase 2 — M10–M13 (Push · CSV · BYO Vision · Realtime) — 2026-07-14
+## [SPEC-4] Phase 2 — JodSa Investments module (`/invest`) — 2026-07-14
 **From**: idea-forge
-**Status**: OPEN — new milestones, build in order **M10 → M11 → M12 → M13**. Each is one pm-desk review
-scope. This is a net-new phase, not a fix to M1–M9.
+**Status**: OPEN — **GREENLIT, this is the active Phase-2 build** (owner confirmed 2026-07-14 the
+investment module is the P2 they want, over SPEC-3). Builds **INTO this app** as a new `/invest` route
+group — **not a fresh scaffold**. Blueprint is audited **SHIP, 0 blockers**.
+
+**Authoritative spec (read in order) — go-signal is this brief:**
+1. `idea-forge/ideas/jodsa-investments/prompt.md` — the handoff prompt (read first).
+2. `idea-forge/ideas/jodsa-investments/docs/01-definition.md` — what/who/success/**non-goals**.
+3. `idea-forge/ideas/jodsa-investments/docs/02-architecture.md` — data model & stack (aligned track-first).
+4. `idea-forge/ideas/jodsa-investments/docs/04-roadmap.md` — M0–M5 + acceptance.
+5. `idea-forge/ideas/jodsa-investments/docs/05-risks.md` · `docs/06-audit.md` — risks + SHIP audit.
+
+**Reuse, don't reinvent:** JodSa's Supabase/RLS/Auth, Serwist PWA, on-device OCR worker, next-intl/
+next-themes, **design v3**. Analysis methodology for M5: `fin-desk/Resources/portfolio-risk-review/
+portfolio-risk-methodology.md`.
+
+**Build order (M0 gates M5 only — it does NOT block the tracker):**
+- [ ] **M1 — Holdings + Asset-Transaction Ledger** ← *start here* · complexity M · deps none · `supabase-rls`.
+  New schema `assets/holdings/asset_transactions/portfolio_snapshots` + RLS (Drizzle migrations);
+  reuse JodSa auth; **multi-currency** minor-unit money helpers (FX-at-cost); manual CRUD; asset classes
+  **US stock/ETF · Thai SET · Thai funds · gold · crypto**; sleeve tags `core|satellite|risk_capital`;
+  cost-basis from transactions; holdings table UI (th/en, light/dark, v3). **Accept:** 2-user RLS
+  isolation; USD+THB holdings coexist w/ hand-fixture minor-unit math; every asset class add/classify/
+  cost-basis; `risk_capital` sleeve flagged 100%-losable.
+- [ ] **M2 — Broker-Screenshot OCR** (Dime-first, ~10 real screenshots prereq) · M · deps M1. Reuse the
+  on-device worker; image never uploaded; ≥85% position-value correct; confirm grid w/ low-conf flags.
+- [ ] **M3 — Portfolio Dashboard** · M · deps M1. Value/cost/P&L/allocation (class·currency·sleeve) +
+  concentration callout + manual price update + snapshot history; under `/invest` (no chart on expense Home).
+- [ ] **M0 — AI-Planning Validation Gate** *(builds nothing; gates M5)* · S · **needs owner input**:
+  feed one **real** portfolio (Dime screenshot + actual SET/fund/gold/crypto holdings) into fin-desk
+  `portfolio-risk-review`/`advisor`; verdict → `docs/M0-validation.md`. **PASS = ≥1 monthly action the
+  owner would act on / be reassured by**, else **stop the AI layer**, ship M1–M3 as a tracker. This is a
+  fin-desk + owner-data step, runnable in parallel with M1–M3.
+- [ ] **M5 — AI Monthly Buy/Sell Planner** ⚠️ *gated by M0 PASS* · L · deps M3+M0 · new `portfolio-planner`
+  skill. Decision-support only: buy/sell/hold/rebalance + one-line rationale, epistemic tags, disclaimer,
+  first-class **NO-TRADE** path; **never places or simulates a real order** (non-goal guard in acceptance).
+
+**Firm non-goals (from 01-definition):** no order execution / broker integration ever · no paid
+market-data API in MVP (manual prices) · not licensed advice. Multi-tenant RLS isolation per new table.
+
+**Dev:** start **M1**; when its acceptance passes (types clean + lint clean + 2-user RLS holds), mark
+`[x]` and ask pm-desk to review. idea-forge does not review the code. Migration touches the **live**
+Supabase — apply per the project's migration discipline.
+
+---
+
+## [SPEC-3] Phase 2 backlog — M10–M13 (Push · CSV · BYO Vision · Realtime) — 2026-07-14
+**From**: idea-forge
+**Status**: **PARKED** (blueprinted, not the active target) — 2026-07-14 the owner chose the **investment
+module (SPEC-4)** as the Phase-2 build. Keep M10–M13 as planned backlog; **do NOT start M10** until the
+owner re-prioritizes. Build order when resumed: **M10 → M11 → M12 → M13**. Net-new phase, not a fix to M1–M9.
 
 **Authoritative spec (read in order):**
 1. `idea-forge/ideas/jodsa/docs/04-roadmap.md` §"Phase 2" — M10–M13 deliverables + acceptance.
