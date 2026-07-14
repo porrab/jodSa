@@ -292,6 +292,142 @@ export interface Database {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          id: string
+          symbol: string | null
+          name: string
+          asset_class: 'us_equity' | 'etf' | 'thai_set' | 'thai_fund' | 'gold' | 'crypto'
+          region: string | null
+          currency: string
+          proxy_class: string | null
+          lookthrough: Json | null
+          is_system: boolean
+          user_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          symbol?: string | null
+          name: string
+          asset_class: 'us_equity' | 'etf' | 'thai_set' | 'thai_fund' | 'gold' | 'crypto'
+          region?: string | null
+          currency: string
+          proxy_class?: string | null
+          lookthrough?: Json | null
+          is_system?: boolean
+          user_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          symbol?: string | null
+          name?: string
+          asset_class?: 'us_equity' | 'etf' | 'thai_set' | 'thai_fund' | 'gold' | 'crypto'
+          region?: string | null
+          currency?: string
+        }
+        Relationships: []
+      }
+      holdings: {
+        Row: {
+          id: string
+          user_id: string
+          asset_id: string
+          sleeve: 'core' | 'satellite' | 'risk_capital'
+          broker: string | null
+          // bigint columns come back from PostgREST as strings (JS number can't
+          // hold a full int64 precisely) — every *_minor field here is a string.
+          current_value_minor: string | null
+          current_value_currency: string | null
+          current_fx_to_display: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          asset_id: string
+          sleeve?: 'core' | 'satellite' | 'risk_capital'
+          broker?: string | null
+          current_value_minor?: string | null
+          current_value_currency?: string | null
+          current_fx_to_display?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          sleeve?: 'core' | 'satellite' | 'risk_capital'
+          broker?: string | null
+          current_value_minor?: string | null
+          current_value_currency?: string | null
+          current_fx_to_display?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      asset_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          holding_id: string
+          type: 'buy' | 'sell' | 'dividend' | 'fee'
+          qty: string | null
+          price_minor: string | null
+          currency: string
+          fees_minor: string
+          fx_rate: string | null
+          datetime: string
+          ref: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          holding_id: string
+          type: 'buy' | 'sell' | 'dividend' | 'fee'
+          qty?: string | null
+          price_minor?: string | null
+          currency: string
+          fees_minor?: string
+          fx_rate?: string | null
+          datetime: string
+          ref?: string | null
+          created_at?: string
+        }
+        Update: {
+          qty?: string | null
+          price_minor?: string | null
+          fees_minor?: string
+          fx_rate?: string | null
+          datetime?: string
+          ref?: string | null
+        }
+        Relationships: []
+      }
+      portfolio_snapshots: {
+        Row: {
+          id: string
+          user_id: string
+          taken_at: string
+          display_currency: string
+          holdings: Json
+          totals: Json
+          allocation: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          taken_at?: string
+          display_currency: string
+          holdings: Json
+          totals: Json
+          allocation: Json
+          created_at?: string
+        }
+        Update: { [_ in never]: never }
+        Relationships: []
+      }
       slip_account_map: {
         Row: {
           id: string

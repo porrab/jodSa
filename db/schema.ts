@@ -3,6 +3,9 @@ import {
   uuid,
   text,
   integer,
+  bigint,
+  numeric,
+  jsonb,
   boolean,
   timestamp,
   date,
@@ -137,6 +140,76 @@ export const slipAccountMap = pgTable('slip_account_map', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 // UNIQUE(user_id, fingerprint) is defined in the SQL migration.
+
+// ── M1 (SPEC-4) — JodSa Investments: holdings + asset-transaction ledger ──────────
+// See db/migrations/0008_invest_holdings.sql for the full design rationale
+// (bigint minor units, no redundant avg-cost column — cost basis is always derived
+// live from asset_transactions via lib/invest/cost-basis.ts).
+
+export const assets = pgTable('assets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  symbol: text('symbol'),
+  name: text('name').notNull(),
+  assetClass: text('asset_class', {
+    enum: ['us_equity', 'etf', 'thai_set', 'thai_fund', 'gold', 'crypto'],
+  }).notNull(),
+  region: text('region'),
+  currency: text('currency').notNull(),
+  // Nullable — a key into the app-shipped proxy-params, consumed only by the later M5 planner.
+  proxyClass: text('proxy_class'),
+  // Nullable — ETF constituents/sector weights (best-effort), consumed only by M5.
+  lookthrough: jsonb('lookthrough'),
+  isSystem: boolean('is_system').default(false).notNull(),
+  userId: uuid('user_id'), // null for system-seeded rows
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const holdings = pgTable('holdings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  assetId: uuid('asset_id').notNull(),
+  sleeve: text('sleeve', { enum: ['core', 'satellite', 'risk_capital'] })
+    .default('core')
+    .notNull(),
+  broker: text('broker'),
+  // Manually-entered "current value" (M3 "update prices"); null until the user sets it.
+  currentValueMinor: bigint('current_value_minor', { mode: 'bigint' }),
+  currentValueCurrency: text('current_value_currency'),
+  // FX-at-valuation used to roll this holding into the display-currency total —
+  // entered by the user, never fetched.
+  currentFxToDisplay: numeric('current_fx_to_display'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const assetTransactions = pgTable('asset_transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  holdingId: uuid('holding_id').notNull(),
+  type: text('type', { enum: ['buy', 'sell', 'dividend', 'fee'] }).notNull(),
+  // buy/sell: traded quantity. dividend/fee: null (price_minor holds the total amount).
+  qty: numeric('qty'),
+  // buy/sell: PER-UNIT price. dividend/fee: TOTAL cash amount (column reused; see migration).
+  priceMinor: bigint('price_minor', { mode: 'bigint' }),
+  currency: text('currency').notNull(),
+  feesMinor: bigint('fees_minor', { mode: 'bigint' }).default(0n).notNull(),
+  // FX-at-cost: display-currency-per-unit-of-`currency`, captured at trade time, immutable.
+  fxRate: numeric('fx_rate'),
+  datetime: timestamp('datetime', { withTimezone: true }).notNull(),
+  ref: text('ref'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const portfolioSnapshots = pgTable('portfolio_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  takenAt: timestamp('taken_at', { withTimezone: true }).defaultNow().notNull(),
+  displayCurrency: text('display_currency').notNull(),
+  holdings: jsonb('holdings').notNull(), // valued positions as of the snapshot
+  totals: jsonb('totals').notNull(), // value / cost / P&L in display currency
+  allocation: jsonb('allocation').notNull(), // by asset_class / currency / sleeve
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
 
 export const sessionSlips = pgTable('session_slips', {
   id: uuid('id').primaryKey().defaultRandom(),
