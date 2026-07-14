@@ -27,7 +27,7 @@ import {
 } from '@/lib/validators/invest'
 import { formatMoney, parseMinor, toMajor, minorUnitDecimals } from '@/lib/invest/money'
 
-type Asset = {
+export type Asset = {
   id: string
   symbol: string | null
   name: string
@@ -57,7 +57,7 @@ type CostBasis = {
   feesMinor: string
 }
 
-type Holding = {
+export type Holding = {
   id: string
   asset_id: string
   sleeve: Sleeve

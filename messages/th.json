@@ -179,7 +179,23 @@
       "selectClass": "เลือกประเภท",
       "create": "สร้างสินทรัพย์",
       "newAssetFallback": "สินทรัพย์ใหม่"
-    }
+    },
+    "tabHoldings": "สินทรัพย์",
+    "tabOverview": "ภาพรวม",
+    "totalValueLabel": "มูลค่ารวม ({currency})",
+    "unpricedNote": "{count} รายการยังไม่ได้ตั้งราคาปัจจุบัน — คำนวณด้วยต้นทุน",
+    "excludedFxNote": "{count} รายการต้องระบุอัตราแลกเปลี่ยนก่อนจึงจะรวมในยอดรวมได้",
+    "concentrationTitle": "ความกระจุกตัว",
+    "concentratedBadge": "กระจุกตัวสูง",
+    "allocationByClass": "แบ่งตามประเภทสินทรัพย์",
+    "allocationByCurrency": "แบ่งตามสกุลเงิน",
+    "allocationBySleeve": "แบ่งตามระดับความเสี่ยง",
+    "updatePrices": "อัปเดตราคา",
+    "pricesUpdated": "อัปเดตราคาแล้ว",
+    "noPricesToUpdate": "กรอกมูลค่าอย่างน้อย 1 รายการเพื่ออัปเดต",
+    "saveSnapshot": "บันทึกสแนปช็อต",
+    "snapshotSaved": "บันทึกสแนปช็อตแล้ว",
+    "snapshotHistory": "ประวัติสแนปช็อต"
   },
   "budget": {
     "title": "งบประมาณ",

@@ -73,3 +73,19 @@ export const updateHoldingSchema = z.object({
   currentFxToDisplay: z.number().positive().optional(),
 })
 export type UpdateHoldingInput = z.infer<typeof updateHoldingSchema>
+
+// ── M3 — Portfolio Dashboard ─────────────────────────────────────────────
+
+/** One row of the "update prices" bulk form (app/actions/invest/portfolio.ts). */
+export const bulkPriceUpdateEntrySchema = z.object({
+  holdingId: z.string().uuid(),
+  currentValue: z.number().nonnegative('Value cannot be negative'),
+  currentValueCurrency: currencySchema,
+  // Required only when currentValueCurrency isn't the display currency (THB) —
+  // enforced by the caller (lib/invest/portfolio.ts DISPLAY_CURRENCY), not here,
+  // since this schema doesn't know the display currency.
+  currentFxToDisplay: z.number().positive().optional(),
+})
+export type BulkPriceUpdateEntry = z.infer<typeof bulkPriceUpdateEntrySchema>
+
+export const bulkPriceUpdateSchema = z.array(bulkPriceUpdateEntrySchema).min(1, 'Nothing to update')

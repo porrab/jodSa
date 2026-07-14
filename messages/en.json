@@ -179,7 +179,23 @@
       "selectClass": "Select class",
       "create": "Create asset",
       "newAssetFallback": "New asset"
-    }
+    },
+    "tabHoldings": "Holdings",
+    "tabOverview": "Overview",
+    "totalValueLabel": "Total value ({currency})",
+    "unpricedNote": "{count} holding(s) valued at cost — no current price set yet",
+    "excludedFxNote": "{count} holding(s) need an FX rate to be included in totals",
+    "concentrationTitle": "Concentration",
+    "concentratedBadge": "Concentrated",
+    "allocationByClass": "By asset class",
+    "allocationByCurrency": "By currency",
+    "allocationBySleeve": "By risk sleeve",
+    "updatePrices": "Update Prices",
+    "pricesUpdated": "Prices updated",
+    "noPricesToUpdate": "Enter at least one value to update",
+    "saveSnapshot": "Save Snapshot",
+    "snapshotSaved": "Snapshot saved",
+    "snapshotHistory": "Snapshot History"
   },
   "budget": {
     "title": "Budgets",
