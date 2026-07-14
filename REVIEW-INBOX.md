@@ -88,6 +88,12 @@ portfolio-risk-methodology.md`.
   - **Not done**: M2 (Broker-Screenshot OCR), M3 (Portfolio Dashboard), M0 (AI-planning validation gate),
     M5 (planner) — out of this session's scope. `portfolio_snapshots` table exists (schema only, per the
     roadmap) but has no UI yet — that's M3.
+  - **✅ orchestrator 2026-07-14 — migration `0008` APPLIED to live** (owner authorized "apply ให้เลย";
+    applied atomically via postgres.js simple-protocol, NOT drizzle-kit — journal only lists through idx 4,
+    same M8 gotcha). Verified live: 4 tables + 16 RLS policies (4/table) + 19 seed system assets.
+    **`tests/unit/rls.test.ts` now GREEN 25/25** incl. `M1 (SPEC-4) RLS: B cannot update A's holding` →
+    the 2-user isolation acceptance is now live-verified, not just reasoned. **M1 acceptance fully holds.**
+    tsc 0 + invest unit 22/22 re-verified by orchestrator. **Ready for pm-desk M1 (code+unit) review.**
 - [ ] **M2 — Broker-Screenshot OCR** (Dime-first, ~10 real screenshots prereq) · M · deps M1. Reuse the
   on-device worker; image never uploaded; ≥85% position-value correct; confirm grid w/ low-conf flags.
 - [ ] **M3 — Portfolio Dashboard** · M · deps M1. Value/cost/P&L/allocation (class·currency·sleeve) +
