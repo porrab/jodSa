@@ -71,6 +71,40 @@ create policy "owner_manage_slips" on session_slips
   RLS cannot rate-limit, so spam protection lives in `middleware.ts`.
 - Serve the host QR image via a **signed URL** scoped to the session lifetime.
 
+## Pattern C — shared reference reads (SPEC-4 M1, `assets`)
+`assets` mixes **system-seeded reference rows** (readable by every authenticated user, writable by
+nobody except migrations) with **user-added custom rows** (owner-scoped, Pattern A). One table, two
+policies per statement, discriminated by `is_system`:
+
+```sql
+alter table assets enable row level security;
+
+create policy "assets_select_system_or_own" on assets
+  for select to authenticated
+  using (is_system = true or user_id = auth.uid());
+create policy "assets_insert_own_custom" on assets
+  for insert to authenticated
+  with check (is_system = false and user_id = auth.uid());
+create policy "assets_update_own_custom" on assets
+  for update to authenticated
+  using (is_system = false and user_id = auth.uid())
+  with check (is_system = false and user_id = auth.uid());
+create policy "assets_delete_own_custom" on assets
+  for delete to authenticated
+  using (is_system = false and user_id = auth.uid());
+```
+
+A CHECK constraint (`(is_system and user_id is null) or (not is_system and user_id is not null)`)
+backs the policy so a row can never be both system-flagged and user-owned. No anon policy — this
+table is authenticated-only, unlike Pattern B's guest reads.
+
+## Owned investment tables (SPEC-4 M1)
+`holdings`, `asset_transactions`, `portfolio_snapshots` (and, at the later M5, `plans`) all use plain
+**Pattern A** — same shape as `accounts`/`transactions`. See
+`db/migrations/0008_invest_holdings.sql` for the full applied SQL. Money columns on these tables are
+**`bigint`**, not `integer` — JodSa's satang columns are `int4` (caps ~฿21.4M), too small once
+multi-currency portfolios are in scope. This doesn't change the RLS pattern, only the column type.
+
 ## Review checklist for any new table
 - [ ] RLS enabled and forced.
 - [ ] `select`/`insert`/`update`/`delete` each covered (deny by default otherwise).

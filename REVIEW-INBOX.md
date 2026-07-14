@@ -25,13 +25,69 @@ next-themes, **design v3**. Analysis methodology for M5: `fin-desk/Resources/por
 portfolio-risk-methodology.md`.
 
 **Build order (M0 gates M5 only — it does NOT block the tracker):**
-- [ ] **M1 — Holdings + Asset-Transaction Ledger** ← *start here* · complexity M · deps none · `supabase-rls`.
+- [x] **M1 — Holdings + Asset-Transaction Ledger** ← *start here* · complexity M · deps none · `supabase-rls`.
   New schema `assets/holdings/asset_transactions/portfolio_snapshots` + RLS (Drizzle migrations);
   reuse JodSa auth; **multi-currency** minor-unit money helpers (FX-at-cost); manual CRUD; asset classes
   **US stock/ETF · Thai SET · Thai funds · gold · crypto**; sleeve tags `core|satellite|risk_capital`;
   cost-basis from transactions; holdings table UI (th/en, light/dark, v3). **Accept:** 2-user RLS
   isolation; USD+THB holdings coexist w/ hand-fixture minor-unit math; every asset class add/classify/
   cost-basis; `risk_capital` sleeve flagged 100%-losable.
+
+  **Dev progress (2026-07-14) — M1 implemented, code+unit ready for pm-desk review:**
+  - **Schema** (`db/migrations/0008_invest_holdings.sql`, hand-authored — `drizzle-kit generate` is
+    broken here, per M8's precedent): `assets` (system-seeded reference rows + user-scoped custom rows,
+    `is_system`/`user_id` CHECK-constrained), `holdings`, `asset_transactions`, `portfolio_snapshots`
+    (schema only — its UI is M3). Every `*_minor` column is **`bigint`**, not `integer`, per the Fable
+    note. `db/schema.ts` + `lib/supabase/types.ts` updated to match by hand. **Not applied to the live
+    Supabase — owner sign-off step, see final report.**
+  - **Design decision (disambiguating `holdings.avg_cost_minor`):** took the "derive from transactions"
+    branch the Fable note offered, not "store total cost" — `holdings` carries **no** stored cost-basis
+    column at all. Qty + cost basis are always computed live from `asset_transactions` via a new
+    weighted-average-cost fold (`lib/invest/cost-basis.ts`), so there's exactly one source of truth and
+    no drift risk. Consequence: opening a holding = recording its first `buy` transaction in the same
+    server action (`createHolding` in `app/actions/invest/holdings.ts`) — "add a holding" and "record
+    the first buy" are the same user action.
+  - **Money** (`lib/invest/money.ts`, separate from `lib/money.ts` per the Fable note): bigint minor
+    units + explicit currency, `parseMinor`/`minorToApi` for the PostgREST bigint-as-string boundary,
+    `convertMinor` for FX-at-cost/FX-at-valuation (rounds once, at the destination currency's minor
+    unit). No `decimal.js` dependency added — M1 doesn't need ratio math (that's M5).
+  - **Route + UI**: `app/(app)/invest/` (inside the `(app)` auth-guard group, not top-level). Compact
+    holding rows → J3-style detail sheet (design v3): sleeve/asset-class badges, `risk_capital` flagged
+    with a destructive-styled warning banner both at creation time and in the detail view, transaction
+    list with add/delete, manual "current value" entry (the M3 hook). Asset picker groups the seeded
+    reference list by class with an inline "+ create asset" exit (J4 empty-source rule) when nothing
+    matches. Nav: `/invest` enters via `/more` + the desktop sidebar (bottom bar's fixed 4-dest+FAB
+    unchanged), per the Fable note.
+  - **Seed data**: 19 system-seeded reference assets spanning all 5 MVP classes (7 US stocks/ETFs, 4 Thai
+    SET names, 3 Thai mutual funds, 2 gold products, 3 crypto), idempotent via a partial unique index +
+    `on conflict ... do nothing`.
+  - **Housekeeping**: `project/jodsa/CLAUDE.md` non-goals amended with a scope-expansion note pointing at
+    this SPEC-4 block. `.claude/skills/supabase-rls/SKILL.md` extended (Pattern C: shared reference reads
+    + the owned-table list) rather than duplicated. `.claude/skills/portfolio-planner/SKILL.md` written
+    verbatim per `prompt.md` §7 (M5 not started — gated by M0, which this session did not run).
+  - **Infra fix (autonomous call, documented — not a scope cross):** `tsconfig.json` `target` bumped
+    `ES2017` → `ES2020`. Bigint literals (`0n`, `100n`, ...) — required throughout the new bigint money
+    layer per the Fable note — don't type-check below ES2020. Next.js/SWC does the actual build
+    transpilation (not `tsc`), so this only affects the type-checker's allowed syntax/lib surface;
+    `pnpm build` (all 21 routes) and `next lint` both still pass clean after the bump.
+  - **Gates**: `tsc --noEmit` exit 0 · `next lint` clean · `pnpm build` succeeds (`/invest` route
+    generated, 7.98 kB / 190 kB First Load JS) · unit suite (with `.env.test` sourced) **257 passed / 7
+    skipped** (pre-existing skips, unrelated) — the *only* non-green item is the new M1 RLS suite in
+    `tests/unit/rls.test.ts` (`M1 (SPEC-4) RLS: invest holdings/asset_transactions/assets`), which errors
+    at `beforeAll` with `Could not find the table 'public.assets'` — **expected**, since migration 0008
+    has correctly not been applied to the live Supabase yet (identical situation to M8's
+    `slip_account_map` RLS suite before its migration was applied). Every other existing suite, including
+    the pre-existing RLS suites for `accounts`/`transactions`/`slip_account_map`/M4 guest-token, stayed
+    green — no regression.
+  - **RLS reasoning (pending live verification):** every new table uses the same Pattern A
+    (`user_id = auth.uid()` on select/insert/update/delete with `with check`) already proven live for
+    `accounts`/`transactions`/`slip_account_map` in this repo, plus a new Pattern C (shared reference
+    reads) for `assets`, documented in the extended `supabase-rls` skill. High confidence by construction
+    and by matching a working pattern verbatim, but **not yet independently confirmed live** — that's
+    exactly what the authored `tests/unit/rls.test.ts` M1 block will confirm once 0008 is applied.
+  - **Not done**: M2 (Broker-Screenshot OCR), M3 (Portfolio Dashboard), M0 (AI-planning validation gate),
+    M5 (planner) — out of this session's scope. `portfolio_snapshots` table exists (schema only, per the
+    roadmap) but has no UI yet — that's M3.
 - [ ] **M2 — Broker-Screenshot OCR** (Dime-first, ~10 real screenshots prereq) · M · deps M1. Reuse the
   on-device worker; image never uploaded; ≥85% position-value correct; confirm grid w/ low-conf flags.
 - [ ] **M3 — Portfolio Dashboard** · M · deps M1. Value/cost/P&L/allocation (class·currency·sleeve) +

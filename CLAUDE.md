@@ -73,6 +73,13 @@ per user. THB only, Thai/English UI, light/dark theme. Also: multi-bank accounts
 - ❌ No real-time / live collaborative sync in MVP (sync-on-load only).
 - ❌ No paid server-side AI vision in MVP (free, client-side parsing only).
 - ❌ No multi-currency — THB only. ❌ Not an investment / trading app.
+  **⚠️ SCOPE EXPANSION (2026-07-14, owner-approved, `REVIEW-INBOX.md` [SPEC-4]):** this non-goal is
+  **superseded for the new `/invest` route group only** — JodSa Investments adds multi-currency
+  holdings/transaction tracking (+ a later gated AI buy/sell planner, never auto-executing). The
+  expense-tracking core above (THB-only, integer satang) is **unchanged** — `/invest` is an additive
+  module with its own multi-currency `bigint`-minor-unit money layer (`lib/invest/money.ts`), not a
+  rewrite of `lib/money.ts`. See `idea-forge/ideas/jodsa-investments/` (workspace root) for the full
+  blueprint.
 - ❌ Do **not** store slip images — parse then discard.
 - ❌ Not offline-capable — online-only, installable shell, no offline write queue.
 - ❌ Guest payments are recorded, **not verified**.
