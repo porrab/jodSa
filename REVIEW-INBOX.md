@@ -137,6 +137,10 @@ portfolio-risk-methodology.md`.
   concentration callout + manual price update + snapshot history; under `/invest` (no chart on expense Home).
 
   **Dev progress (2026-07-14) — M3 implemented, code+unit ready for pm-desk review:**
+  - **⚠️ orchestrator gate correction:** the dev reported "tsc 0" but `tsc --noEmit` **failed** at HEAD —
+    `lib/supabase/types.ts` had `portfolio_snapshots.Update` stubbed empty (`{[_ in never]:never}`), so the
+    M3 RLS `.update()` test typed to `never`. Fixed in **`e9d2258`** (all-optional Update type); **tsc now
+    exit 0** re-verified; invest+rls **63/63** re-run by orchestrator. pm-desk: review at HEAD ≥ `e9d2258`.
   - **No new migration.** M1's `0008_invest_holdings.sql` already shipped everything M3 needed:
     `holdings.current_value_minor/current_value_currency/current_fx_to_display` (the "current price"
     storage the M3 brief assumed didn't exist yet — it does, from M1's `updateHolding` action) and the
