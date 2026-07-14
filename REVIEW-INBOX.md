@@ -48,9 +48,39 @@ portfolio-risk-methodology.md`.
 **Firm non-goals (from 01-definition):** no order execution / broker integration ever · no paid
 market-data API in MVP (manual prices) · not licensed advice. Multi-tenant RLS isolation per new table.
 
+### Fable build-readiness review — **GO-WITH-NOTES** (2026-07-14, disk-verified)
+Core claims check out: no schema collision, no existing `/invest`, auth/RLS/Serwist/i18n/design-v3 real
+and reusable, M0 gates M5 only, M1 acceptance self-contained. Heed these while building — **M1 items first:**
+- **[M1] Money = new layer, `bigint` minor units.** `lib/money.ts` is THB/satang-only — **not**
+  reusable. Build a **separate** `lib/invest/money.ts` (multi-currency minor units + FX-at-cost). ⚠️
+  JodSa's schema uses `integer` (int4, caps ~฿21.4M in satang) — for invest `*_minor` columns use
+  **`bigint`**, do **not** copy the int4 pattern. Disambiguate `holdings.avg_cost_minor` (per-unit is
+  lossy with fractional crypto/Dime qty → store total cost or derive from transactions).
+- **[M1] Migration = `0008_*.sql`, hand-authored SQL with RLS inline.** Migrations run 0001–0007 (note a
+  duplicate-numbered 0005 pair + stale `meta/_journal.json`). **`drizzle-kit generate` is broken in this
+  repo** (0007 was hand-authored) — write `0008` by hand; apply to **live** Supabase manually per M8's
+  precedent (do NOT auto-apply — surface it for owner sign-off).
+- **[M1] Route group = `app/(app)/invest/`** (inside the `(app)` auth-guard group at
+  `app/(app)/layout.tsx`), **not** top-level `app/invest/` (which would render with no auth/nav). Nav v3
+  is a fixed 4-dest + FAB bar → `/invest` enters via `/more` + desktop sidebar (dev's call, no conflict).
+- **[M1] Housekeeping:** `project/jodsa/CLAUDE.md` still lists "❌ No multi-currency / ❌ Not an
+  investment app" as firm non-goals with "push back if asked to cross." SPEC-4 is the owner-approved
+  crossing — amend that CLAUDE.md non-goal early in M1 (scope-expansion note → SPEC-4) so future sessions
+  don't refuse.
+- **[M1-UI] Design v3 authority = `idea-forge/ideas/jodsa/docs/07-design.md`** (NOT the v1 snapshot at
+  `project/jodsa/docs/source-idea/docs/07-design.md`). v3 tokens are already live in `globals.css` (M9) —
+  build to match existing components.
+- **[M0/M5] Methodology path fix:** the canonical file is workspace-root `Resources/portfolio-risk-review/
+  portfolio-risk-methodology.md` (NOT `fin-desk/Resources/...`, which does not exist) — correct the
+  prefix when the `portfolio-planner` SKILL.md is written.
+- **[M2] OCR worker split:** `workers/slip.worker.ts` does QR/preprocess only (nested-WASM warning);
+  tesseract runs main-thread via dynamic import (`lib/slip/parse-image.ts`). `workers/portfolio.worker.ts`
+  must copy this split; row-segmentation grammar is genuinely new work.
+- **[M5] Optional:** harden the no-order-execution non-goal to a grep guard (like SPEC-3's M10 pattern).
+
 **Dev:** start **M1**; when its acceptance passes (types clean + lint clean + 2-user RLS holds), mark
-`[x]` and ask pm-desk to review. idea-forge does not review the code. Migration touches the **live**
-Supabase — apply per the project's migration discipline.
+`[x]` and ask pm-desk to review. idea-forge does not review the code. **Do not apply `0008` to the live
+Supabase without owner sign-off** — author the migration, run/verify locally, then surface it for apply.
 
 ---
 
