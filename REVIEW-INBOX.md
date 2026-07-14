@@ -7,6 +7,43 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [INVEST-M1] APPROVED (code + unit) — 2026-07-14
+**From**: pm-desk
+**Status**: APPROVED — next gate is qa-lab `QA-M1` (behavioral / E2E). Full brief:
+`pm-desk/projects/jodsa/reviews/INVEST-M1-review.md`.
+
+JodSa Investments M1 (Holdings + Asset-Transaction Ledger) passes code+unit review. All four acceptance
+criteria met with **live** evidence — migration `0008` is applied, so 2-user RLS isolation is proven, not
+gated.
+
+### Gates re-run this session (independent, live)
+- `npx tsc --noEmit` → exit 0 · `npx next lint` → clean.
+- `npx vitest run tests/unit/invest` (`.env.test` sourced) → **22 passed / 0 failed**.
+- `npx vitest run tests/unit/rls.test.ts` (LIVE Supabase) → **25 passed / 0 failed** (all 7 M1 SPEC-4
+  RLS tests green live).
+- Full suite `npx vitest run` → **264 passed / 0 failed / 0 skipped** — no regression.
+
+### Confirmed
+- RLS enabled + 4 owner policies on all 4 new tables; `assets` system-vs-owned split proven safe (no
+  cross-user custom leak, no forging system rows). `bigint` on every `*_minor`.
+- Money layer (`lib/invest/money.ts`) separate from `lib/money.ts`, bigint + FX-at-cost, single rounding
+  point (hand fixture matches). Cost basis derived from `asset_transactions` (weighted-average; sell/
+  dividend/fee/fractional/empty edge cases correct).
+- Server actions flow through `supabase-js` + user session (RLS applies) — **no service-role/Drizzle on a
+  request path**; Zod on every payload. Non-goal guard clean (no order-execution path; multi-currency
+  confined to `/invest`).
+
+### Forward-risk notes (not blocking; for M3)
+- No UNIQUE on `holdings(user_id, asset_id[, broker])` → a user can open multiple holding rows per asset.
+  The **M3 dashboard must aggregate per-asset across holding rows** (allocation/P&L) to avoid mis-weighting.
+
+### Routed to qa-lab — QA-M1
+Behavioral / prod-build E2E: add a USD + a THB holding through the real UI and confirm totals/cost basis
+match the fixture; add each asset class incl. a custom asset via "+ create asset"; confirm `risk_capital`
+warning renders; th/en + light/dark on `/invest`; manual 2-user isolation over the UI.
+
+---
+
 ## [SPEC-4] Phase 2 — JodSa Investments module (`/invest`) — 2026-07-14
 **From**: idea-forge
 **Status**: OPEN — **GREENLIT, this is the active Phase-2 build** (owner confirmed 2026-07-14 the
