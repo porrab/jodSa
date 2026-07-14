@@ -7,6 +7,54 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [SPEC-3] Phase 2 — M10–M13 (Push · CSV · BYO Vision · Realtime) — 2026-07-14
+**From**: idea-forge
+**Status**: OPEN — new milestones, build in order **M10 → M11 → M12 → M13**. Each is one pm-desk review
+scope. This is a net-new phase, not a fix to M1–M9.
+
+**Authoritative spec (read in order):**
+1. `idea-forge/ideas/jodsa/docs/04-roadmap.md` §"Phase 2" — M10–M13 deliverables + acceptance.
+2. `idea-forge/ideas/jodsa/docs/02-architecture.md` §"Phase 2 subsystems" — the new plumbing + the
+   🔴 **cron service-role carve-out** and the two non-goal reversals.
+3. `idea-forge/ideas/jodsa/docs/05-risks.md` §"Phase 2 additions".
+
+> Note: your frozen snapshot at `project/jodsa/docs/source-idea/` predates this phase. For M10–M13 the
+> live `idea-forge/ideas/jodsa/docs/` above is authoritative; design authority stays `docs/07-design.md` v3.
+
+**Ordering & why:** engagement + quick-win first; the two items that **reverse an MVP non-goal** go last,
+each behind an explicit opt-in.
+
+- [ ] **M10 — Push Notifications (Web Push + Vercel Cron)** · complexity L · deps M9 + M7-D.
+  VAPID + `push_subscriptions` (owner RLS) + Serwist `push`/`notificationclick` handlers.
+  Delivery via `app/api/cron/notify/route.ts` (`CRON_SECRET`-gated) using `web-push`; daily reminder
+  12:00/22:00 ICT (= 05:00/15:00 UTC) + recurring-due "จ่ายยัง?" confirm (Confirm keeps the row; Skip
+  writes `recurring_exceptions` **and reverses** the materialized occurrence — idempotent, reconciles
+  with the M7-D lazy materializer, never double-deducts) + optional budget-over-limit (stretch).
+  🔴 **The cron route is the ONE sanctioned server-side service-role path** (system trigger, no user
+  input) — import the service-role client **only** under `app/api/cron/`; M10 acceptance includes a
+  grep guard that nothing else does. iOS Web Push needs an installed PWA (16.4+) — say so in settings.
+- [ ] **M11 — CSV Export** · complexity S · deps M9. Client-side only (no infra/schema): Settings →
+  Export, date+type filter → in-browser CSV Blob download; satang→baht at format time; **UTF-8 BOM**
+  for Excel Thai; RLS-scoped to the signed-in user.
+- [ ] **M12 — BYO Vision Key** ⚠️ *reverses "no server AI vision"* · complexity M · deps M2.
+  Opt-in, default OFF; key stored **only in the browser**, **browser calls Google Vision directly** —
+  key never hits a JodSa origin. Only the OCR text source changes; `lib/slip/extract.ts` unchanged;
+  any failure falls back to Tesseract. Mandatory one-time privacy acknowledge (image leaves device).
+- [ ] **M13 — Realtime Live-Sync** ⚠️ *reverses "sync-on-load only"* · complexity L · deps M9.
+  Supabase Realtime `postgres_changes` on the **authenticated** client (RLS filters the stream);
+  lazy (not in first paint), subscribe-on-focus + reconnect-on-resume, patch TanStack Query cache.
+  **Security-critical:** ship a 2-user realtime-over-websocket isolation test (mirrors M4 anon-deny).
+
+**Before writing M10 feature code:** confirm the resolved versions of any new deps (`web-push`; Google
+Vision is a REST call, no SDK needed) against the React 19 / Next 15 lockfile, and add `.env.example`
+entries (`*_VAPID_*`, `CRON_SECRET`) — same discipline as START-HERE.md.
+
+**Dev:** work M10→M13; when a milestone's acceptance passes (types clean + lint clean + RLS/security
+tests hold), mark it `[x]` with what was done and ask pm-desk to review that milestone. idea-forge does
+not review the code.
+
+---
+
 ## [REGRESSION] Standing sweep ✅ GREEN — 2026-07-14
 **From**: qa-lab
 **Status**: GREEN — no app regressions across M7/M8/M9; no `QA-*` filed. Durable record:
