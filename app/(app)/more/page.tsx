@@ -1,13 +1,16 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { CreditCard, HandCoins, Repeat, Settings, Upload } from 'lucide-react'
+import { CreditCard, HandCoins, Repeat, Settings, TrendingUp, Upload } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 // "Groups" (M3) left the nav in the design v3 reset (J5) — one concept
 // "ทริป" now, existing grouped data reachable via the /transactions filter.
+// SPEC-4 (M1): /invest is a new module surface — enters via /more + the desktop
+// sidebar per the Fable build-readiness review, not the fixed 4-dest+FAB bottom bar.
 const items = [
   { href: '/import',    key: 'import',    icon: Upload },
   { href: '/accounts',  key: 'accounts',  icon: CreditCard },
+  { href: '/invest',    key: 'invest',    icon: TrendingUp },
   { href: '/recurring', key: 'recurring', icon: Repeat },
   { href: '/sessions',  key: 'sessions',  icon: HandCoins },
   { href: '/settings',  key: 'settings',  icon: Settings },

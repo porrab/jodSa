@@ -14,6 +14,7 @@ import {
   HandCoins,
   MoreHorizontal,
   Settings,
+  TrendingUp,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -30,6 +31,9 @@ const navItems = [
   { href: '/transactions', key: 'transactions', icon: ArrowLeftRight },
   { href: '/import', key: 'import', icon: Upload },
   { href: '/budgets', key: 'budgets', icon: PiggyBank },
+  // SPEC-4 (M1): /invest enters via the desktop sidebar + /more, not the fixed
+  // mobile 4-dest+FAB bottom bar (design v3 keeps that bar unchanged).
+  { href: '/invest', key: 'invest', icon: TrendingUp },
   { href: '/recurring', key: 'recurring', icon: Repeat },
   { href: '/sessions', key: 'sessions', icon: HandCoins },
   { href: '/accounts', key: 'accounts', icon: CreditCard },
