@@ -366,6 +366,89 @@ describe.skipIf(SKIP)('M1 (SPEC-4) RLS: invest holdings/asset_transactions/asset
   })
 })
 
+// portfolio_snapshots' RLS policies were authored + applied in 0008 (M1), but
+// M1's own review only exercised holdings/asset_transactions/assets — M3 is
+// the first milestone to actually write/read this table through the app
+// (savePortfolioSnapshot). Per this repo's quality bar ("2-user isolation
+// test before merge"), prove it live here rather than trusting-by-pattern.
+describe.skipIf(SKIP)('M3 RLS: portfolio_snapshots owner isolation', () => {
+  let clientA: ReturnType<typeof createClient<Database>>
+  let clientB: ReturnType<typeof createClient<Database>>
+  let userAId: string
+  let snapshotAId: string
+
+  beforeAll(async () => {
+    clientA = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    clientB = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+
+    const [resA, resB] = await Promise.all([
+      clientA.auth.signInWithPassword({ email: USER_A_EMAIL!, password: USER_A_PASS! }),
+      clientB.auth.signInWithPassword({ email: USER_B_EMAIL!, password: USER_B_PASS! }),
+    ])
+    if (resA.error) throw new Error(`User A login failed: ${resA.error.message}`)
+    if (resB.error) throw new Error(`User B login failed: ${resB.error.message}`)
+    userAId = resA.data.user!.id
+
+    const { data: snapshot, error } = await clientA
+      .from('portfolio_snapshots')
+      .insert({
+        user_id: userAId,
+        display_currency: 'THB',
+        holdings: [],
+        totals: { valueMinor: '0', costMinor: '0', pnlMinor: '0', pricedCount: 0, unpricedCount: 0, excludedCount: 0, currency: 'THB' },
+        allocation: { assetClass: [], currency: [], sleeve: [] },
+      })
+      .select('id')
+      .single()
+    if (error) throw new Error(`portfolio_snapshots insert failed: ${error.message}`)
+    snapshotAId = snapshot!.id
+  })
+
+  afterAll(async () => {
+    if (snapshotAId) await clientA.from('portfolio_snapshots').delete().eq('id', snapshotAId)
+    await Promise.all([clientA.auth.signOut(), clientB.auth.signOut()])
+  })
+
+  it('B cannot see A\'s snapshot', async () => {
+    const { data, error } = await clientB.from('portfolio_snapshots').select('id')
+    expect(error).toBeNull()
+    expect((data ?? []).find((s) => s.id === snapshotAId)).toBeUndefined()
+  })
+
+  it('B cannot insert a snapshot claiming to be A\'s user_id', async () => {
+    const { error } = await clientB.from('portfolio_snapshots').insert({
+      user_id: userAId,
+      display_currency: 'THB',
+      holdings: [],
+      totals: {},
+      allocation: {},
+    })
+    expect(error).not.toBeNull()
+  })
+
+  it('B cannot update or delete A\'s snapshot', async () => {
+    const { error: updateErr } = await clientB
+      .from('portfolio_snapshots')
+      .update({ display_currency: 'USD' })
+      .eq('id', snapshotAId)
+    expect(updateErr).toBeNull() // RLS excludes the row — no error, just no match
+
+    const { data } = await clientA.from('portfolio_snapshots').select('display_currency').eq('id', snapshotAId).single()
+    expect(data?.display_currency).toBe('THB') // unchanged
+
+    const { error: deleteErr } = await clientB.from('portfolio_snapshots').delete().eq('id', snapshotAId)
+    expect(deleteErr).toBeNull()
+    const { data: stillThere } = await clientA.from('portfolio_snapshots').select('id').eq('id', snapshotAId).single()
+    expect(stillThere?.id).toBe(snapshotAId)
+  })
+
+  it('A can read their own snapshot back', async () => {
+    const { data, error } = await clientA.from('portfolio_snapshots').select('id').eq('id', snapshotAId).single()
+    expect(error).toBeNull()
+    expect(data?.id).toBe(snapshotAId)
+  })
+})
+
 describe.skipIf(SKIP)('M4 RLS: guest capability-token (Pattern B)', () => {
   let host: ReturnType<typeof createClient<Database>>
   let guest: ReturnType<typeof createClient<Database>>
