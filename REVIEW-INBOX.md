@@ -133,8 +133,84 @@ portfolio-risk-methodology.md`.
     tsc 0 + invest unit 22/22 re-verified by orchestrator. **Ready for pm-desk M1 (code+unit) review.**
 - [ ] **M2 — Broker-Screenshot OCR** (Dime-first, ~10 real screenshots prereq) · M · deps M1. Reuse the
   on-device worker; image never uploaded; ≥85% position-value correct; confirm grid w/ low-conf flags.
-- [ ] **M3 — Portfolio Dashboard** · M · deps M1. Value/cost/P&L/allocation (class·currency·sleeve) +
+- [x] **M3 — Portfolio Dashboard** · M · deps M1. Value/cost/P&L/allocation (class·currency·sleeve) +
   concentration callout + manual price update + snapshot history; under `/invest` (no chart on expense Home).
+
+  **Dev progress (2026-07-14) — M3 implemented, code+unit ready for pm-desk review:**
+  - **No new migration.** M1's `0008_invest_holdings.sql` already shipped everything M3 needed:
+    `holdings.current_value_minor/current_value_currency/current_fx_to_display` (the "current price"
+    storage the M3 brief assumed didn't exist yet — it does, from M1's `updateHolding` action) and the
+    `portfolio_snapshots` table + RLS (schema-only until now). **No `0009` migration, no live-apply
+    sign-off needed for this milestone.**
+  - **New pure module** `lib/invest/portfolio.ts` — all totals/allocation/concentration/P&L math,
+    exhaustively unit-tested (`tests/unit/invest/portfolio.test.ts`, 12 tests) against the same
+    hand-computed USD+THB fixture as M1's `money.test.ts`. Design decisions (documented in the file
+    header):
+    - **Display currency fixed to THB** (`DISPLAY_CURRENCY` constant) — there's no per-user display-
+      currency setting in this app; M1's own UI already assumes THB (`fxRateLabel`: "{currency} → THB").
+      Single point to change later if a real setting is added.
+    - **FX-at-cost** uses the holding's **most recent buy transaction's** `fx_rate` (already captured
+      per-transaction by M1) to convert the whole holding's cost basis to THB — a holding-level
+      approximation (not lot-by-lot), appropriate for a personal tracker, exact for the M1/M3 fixture
+      (single buy per holding).
+    - **FX-at-valuation** uses `holdings.current_fx_to_display` exactly as 02-architecture.md specifies
+      (unchanged from M1).
+    - **Unpriced holdings are valued at cost** (implying ฿0 P&L until priced) rather than excluded, so
+      portfolio totals are always a defined number; `hasCurrentValue` on each row lets the UI distinguish
+      "priced" from "valued at cost."
+    - **A holding needing FX with none recorded is excluded** from totals/allocation/concentration
+      (`unconverted: true`) and surfaced as a count — never silently assumed 1:1.
+    - **Concentration merges same-`asset_id` holding rows before ranking** (`aggregateByAsset`) — the
+      pm-desk M1 forward-risk fix. `tests/unit/invest/portfolio.test.ts` has a dedicated fixture (two
+      AAPL holding rows across different sleeves/brokers + one PTT holding sized so PTT's single row
+      would incorrectly outrank either individual AAPL row, but correctly loses to the merged AAPL
+      position) proving the merge, not just asserting it happens.
+  - **Server actions** (`app/actions/invest/portfolio.ts`): `updatePortfolioPrices` (bulk "update prices"
+    write — validates an array via a new `bulkPriceUpdateSchema` in `lib/validators/invest.ts`, loops
+    RLS-scoped `.update()` calls, one per holding) and `savePortfolioSnapshot` (re-fetches this user's
+    live holdings/transactions server-side — never trusts client-rendered totals — recomputes via
+    `lib/invest/portfolio.ts`, and inserts the `portfolio_snapshots` row). Both flow through
+    `supabase-js` + user session only, same as every other action in this app.
+  - **UI**: `/invest` is now tabbed (`app/(app)/invest/invest-tabs.tsx`, same pattern as
+    `app/(app)/budgets/budgets-overview-tabs.tsx`) — "ถือครอง" (Holdings, unchanged M1 `InvestClient`)
+    stays the default first tab; "ภาพรวม" (Overview, new `portfolio-dashboard.tsx`) is the second segment
+    so a first visit to `/invest` never pays for Recharts. Overview shows: total value/cost/P&L card,
+    a concentration callout (top positions %, destructive badge if any position ≥25%), three lazy
+    Recharts pie charts (`components/charts/allocation-pie-chart.tsx` +
+    `lazy-allocation-pie-chart.tsx`, same lazy-mount pattern as `lazy-income-expense-chart.tsx`) for
+    allocation by class/currency/sleeve, an "Update Prices" bulk-entry sheet, and a "Save Snapshot"
+    button + clickable snapshot history list (opens a read-only sheet rendering the *stored* jsonb
+    payload — proves "a past snapshot reloads from history" without recomputing).
+  - **RLS**: `portfolio_snapshots`' policies were authored + applied live back in M1's `0008`, but M1's
+    own review only exercised holdings/asset_transactions/assets — M3 is the first milestone to actually
+    write/read this table through the app. Added a new live block to `tests/unit/rls.test.ts` ("M3 RLS:
+    portfolio_snapshots owner isolation" — B cannot see/update/delete A's snapshot, cannot insert one
+    claiming A's `user_id`, A can read their own back) rather than trusting the pattern by construction,
+    per this repo's "2-user isolation test" bar. **Live-verified, not just reasoned** — ran against the
+    real Supabase project.
+  - **Gates**: `npx tsc --noEmit` exit 0 · `npx next lint` → **0 warnings, 0 errors** (fixed two warnings
+    surfaced during dev: an unused `DISPLAY_CURRENCY` import, and a same-shape-as-M1 `useActionState`
+    action whose formData genuinely goes unused — targeted `eslint-disable-next-line`, documented inline)
+    · `npx vitest run tests/unit/invest` → 34/34 · `npx vitest run tests/unit/rls.test.ts` (`.env.test`
+    sourced, live Supabase) → **29/29** (up from 25/25 pre-M3; +4 new `portfolio_snapshots` tests) ·
+    full suite `npx vitest run` → **276/276, 0 skipped** — no regression · `npx next build` succeeds,
+    all 24 routes generate; independently confirmed Recharts is absent from `/invest`'s base chunk list
+    (grepped every chunk file the app-build-manifest lists for `/invest`'s page — zero "recharts"
+    matches), same verification method M9 used for `/dashboard`.
+  - **Acceptance check** (roadmap M3 + the SPEC-4 dev instructions):
+    - ✅ Totals/P&L/allocation match a hand-computed fixture — unit-tested (`portfolio.test.ts`).
+    - ✅ Updating a price re-computes value + P&L — `updatePortfolioPrices` writes `holdings.current_value_*`
+      → `revalidatePath('/invest')` → the dashboard's server-side computation reruns from live data on
+      next render (same mechanism M1 already uses for the holdings list, no new caching layer).
+    - ✅ A past snapshot reloads from history — `SnapshotDetail` renders the stored jsonb totals/allocation
+      verbatim (`tests/unit/invest/portfolio.test.ts` has an explicit JSON-round-trip test proving no
+      recompute drift).
+    - ✅ Numbers match across views — the Holdings tab, Overview tab, and any saved snapshot all derive
+      from the same `lib/invest/portfolio.ts` functions fed by the same live query in `page.tsx`.
+    - ✅ Per-asset aggregation before allocation/concentration — see `aggregateByAsset` above.
+  - **Not done / deferred**: no per-user display-currency setting (hardcoded THB, documented decision
+    above); no automated price feed (manual entry only, per the roadmap); M2 (Broker-Screenshot OCR), M0,
+    M5 remain out of scope for this session.
 - [ ] **M0 — AI-Planning Validation Gate** *(builds nothing; gates M5)* · S · **needs owner input**:
   feed one **real** portfolio (Dime screenshot + actual SET/fund/gold/crypto holdings) into fin-desk
   `portfolio-risk-review`/`advisor`; verdict → `docs/M0-validation.md`. **PASS = ≥1 monthly action the
