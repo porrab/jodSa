@@ -232,6 +232,140 @@ describe.skipIf(SKIP)('M8 RLS: slip_account_map owner isolation', () => {
   })
 })
 
+// SPEC-4 M1: holdings / asset_transactions / assets (custom rows) owner isolation
+// + shared reference reads on system-seeded assets. Per M8's precedent, this suite
+// errors with "relation does not exist" until db/migrations/0008_invest_holdings.sql
+// is applied to the live Supabase project — expected until that owner sign-off step.
+describe.skipIf(SKIP)('M1 (SPEC-4) RLS: invest holdings/asset_transactions/assets', () => {
+  let clientA: ReturnType<typeof createClient<Database>>
+  let clientB: ReturnType<typeof createClient<Database>>
+  let userAId: string
+  let systemAssetId: string
+  let customAssetAId: string
+  let holdingAId: string
+  let txAId: string
+
+  beforeAll(async () => {
+    clientA = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    clientB = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+
+    const [resA, resB] = await Promise.all([
+      clientA.auth.signInWithPassword({ email: USER_A_EMAIL!, password: USER_A_PASS! }),
+      clientB.auth.signInWithPassword({ email: USER_B_EMAIL!, password: USER_B_PASS! }),
+    ])
+    if (resA.error) throw new Error(`User A login failed: ${resA.error.message}`)
+    if (resB.error) throw new Error(`User B login failed: ${resB.error.message}`)
+    userAId = resA.data.user!.id
+
+    const { data: sysAsset, error: sysErr } = await clientA
+      .from('assets')
+      .select('id')
+      .eq('is_system', true)
+      .limit(1)
+      .single()
+    if (sysErr) throw new Error(`Fetching a seeded system asset failed: ${sysErr.message}`)
+    systemAssetId = sysAsset!.id
+
+    const { data: customAsset, error: caErr } = await clientA
+      .from('assets')
+      .insert({
+        name: `RLS Test Asset ${Date.now()}`,
+        asset_class: 'crypto',
+        currency: 'USD',
+        is_system: false,
+        user_id: userAId,
+      })
+      .select('id')
+      .single()
+    if (caErr) throw new Error(`Custom asset insert failed: ${caErr.message}`)
+    customAssetAId = customAsset!.id
+
+    const { data: holding, error: hErr } = await clientA
+      .from('holdings')
+      .insert({ user_id: userAId, asset_id: systemAssetId, sleeve: 'core' })
+      .select('id')
+      .single()
+    if (hErr) throw new Error(`Holding insert failed: ${hErr.message}`)
+    holdingAId = holding!.id
+
+    const { data: tx, error: txErr } = await clientA
+      .from('asset_transactions')
+      .insert({
+        user_id: userAId,
+        holding_id: holdingAId,
+        type: 'buy',
+        qty: '1',
+        price_minor: '10000',
+        currency: 'USD',
+        fees_minor: '0',
+        datetime: new Date().toISOString(),
+      })
+      .select('id')
+      .single()
+    if (txErr) throw new Error(`asset_transactions insert failed: ${txErr.message}`)
+    txAId = tx!.id
+  })
+
+  afterAll(async () => {
+    if (txAId) await clientA.from('asset_transactions').delete().eq('id', txAId)
+    if (holdingAId) await clientA.from('holdings').delete().eq('id', holdingAId)
+    if (customAssetAId) await clientA.from('assets').delete().eq('id', customAssetAId)
+    await Promise.all([clientA.auth.signOut(), clientB.auth.signOut()])
+  })
+
+  it('B cannot see A\'s holdings', async () => {
+    const { data, error } = await clientB.from('holdings').select('id')
+    expect(error).toBeNull()
+    expect((data ?? []).find((h) => h.id === holdingAId)).toBeUndefined()
+  })
+
+  it('B cannot see A\'s asset_transactions', async () => {
+    const { data, error } = await clientB.from('asset_transactions').select('id')
+    expect(error).toBeNull()
+    expect((data ?? []).find((t) => t.id === txAId)).toBeUndefined()
+  })
+
+  it('B cannot see A\'s custom asset', async () => {
+    const { data, error } = await clientB.from('assets').select('id').eq('id', customAssetAId)
+    expect(error).toBeNull()
+    expect(data ?? []).toHaveLength(0)
+  })
+
+  it('both A and B can read the shared system-seeded asset', async () => {
+    const [{ data: a }, { data: b }] = await Promise.all([
+      clientA.from('assets').select('id').eq('id', systemAssetId).single(),
+      clientB.from('assets').select('id').eq('id', systemAssetId).single(),
+    ])
+    expect(a?.id).toBe(systemAssetId)
+    expect(b?.id).toBe(systemAssetId)
+  })
+
+  it('B cannot insert a holding claiming to be A\'s user_id', async () => {
+    const { error } = await clientB
+      .from('holdings')
+      .insert({ user_id: userAId, asset_id: systemAssetId, sleeve: 'core' })
+    expect(error).not.toBeNull()
+  })
+
+  it('B cannot update A\'s holding', async () => {
+    const { error: updateErr } = await clientB
+      .from('holdings')
+      .update({ sleeve: 'risk_capital' })
+      .eq('id', holdingAId)
+    expect(updateErr).toBeNull() // RLS excludes the row — no error, just no match
+
+    const { data } = await clientA.from('holdings').select('sleeve').eq('id', holdingAId).single()
+    expect(data?.sleeve).toBe('core') // unchanged from setup
+  })
+
+  it('B cannot claim a row as system (is_system insert is restricted to false for owned rows)', async () => {
+    const { error } = await clientB
+      .from('assets')
+      .insert({ name: 'Fake system asset', asset_class: 'gold', currency: 'THB', is_system: true })
+    expect(error).not.toBeNull()
+  })
+})
+
 describe.skipIf(SKIP)('M4 RLS: guest capability-token (Pattern B)', () => {
   let host: ReturnType<typeof createClient<Database>>
   let guest: ReturnType<typeof createClient<Database>>
