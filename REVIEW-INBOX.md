@@ -493,9 +493,15 @@ portfolio-risk-methodology.md`.
     **`tests/unit/rls.test.ts` now GREEN 33/33** incl. `M5 RLS: plans owner isolation`. tsc 0 + invest
     unit 63/63 re-verified by orchestrator. **M5 code+unit ready for pm-desk review.**
   - **Note for pm-desk/qa:** the owner's real portfolio was seeded into `/invest` (6 holdings, ฿21,278.73).
-    Its 3 owner-created custom assets (GOOGL, ASML, SCBS&P500) have `proxy_class = null` by design — the
-    backfill only touches `is_system` rows — so the owner's first plan will exercise the unclassified-holding
-    classify flow. That is the intended UX, not a bug; **QA-M5 should cover exactly that path.**
+    ~~Its 3 owner-created custom assets (GOOGL, ASML, SCBS&P500) have `proxy_class = null`... the owner's
+    first plan will exercise the classify flow~~ — **SUPERSEDED 2026-07-16:** the owner then asked the
+    orchestrator to classify them, and it did: **GOOGL→`us_tech_growth`, ASML→`us_tech_growth`,
+    SCBS&P500→`us_large_cap`** (per M0: the SCB fund duplicates VOO). **Verified live: unclassified
+    holdings = 0.** So the owner's first plan does **NOT** hit the `blocked` state.
+    ⚠️ **qa-lab:** the INVEST-M5 verdict brief (written against the pre-classification note above) says
+    QA-M5's highest priority is the owner hitting `blocked` — **that premise is stale.** The
+    unclassified→classify path is still a real code path worth covering, but you must **seed a fresh
+    unclassified custom asset** to exercise it; you will not reproduce it from the owner's account.
 
 **Firm non-goals (from 01-definition):** no order execution / broker integration ever · no paid
 market-data API in MVP (manual prices) · not licensed advice. Multi-tenant RLS isolation per new table.
