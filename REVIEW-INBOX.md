@@ -378,8 +378,18 @@ portfolio-risk-methodology.md`.
       persistently in the UI and is stored in every persisted plan's `outputs.disclaimer`.
     - ✅ No order-execution / broker-integration code path exists anywhere — grep-guard test, plus by
       construction (`Suggestion`'s type has no execute/place field or sink).
-  - **Not done / deferred**: no live-apply of `0009` (owner sign-off step, see below); M2 (Broker-
-    Screenshot OCR) remains out of scope for this session, unaffected by M5.
+  - **Not done / deferred**: M2 (Broker-Screenshot OCR) remains out of scope for this session, unaffected by M5.
+  - **✅ orchestrator 2026-07-16 — migration `0009` APPLIED to live** (owner authorized "apply"; applied
+    atomically via postgres.js simple-protocol, NOT drizzle-kit — journal stale, same 0008 precedent).
+    Verified live: `plans` table present + 3 RLS policies (select/insert/delete, no update — plan is
+    immutable); **all 19 system assets backfilled, 0 remain unclassified** (`us_tech_growth`=6,
+    `thai_set`=4, `us_large_cap`=2, `gold`=2, `crypto`=2, `thai_fund_generic`=2, `cash`=1).
+    **`tests/unit/rls.test.ts` now GREEN 33/33** incl. `M5 RLS: plans owner isolation`. tsc 0 + invest
+    unit 63/63 re-verified by orchestrator. **M5 code+unit ready for pm-desk review.**
+  - **Note for pm-desk/qa:** the owner's real portfolio was seeded into `/invest` (6 holdings, ฿21,278.73).
+    Its 3 owner-created custom assets (GOOGL, ASML, SCBS&P500) have `proxy_class = null` by design — the
+    backfill only touches `is_system` rows — so the owner's first plan will exercise the unclassified-holding
+    classify flow. That is the intended UX, not a bug; **QA-M5 should cover exactly that path.**
 
 **Firm non-goals (from 01-definition):** no order execution / broker integration ever · no paid
 market-data API in MVP (manual prices) · not licensed advice. Multi-tenant RLS isolation per new table.
