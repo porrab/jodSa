@@ -291,18 +291,12 @@ export interface Database {
           inputs: Json
           outputs: Json
         }
-        Update: {
-          id?: string
-          user_id?: string
-          created_at?: string
-          param_version?: string
-          display_currency?: string
-          new_money_minor?: string
-          new_money_currency?: string
-          target_allocation?: Json
-          inputs?: Json
-          outputs?: Json
-        }
+        // A plan is an immutable historical record: migration 0009 ships select/insert/delete
+        // policies and deliberately NO update policy. Typed `never` so reaching for .update()
+        // fails loudly at tsc. A permissive Update type here would typecheck, run, return no
+        // error, and silently change nothing — RLS just matches zero rows (pm-desk INVEST-M5
+        // review, forward note 1). Enforced by the "A cannot update their own plan" RLS test.
+        Update: { [_ in never]: never }
         Relationships: []
       }
       session_slips: {

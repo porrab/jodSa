@@ -659,4 +659,26 @@ describe.skipIf(SKIP)('M5 RLS: plans owner isolation', () => {
     expect(error).toBeNull()
     expect(data?.id).toBe(planAId)
   })
+
+  it('A cannot update their own plan — plans are immutable (no UPDATE policy)', async () => {
+    // 0009 ships select/insert/delete and deliberately no update policy, so `plans.Update` is
+    // typed `never`. Cast past the type on purpose: the point is to prove the DATABASE denies
+    // this, not just that the type does. Without an update policy RLS matches zero rows, so the
+    // call returns no error and silently changes nothing — which is exactly why the type must
+    // stay `never` (pm-desk INVEST-M5 forward note 1).
+    const untyped = clientA.from('plans') as unknown as {
+      update: (v: Record<string, unknown>) => {
+        eq: (col: string, val: string) => Promise<{ error: unknown }>
+      }
+    }
+    const { error } = await untyped.update({ display_currency: 'USD' }).eq('id', planAId)
+    expect(error).toBeNull() // no matching row under RLS — denied by absence, not by error
+
+    const { data } = await clientA
+      .from('plans')
+      .select('display_currency')
+      .eq('id', planAId)
+      .single()
+    expect(data?.display_currency).toBe('THB') // unchanged — immutability holds at the DB
+  })
 })
