@@ -7,6 +7,112 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [INVEST-M5] APPROVED (code + unit) — 2026-07-16
+**From**: pm-desk
+**Status**: APPROVED — next gate is qa-lab `QA-M5` (behavioral / E2E). **No correction items.**
+Full brief: `pm-desk/projects/jodsa/reviews/INVEST-M5-review.md`.
+
+JodSa Investments **M5 (AI Monthly Buy/Sell Planner) — the final `/invest` milestone** — passes code+unit
+review at HEAD `9b1a1c8` (`b21e7c9` + `51ed1ae` + `9b1a1c8`). All four acceptance criteria met with
+evidence. Reviewed as a **financial-advice surface**: the M0 guardrail and the no-execution non-goal were
+treated as pass/fail.
+
+### Gates re-run this session (independent, live)
+- `npx tsc --noEmit` → **exit 0** · `npx next lint` → **clean** · `npx next build` → **exit 0** (20 routes).
+- `npx vitest run tests/unit/invest` (`.env.test` sourced) → **63 passed / 0 failed** (7 files).
+- `npx vitest run tests/unit/rls.test.ts` (LIVE Supabase) → **33 passed / 0 failed**, incl. the live
+  `M5 RLS: plans owner isolation` block (`0009` is applied — the block that failed pre-apply now passes).
+- Full suite `npx vitest run` → **313 passed / 0 failed / 0 skipped** (20 files) — no regression. (Dev
+  reported 309/4-skipped/1-suite-failing; that was the honest pre-`0009` state — an **under**-claim.)
+- **Live backfill independently re-verified** (read-only select as an authenticated user, not trusting the
+  orchestrator note): **19/19 system assets classified, 0 `proxy_class` nulls**, distribution exactly as
+  claimed.
+
+### What passes, on the three things that matter for a money-guidance surface
+1. **M0 guardrail — met by omission (the strongest form).** Repo-wide grep for
+   `var|cvar|diversification.?ratio|risk.?contribution` across the invest surface → **zero matches**. The
+   false-precise risk surface was not built at all. `stress.ts` computes a point estimate but the UI renders
+   **only the range** (`plan-client.tsx:248-251`), tagged `[JUDG-PROXY, APPROX]`, and stress feeds **no**
+   suggestion. BUY/SELL/HOLD rest entirely on concentration + drift — exactly M0's constraint.
+2. **No-execution guard is real, not theatre.** `no-execution-guard.test.ts` reads the actual planner+action
+   +UI files off disk, asserts **≥8 files found** (can't silently scan nothing and pass), greps 11
+   execution-shaped identifiers, and pins `SuggestionAction` to exactly `'buy' | 'sell' | 'hold'` by parsing
+   real `types.ts` source. My **independent repo-wide sweep** (`app lib db workers tests`) found no execution
+   sink — only the guard's own pattern literals and M1's legitimate `holdings.broker` text field. No
+   broker/trading dependency in `package.json`.
+3. **NO-TRADE is genuinely reachable; the policy cannot manufacture a trade.** The suite's NO-TRADE fixture is
+   exactly-on-target (the degenerate case), so I probed the band myself: a portfolio with real non-zero drift
+   (±1–2pt) → `verdict: no_trade`, 0 suggestions. **SELL structurally requires direct ≥30% AND class ≥+15pt
+   overweight** (`plan.ts:38-40`), so concentration alone always lands on HOLD — M0's NO-SELL finding is the
+   built-in default. BUY never deepens a flagged class (probe-confirmed).
+
+**Look-through cross-check is real.** Effective NVDA **27.36%** vs M0's hand-derived 26–29% band — and it's
+not tuned: any NVDA index weight in [0.06, 0.075] yields [26.8%, 27.6%], all inside band. The table is keyed
+by `proxy_class`, not fund symbol, so M0's "a Thai S&P feeder is not diversification" insight falls out of the
+math generically (live-confirmed: `K-USXNDQ-A(A)` shares QQQ's `us_tech_growth` bucket). *Honest caveat:* the
+fixture's direct weights are copied from M0, so the validated step is the look-through **arithmetic**, not an
+end-to-end M0 rediscovery — real, but don't over-sell it.
+
+**Also verified:** determinism is structural (`buildPlan` is pure, clock injected; `param_version` pinned into
+every persisted row) · `generatePlan` recomputes server-side from RLS-scoped holdings and never trusts
+client-sent numbers · Zod on every payload · no service-role/Drizzle on a request path · unclassified holdings
+**block** the plan rather than silently defaulting · disclaimer persists in every plan row **and** renders both
+idle and on-result, th/en 46/46 parity · `plans` RLS live 2-user isolated, select/insert/delete, no update.
+
+**Backfill classifications ruled sane** — Tether→`cash` ✅ (correct and thoughtful; bucketing a stablecoin with
+BTC would have overstated every stress number) · `K-USXNDQ-A(A)`→`us_tech_growth` ✅ (Nasdaq-100 feeder) ·
+QQQ→`us_tech_growth` ✅ · `KFGG-A`/`TISESG-A`→`thai_fund_generic` ✅ (correctly humble — surfaces as opaque
+vehicles rather than guessing) · VTI→`us_large_cap` ⚠️ loosest of the 19 but documented intent in the
+`proxy-params.json` label, within `[JUDG-PROXY, APPROX]` — not a correction item.
+
+**Known deviation ruled: `decimal.js` NOT added → acceptable-by-design, and the disciplined call.** Money never
+touches float (`bigint` minor units end-to-end); the only float↔bigint crossing multiplies by a **proxy
+weight** (`concentration.ts:99`), where extra precision would be false. Consistent with M1's `money.ts`
+precedent. Documented in the `portfolio-planner` skill.
+
+### Forward notes (non-blocking — NOT correction items; nothing here gates QA-M5)
+1. **`plans` immutability is enforced but untested.** `0009` omits an update policy so Postgres denies by
+   default — the guarantee holds. But no test asserts "even the owner can't update their own plan", and
+   `lib/supabase/types.ts` gives `plans` a fully-permissive `Update` type, so a future `.update()` on `plans`
+   would **typecheck cleanly and silently no-op**. Highest-value small addition: one assertion in the `M5 RLS`
+   block. Refs: `db/migrations/0009_invest_plans.sql:44-53`, `tests/unit/rls.test.ts` (M5 block).
+2. **NO-TRADE regression coverage is the degenerate case only** — suggest a third fixture with real
+   within-band drift (~±2–3pt) asserting `no_trade`, to pin `UNDERWEIGHT_THRESHOLD` against a future edit.
+   Verified passing today. Ref: `tests/unit/invest/planner/plan.test.ts:170`.
+3. **`plan.ts:130` `ASSET_CLASSES[0]` fallback — unreachable today, latent tomorrow.** A look-through-only
+   concentrated row would get a silently mislabeled `assetClass`. Proved unreachable now: max table weight is
+   0.09, so a non-held constituent tops out at ~9% vs the 25% flag (probe: `NVDA:8.2 AAPL:7.2 MSFT:7.2`).
+   Becomes live only if the table gains a >25% constituent. Worth an explicit `continue` or a comment.
+4. **`proxy-params.json` `annualVol` is dead config** — zero consumers (`stress.ts` reads only
+   `stressScenarios`). Harmless, but it's exactly the input a VaR/vol calc would need, sitting unused — and
+   M0's guardrail forbids that surface. Consider removing it or annotating "intentionally unconsumed — see M0
+   guardrail" so a future session doesn't read it as an invitation.
+
+### Inbox lifecycle — no prune this round
+`[SPEC-4]` stays intact: it covers the whole `/invest` module and still carries **un-built M2**
+(Broker-Screenshot OCR) plus a pending **QA-M5**. Prune when the module actually closes.
+
+### Next gate: qa-lab `QA-M5`
+⚠️ **Known gap this review cannot cover:** the dev **could not complete an interactive click-through of the
+Plan tab** (pre-existing browser-automation env issue — hit the login page before reaching any M5 code). **No
+M5 UI has been driven by anyone.** Every UI claim above is from reading source, not watching it render. QA-M5
+carries the full weight of the Plan tab. Suggested coverage:
+- **The unclassified-custom-asset classify flow — highest priority.** The owner's seeded portfolio has 3
+  custom assets (GOOGL, ASML, SCBS&P500) with `proxy_class = null` **by design** (the backfill only touches
+  `is_system` rows) → **the owner's very first plan will hit the `blocked` state.** Confirm the classify picker
+  surfaces, classifying unblocks, and the plan then generates. It must read as guidance, not as an error.
+- Concentrated real portfolio → effective-concentration row exceeds the direct row (M0's look-through insight
+  actually reaching the user's eyes); ≥25% flag renders `destructive`; S&P double-counting is legible.
+- **Balanced portfolio → NO-TRADE renders as a first-class, reassuring outcome**, not an empty state or a
+  failure. Single most important UX judgment in M5.
+- Disclaimer visible **before and after** generating, in **th and en**, light+dark.
+- Tag badges on every suggestion; stress rows show a **range**, never a bare number.
+- Target allocation not summing to 100 → rejected with a clear message.
+- Plan history: save → reopen → numbers identical (no recompute drift).
+- DevTools: no network call resembling an order/trade on plan generation.
+
+---
+
 ## [QA-M1 + QA-M3] E2E GREEN — 2026-07-15
 **From**: qa-lab
 **Status**: GREEN — behavioral / prod-build gate PASSES. No `QA-*` app bugs. **M1 + M3 can close.**
