@@ -289,14 +289,97 @@ portfolio-risk-methodology.md`.
   - **Not done / deferred**: no per-user display-currency setting (hardcoded THB, documented decision
     above); no automated price feed (manual entry only, per the roadmap); M2 (Broker-Screenshot OCR), M0,
     M5 remain out of scope for this session.
-- [ ] **M0 — AI-Planning Validation Gate** *(builds nothing; gates M5)* · S · **needs owner input**:
-  feed one **real** portfolio (Dime screenshot + actual SET/fund/gold/crypto holdings) into fin-desk
-  `portfolio-risk-review`/`advisor`; verdict → `docs/M0-validation.md`. **PASS = ≥1 monthly action the
-  owner would act on / be reassured by**, else **stop the AI layer**, ship M1–M3 as a tracker. This is a
-  fin-desk + owner-data step, runnable in parallel with M1–M3.
-- [ ] **M5 — AI Monthly Buy/Sell Planner** ⚠️ *gated by M0 PASS* · L · deps M3+M0 · new `portfolio-planner`
+- [x] **M0 — AI-Planning Validation Gate** *(builds nothing; gates M5)* · S · **PASS** —
+  `idea-forge/ideas/jodsa-investments/docs/M0-validation.md` (fin-desk, 2026-07-16, N=1 real portfolio).
+  Verdict: proxy-derived look-through surfaces a decision-useful, non-obvious action (S&P
+  double-counting, effective NVDA ~27%, "steer new money to ballast/ex-US, don't add to VOO/NVDA") plus
+  a credible NO-SELL — **guardrail for M5**: load-bearing suggestions must rest on concentration +
+  drift (robust to proxy), not on precise risk-contribution/VaR/CVaR math (directional + tagged only).
+- [x] **M5 — AI Monthly Buy/Sell Planner** ⚠️ *gated by M0 PASS* · L · deps M3+M0 · new `portfolio-planner`
   skill. Decision-support only: buy/sell/hold/rebalance + one-line rationale, epistemic tags, disclaimer,
   first-class **NO-TRADE** path; **never places or simulates a real order** (non-goal guard in acceptance).
+
+  **Dev progress (2026-07-16) — M5 implemented, code+unit ready for pm-desk review (commit `b21e7c9`):**
+  - **Pipeline** (`lib/invest/planner/`, per the `portfolio-planner` skill, pure/deterministic, zero new
+    deps): `resolve.ts` (blocks any holding whose `assets.proxy_class` is null — never silently
+    defaults) → `allocation.ts` (current allocation + drift **by asset_class** vs a user-editable target,
+    chosen over sleeve because it's the dimension a "where does new money go" decision actually acts on)
+    → `concentration.ts` (direct top-N + a **proxy-class-keyed** ETF/fund look-through table — keyed by
+    `proxy_class` rather than fund symbol so a Thai S&P-500 feeder fund shares the same look-through as
+    a US S&P ETF, reproducing the M0 "double-counting" finding **generically**, not hard-coded to one
+    fund; opaque vehicles with no look-through entry are flagged, not decomposed) → `stress.ts` (2
+    scenarios from `proxy-params.json`, portfolio impact always rendered as a ±15% band around the
+    point estimate — never a false-precise single number) → `plan.ts` (orchestrator + suggestion policy:
+    BUY steers new money to underweight, non-concentrated classes only; HOLD is the default response to
+    a concentrated position — matches M0's NO-SELL; SELL only fires when a position's **direct** weight
+    is itself ≥30% AND its asset_class is overweight ≥15pt, so a small-book, mostly-look-through
+    concentration like NVDA correctly lands on HOLD, not a manufactured sell) → `verdict.ts` (NO-TRADE
+    when no suggestion is actionable — genuinely reachable, verified by a dedicated balanced fixture).
+  - **Fixture validation is not just self-consistent — it reproduces the real M0 numbers.** The M5
+    hand-computed test fixture (`tests/unit/invest/planner/plan.test.ts`) uses the *same* VOO 42.5% /
+    NVDA 23.4% / Thai-S&P-fund 14.1% shape as the real M0-validation portfolio; the generic look-through
+    math independently lands on 56.6% S&P double-counting, 43.4% direct tech, and **effective NVDA
+    27.36%** — inside M0's own hand-derived ~26–29% band. That's evidence the concentration math is
+    doing the real thing, not passing a tuned test.
+  - **Epistemic tagging + i18n split:** every `Suggestion`/stress result carries `tags: EpistemicTag[]`.
+    Rationale text ships as a canonical English string (persisted, hand-fixture-testable) **and** a
+    `reasonKey`/`reasonParams` pair the UI renders via next-intl ICU interpolation — full th/en without
+    losing a fixed string to assert against in tests.
+  - **Migration `0009_invest_plans.sql`** (hand-authored, modeled on `0008`, **NOT applied to live** —
+    author + local-verify only, owner sign-off pending): (1) `plans` table, Pattern A owner RLS,
+    **select/insert/delete only** (a plan is an immutable historical record, no legitimate "edit a past
+    plan" path exists); (2) a one-time `UPDATE` backfill of `assets.proxy_class` for the 19 system-seeded
+    reference assets from `0008` — those shipped with `proxy_class = null` (M1 correctly deferred it,
+    "consumed only by M5"), so without this backfill `resolve.ts` would block **every** plan on a fresh
+    install. User-created custom assets are classified via a new `classifyAssetProxyClass` action
+    (`app/actions/invest/assets.ts`) — no RLS change needed, the existing `assets_update_own_custom`
+    policy from `0008` already covers it; the plan UI surfaces a classify picker inline when
+    `resolve.ts` reports unclassified holdings.
+  - **Server action** (`app/actions/invest/plan.ts`, `generatePlan`): re-fetches holdings/assets/
+    transactions fresh via `supabase-js` + user session (RLS-scoped, never trusts client numbers — same
+    rule as M3's `savePortfolioSnapshot`), resolves, runs the pure planner, inserts the immutable `plans`
+    row. Ends at the recommendation — no order is placed or simulated anywhere in this path.
+  - **UI**: third `/invest` tab ("แผนรายเดือน" / Plan) — target-allocation inputs (6 asset classes,
+    validated to sum to 100%) + new-money amount/currency, unclassified-holdings classify flow, plan
+    result (verdict banner, allocation drift, direct + effective concentration incl. opaque-vehicle
+    list, stress scenarios, suggestion cards with epistemic-tag badges), plan history with a read-only
+    detail sheet reading the persisted `outputs` jsonb verbatim (same "reload from history, no
+    recompute drift" pattern as M3's snapshots). The disclaimer ("decision-support, not licensed
+    advice — you place any trade yourself") renders **persistently** above the form, not only after a
+    plan is generated.
+  - **Non-goal guard**: `tests/unit/invest/planner/no-execution-guard.test.ts` greps the entire planner
+    surface (`lib/invest/planner/`, the plan Server Action, the plan UI) for execution-shaped
+    identifiers (`placeOrder(`, `executeTrade(`, `brokerApi`, `orderClient`, etc.) — asserts zero
+    matches — plus a type-level check that `SuggestionAction` is exactly `'buy' | 'sell' | 'hold'`.
+  - **Deviation from the blueprint (documented, not asked about — no new dependency was actually
+    needed):** `decimal.js` was **not** added. Every ratio in the planner (percentages, proxy
+    volatilities, look-through weights) is already an approximate/proxy input, so `decimal.js`'s extra
+    precision buys nothing real — same precedent `lib/invest/money.ts` already set at M1. Documented in
+    `.claude/skills/portfolio-planner/SKILL.md`'s "Dependencies" section for the record.
+  - **Gates**: `npx tsc --noEmit` → exit 0 (re-run after the last edit, per the M3 gate-correction
+    lesson) · `npx next lint` → 0 warnings/errors · `npx vitest run tests/unit/invest` → **63/63** ·
+    full suite `npx vitest run` (`.env.test` sourced) → **309 passed / 4 skipped (pre-existing) / 1
+    suite fails at `beforeAll`** — the new "M5 RLS: plans owner isolation" block, because `public.plans`
+    doesn't exist on live Supabase yet (0009 not applied) — **expected**, identical situation M1's
+    holdings/assets RLS block was in before `0008` landed; every other suite, including the existing
+    M1/M3 invest RLS blocks, stayed green (no regression) · `npx next build` → exit 0, all 20 routes;
+    independently re-confirmed Recharts still absent from `/invest`'s first-load chunk list (`/invest`
+    now 10.8 kB / 197 kB First Load JS, up from M3's 7.98 kB / 190 kB for the new Plan tab).
+  - **Acceptance check** (roadmap M5):
+    - ✅ Hand-computed fixture reproduces allocation drift, top concentration (direct + effective), and
+      a sensible buy **and** sell suggestion, within tagged tolerance — unit-tested, and independently
+      lands inside M0's own hand-derived range (see fixture-validation note above).
+    - ✅ Deterministic per `param_version` — same inputs + same `createdAt` ⇒ deep-equal `Plan`,
+      unit-tested; `param_version` (`"2026.07-v1"`) is pinned into every persisted plan.
+    - ✅ A deliberately-balanced fixture yields a clearly-rendered NO-TRADE — zero suggestions, `verdict
+      === 'no_trade'`, even with new money available (proves NO-TRADE isn't reachable only when there's
+      literally nothing to allocate).
+    - ✅ Every suggested number carries an epistemic tag; the disclaimer + "you place the trade" renders
+      persistently in the UI and is stored in every persisted plan's `outputs.disclaimer`.
+    - ✅ No order-execution / broker-integration code path exists anywhere — grep-guard test, plus by
+      construction (`Suggestion`'s type has no execute/place field or sink).
+  - **Not done / deferred**: no live-apply of `0009` (owner sign-off step, see below); M2 (Broker-
+    Screenshot OCR) remains out of scope for this session, unaffected by M5.
 
 **Firm non-goals (from 01-definition):** no order execution / broker integration ever · no paid
 market-data API in MVP (manual prices) · not licensed advice. Multi-tenant RLS isolation per new table.
