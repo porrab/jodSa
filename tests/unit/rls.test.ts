@@ -578,3 +578,85 @@ describe.skipIf(SKIP)('M4 RLS: guest capability-token (Pattern B)', () => {
     await clientB.auth.signOut()
   })
 })
+
+// M5 — `plans` table (migration 0009_invest_plans.sql). NOT applied to live
+// Supabase as of this session (owner sign-off pending — see this milestone's
+// final report). This block will error at beforeAll ("relation public.plans
+// does not exist") until 0009 is applied, same situation M1's holdings/assets
+// RLS block was in before 0008 landed — expected, not a failure of this test.
+// Modeled directly on the M3 portfolio_snapshots block above (Pattern A owner
+// isolation, no update policy — a plan is an immutable historical record).
+describe.skipIf(SKIP)('M5 RLS: plans owner isolation', () => {
+  let clientA: ReturnType<typeof createClient<Database>>
+  let clientB: ReturnType<typeof createClient<Database>>
+  let userAId: string
+  let planAId: string
+
+  beforeAll(async () => {
+    clientA = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+    clientB = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+
+    const [resA, resB] = await Promise.all([
+      clientA.auth.signInWithPassword({ email: USER_A_EMAIL!, password: USER_A_PASS! }),
+      clientB.auth.signInWithPassword({ email: USER_B_EMAIL!, password: USER_B_PASS! }),
+    ])
+    if (resA.error) throw new Error(`User A login failed: ${resA.error.message}`)
+    if (resB.error) throw new Error(`User B login failed: ${resB.error.message}`)
+    userAId = resA.data.user!.id
+
+    const { data: plan, error } = await clientA
+      .from('plans')
+      .insert({
+        user_id: userAId,
+        param_version: '2026.07-v1',
+        display_currency: 'THB',
+        new_money_minor: '300000',
+        new_money_currency: 'THB',
+        target_allocation: { us_equity: 100 },
+        inputs: [],
+        outputs: { verdict: 'no_trade', suggestions: [] },
+      })
+      .select('id')
+      .single()
+    if (error) throw new Error(`plans insert failed: ${error.message}`)
+    planAId = plan!.id
+  })
+
+  afterAll(async () => {
+    if (planAId) await clientA.from('plans').delete().eq('id', planAId)
+    await Promise.all([clientA.auth.signOut(), clientB.auth.signOut()])
+  })
+
+  it("B cannot see A's plan", async () => {
+    const { data, error } = await clientB.from('plans').select('id')
+    expect(error).toBeNull()
+    expect((data ?? []).find((p) => p.id === planAId)).toBeUndefined()
+  })
+
+  it("B cannot insert a plan claiming to be A's user_id", async () => {
+    const { error } = await clientB.from('plans').insert({
+      user_id: userAId,
+      param_version: '2026.07-v1',
+      display_currency: 'THB',
+      new_money_minor: '0',
+      new_money_currency: 'THB',
+      target_allocation: {},
+      inputs: [],
+      outputs: {},
+    })
+    expect(error).not.toBeNull()
+  })
+
+  it("B cannot delete A's plan", async () => {
+    const { error: deleteErr } = await clientB.from('plans').delete().eq('id', planAId)
+    expect(deleteErr).toBeNull() // RLS excludes the row — no error, just no match
+    const { data: stillThere } = await clientA.from('plans').select('id').eq('id', planAId).single()
+    expect(stillThere?.id).toBe(planAId)
+  })
+
+  it("A can read their own plan back", async () => {
+    const { data, error } = await clientA.from('plans').select('id, outputs').eq('id', planAId).single()
+    expect(error).toBeNull()
+    expect(data?.id).toBe(planAId)
+  })
+})

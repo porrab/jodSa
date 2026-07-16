@@ -1,0 +1,60 @@
+{
+  "paramVersion": "2026.07-v1",
+  "source": "Resources/portfolio-risk-review/portfolio-risk-methodology.md — 'Simulation Assumptions' default annual volatilities and crisis-correlation notes, applied to JodSa Investments' MVP asset classes. These are illustrative proxy inputs, NOT fitted to a real historical return series — every consumer must tag values derived from this file [JUDG-PROXY].",
+  "classes": {
+    "us_large_cap": {
+      "label": "US large-cap / broad market index (VOO/VTI-like, S&P 500 / total-market proxy)",
+      "annualVol": 0.16
+    },
+    "us_tech_growth": {
+      "label": "US mega-cap growth / tech / Nasdaq-heavy (QQQ-like, or concentrated single-name growth)",
+      "annualVol": 0.30
+    },
+    "thai_set": {
+      "label": "Thai SET single-names / broad Thai equity",
+      "annualVol": 0.18
+    },
+    "thai_fund_generic": {
+      "label": "Generic Thai mutual fund, equity-leaning, strategy not otherwise classified",
+      "annualVol": 0.18
+    },
+    "gold": {
+      "label": "Gold",
+      "annualVol": 0.15
+    },
+    "crypto": {
+      "label": "Crypto (BTC/ETH-like, high-vol)",
+      "annualVol": 0.65
+    },
+    "cash": {
+      "label": "Cash / stablecoin / money-market",
+      "annualVol": 0.01
+    }
+  },
+  "stressScenarios": {
+    "broad_equity_selloff": {
+      "label": "Broad equity sell-off (GFC / COVID-style risk-off across risk assets)",
+      "factors": {
+        "us_large_cap": -0.20,
+        "us_tech_growth": -0.30,
+        "thai_set": -0.18,
+        "thai_fund_generic": -0.18,
+        "gold": 0.05,
+        "crypto": -0.35,
+        "cash": 0.0
+      }
+    },
+    "risk_asset_crash": {
+      "label": "Concentrated risk-asset crash (crypto / high-beta led, milder broad-equity drag)",
+      "factors": {
+        "us_large_cap": -0.10,
+        "us_tech_growth": -0.15,
+        "thai_set": -0.08,
+        "thai_fund_generic": -0.08,
+        "gold": 0.03,
+        "crypto": -0.55,
+        "cash": 0.0
+      }
+    }
+  }
+}

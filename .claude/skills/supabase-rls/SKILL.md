@@ -98,12 +98,18 @@ A CHECK constraint (`(is_system and user_id is null) or (not is_system and user_
 backs the policy so a row can never be both system-flagged and user-owned. No anon policy — this
 table is authenticated-only, unlike Pattern B's guest reads.
 
-## Owned investment tables (SPEC-4 M1)
-`holdings`, `asset_transactions`, `portfolio_snapshots` (and, at the later M5, `plans`) all use plain
-**Pattern A** — same shape as `accounts`/`transactions`. See
-`db/migrations/0008_invest_holdings.sql` for the full applied SQL. Money columns on these tables are
-**`bigint`**, not `integer` — JodSa's satang columns are `int4` (caps ~฿21.4M), too small once
-multi-currency portfolios are in scope. This doesn't change the RLS pattern, only the column type.
+## Owned investment tables (SPEC-4 M1 + M5)
+`holdings`, `asset_transactions`, `portfolio_snapshots` (M1, `db/migrations/0008_invest_holdings.sql`)
+and `plans` (M5, `db/migrations/0009_invest_plans.sql`) all use plain **Pattern A** — same shape as
+`accounts`/`transactions`. `plans` omits an update policy (select/insert/delete only) — a generated
+plan is an immutable historical record, there's no legitimate "edit a past plan" action anywhere in
+the app. Money columns on all of these tables are **`bigint`**, not `integer` — JodSa's satang columns
+are `int4` (caps ~฿21.4M), too small once multi-currency portfolios are in scope. This doesn't change
+the RLS pattern, only the column type.
+
+`0009` also backfills `assets.proxy_class` for the 19 system-seeded reference rows (a plain `UPDATE`,
+not an RLS change) — without it, the M5 planner's `resolve.ts` step would block every plan on a fresh
+install, since it never silently defaults a missing classification.
 
 ## Review checklist for any new table
 - [ ] RLS enabled and forced.

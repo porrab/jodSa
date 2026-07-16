@@ -264,6 +264,47 @@ export interface Database {
         }
         Relationships: []
       }
+      // M5 (SPEC-4) — see db/migrations/0009_invest_plans.sql. NOT yet applied to
+      // live Supabase — awaiting owner sign-off (see this session's final report).
+      plans: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          param_version: string
+          display_currency: string
+          new_money_minor: string
+          new_money_currency: string
+          target_allocation: Json
+          inputs: Json
+          outputs: Json
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          created_at?: string
+          param_version: string
+          display_currency: string
+          new_money_minor: string
+          new_money_currency: string
+          target_allocation: Json
+          inputs: Json
+          outputs: Json
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          param_version?: string
+          display_currency?: string
+          new_money_minor?: string
+          new_money_currency?: string
+          target_allocation?: Json
+          inputs?: Json
+          outputs?: Json
+        }
+        Relationships: []
+      }
       session_slips: {
         Row: {
           id: string
@@ -325,6 +366,9 @@ export interface Database {
           asset_class?: 'us_equity' | 'etf' | 'thai_set' | 'thai_fund' | 'gold' | 'crypto'
           region?: string | null
           currency?: string
+          // M5 — classifyAssetProxyClass updates only this field on a user-owned
+          // custom asset (RLS still requires is_system = false, user_id = auth.uid()).
+          proxy_class?: string | null
         }
         Relationships: []
       }

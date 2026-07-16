@@ -5,11 +5,12 @@ description: Use when implementing or modifying the monthly buy/sell planning ma
 
 # Portfolio Planner (M5 — decision-support only)
 
-> **Not built yet.** This skill is written ahead of M5 per `idea-forge/ideas/jodsa-investments/prompt.md`
-> §7 "First Action" step 3 — M5 is gated by the M0 AI-planning validation gate (see
-> `project/jodsa/REVIEW-INBOX.md` [SPEC-4]) and depends on M3 (Portfolio Dashboard). Do not start
-> implementing `lib/invest/planner/` until M0 has recorded a PASS verdict in `docs/M0-validation.md`
-> and M3 is done.
+> **Built 2026-07-16.** M0 recorded PASS (`idea-forge/ideas/jodsa-investments/docs/M0-validation.md`,
+> real N=1 portfolio, effective NVDA ~27% via S&P look-through double-counting — a genuinely
+> decision-useful, non-obvious finding) and M3 was already done, so M5 was implemented per this file's
+> pipeline. Persistence needs migration `db/migrations/0009_invest_plans.sql` (the `plans` table +
+> an `assets.proxy_class` backfill) — **author + verified locally only, not yet applied to live
+> Supabase** (owner sign-off pending, same guardrail as `0008`).
 
 Turns **resolved holdings + versioned proxy params + the owner's new-money cadence (~3k THB/mo)** into
 **buy / sell / hold / rebalance suggestions, each with a one-line rationale** — or a first-class
@@ -58,19 +59,31 @@ buy/sell planning. Do NOT paraphrase or shortcut it.
 flagged, never defaulted silently.
 
 ## Plan schema
-`{ createdAt, displayCurrency, paramVersion, newMoney: {minor, currency}, targetAllocation, inputs: ResolvedHolding[], outputs: { allocationDrift, concentration, stress[], suggestions: {action, asset, amountRange, rationale, tags}[], verdict, disclaimer } }` — persisted to `plans` (a table this skill introduces at M5; it does not exist yet as of M1).
+`{ createdAt, paramVersion, displayCurrency, newMoney: {minor, currency}, targetAllocation, totalValueMinor, riskCapitalPct, allocationDrift, concentration: {direct, effective, opaqueVehicles, anyConcentrated}, stress[], suggestions: {action, assetClass, assetId?, amountRange?, rationale, reasonKey, reasonParams, tags}[], verdict, headline, headlineKey, headlineParams, disclaimer }` (see `lib/invest/planner/types.ts`) — persisted to `plans` (`db/migrations/0009_invest_plans.sql`, Pattern A owner RLS, select/insert/delete only — a plan is immutable). `reasonKey`/`reasonParams` are separate from the canonical English `rationale` string so the UI can render th/en via next-intl while the persisted/tested text stays a fixed, hand-fixture-matchable string.
 
 ## When NOT to use
 - Live/real-time pricing (no feed in MVP).
 - Full correlation/crisis-correlation matrix, position-sizing, rebalancing engine, reverse-stress — Phase 2.
-- ANY order execution / broker integration / trade simulation — permanently out of scope.
+- ANY order execution / broker integration / trade simulation — permanently out of scope. Enforced by
+  `tests/unit/invest/planner/no-execution-guard.test.ts` (greps the planner surface for
+  execution-shaped identifiers — `placeOrder(`, `executeTrade(`, `brokerApi`, etc. — asserts zero).
 
-## Files (to be written at M5)
+## Files (built 2026-07-16)
 `resolve.ts`, `allocation.ts`, `concentration.ts`, `stress.ts`, `plan.ts`, `tags.ts`, `verdict.ts`,
-`proxy-params.json`, `types.ts`, `test-cases.md` (hand-computed fixtures).
+`proxy-params.json`, `types.ts`. Hand-computed fixtures live in
+`tests/unit/invest/planner/plan.test.ts` (not a separate `test-cases.md` — kept next to the code they
+verify, matching this repo's existing `tests/unit/invest/*.test.ts` convention).
 
-## Dependencies
-`decimal.js` (ratios only — not yet a dependency of this repo; adding it is an M5 step, ask before
-adding per the project's "ask before a new external dependency" rule). Reads the app-shipped
-proxy-params + the tracker's resolved holdings (`assets`/`holdings`/`asset_transactions` from M1).
-References the fin-desk methodology file above.
+## Dependencies — deviation from the original blueprint
+**`decimal.js` was NOT added.** The blueprint called for it for "ratio math," but every other module in
+`lib/invest/` (`money.ts`, `portfolio.ts`) already does ratio/percentage math with plain `number` +
+explicit rounding points and documents *why* `decimal.js` is unnecessary for this app's scale — M5
+follows the same precedent (percentages, proxy volatilities, and look-through weights are all already
+approximate/proxy inputs, so `decimal.js`'s extra precision buys nothing real). This is judged a
+non-issue under the project's "ask before a new external dependency" rule (no new dependency was
+needed, so there was nothing to ask about) — documented here for the record in case a future session
+expects `decimal.js` per the original blueprint text.
+
+Reads the app-shipped proxy-params + the tracker's resolved holdings (`assets`/`holdings`/
+`asset_transactions` from M1, via `lib/invest/portfolio.ts`'s `valueHolding()` for FX-converted display-
+currency amounts). References the fin-desk methodology file above.

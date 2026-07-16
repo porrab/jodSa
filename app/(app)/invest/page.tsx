@@ -22,12 +22,18 @@ export default async function InvestPage() {
   // Joined client-side (Map lookups), not via a PostgREST embed — matches this
   // repo's existing convention (see app/(app)/transactions/page.tsx) and sidesteps
   // supabase-js needing typed `Relationships` metadata for an embed to type-check.
-  const [{ data: holdingsRaw }, { data: assets }, { data: txRaw }, { data: snapshotsRaw }] = await Promise.all([
-    supabase.from('holdings').select('*').order('created_at'),
-    supabase.from('assets').select('*').order('is_system', { ascending: false }).order('name'),
-    supabase.from('asset_transactions').select('*').order('datetime'),
-    supabase.from('portfolio_snapshots').select('*').order('taken_at', { ascending: false }).limit(20),
-  ])
+  const [{ data: holdingsRaw }, { data: assets }, { data: txRaw }, { data: snapshotsRaw }, { data: plansRaw }] =
+    await Promise.all([
+      supabase.from('holdings').select('*').order('created_at'),
+      supabase.from('assets').select('*').order('is_system', { ascending: false }).order('name'),
+      supabase.from('asset_transactions').select('*').order('datetime'),
+      supabase.from('portfolio_snapshots').select('*').order('taken_at', { ascending: false }).limit(20),
+      // M5 — `plans` table (migration 0009). Not yet applied to live Supabase; this
+      // query 400s until the owner applies it. See loading.tsx / InvestTabs for the
+      // "not applied yet" fallback (empty history, generate still attempts and
+      // surfaces the DB error via GeneratePlanState 'error').
+      supabase.from('plans').select('*').order('created_at', { ascending: false }).limit(20),
+    ])
 
   const assetById = new Map((assets ?? []).map((a) => [a.id, a]))
 
@@ -140,6 +146,7 @@ export default async function InvestPage() {
       assets={assets ?? []}
       dashboard={dashboard}
       snapshots={snapshotsRaw ?? []}
+      plans={plansRaw ?? []}
     />
   )
 }

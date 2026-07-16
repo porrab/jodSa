@@ -211,6 +211,23 @@ export const portfolioSnapshots = pgTable('portfolio_snapshots', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+// ── M5 (SPEC-4) — JodSa Investments: AI Monthly Buy/Sell Planner persistence ──────
+// See db/migrations/0009_invest_plans.sql for the full design rationale + the
+// assets.proxy_class backfill this migration also carries.
+
+export const plans = pgTable('plans', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  paramVersion: text('param_version').notNull(),
+  displayCurrency: text('display_currency').notNull(),
+  newMoneyMinor: bigint('new_money_minor', { mode: 'bigint' }).notNull(),
+  newMoneyCurrency: text('new_money_currency').notNull(),
+  targetAllocation: jsonb('target_allocation').notNull(),
+  inputs: jsonb('inputs').notNull(),
+  outputs: jsonb('outputs').notNull(),
+})
+
 export const sessionSlips = pgTable('session_slips', {
   id: uuid('id').primaryKey().defaultRandom(),
   sessionId: text('session_id').notNull(),
