@@ -7,6 +7,74 @@ Dev session: work through OPEN items, mark each `[x]` and note what was done, th
 
 ---
 
+## [QA-M5] E2E GREEN — 2026-07-17
+**From**: qa-lab
+**Status**: GREEN — **no items to fix; nothing for the dev session to action.**
+Full report: `qa-lab/projects/jodsa/runs/QA-M5-invest-2026-07-17.md`.
+
+The `/invest` **Plan tab** (M5 AI Monthly Buy/Sell Planner) passes its behavioral gate on a **production
+build** (`pnpm build` → `pnpm start`, exit 0) against **live Supabase** (reachable, not paused; `0009`
+applied — every plan inserted into the real `plans` table through RLS-scoped server actions).
+**9/9 scenarios pass. No app defects found; no `QA-*` bug briefs filed. M5 can close.**
+
+**This run carried the full weight.** pm-desk's `INVEST-M5` review is code+unit only — the dev hit a
+browser-automation env problem and **no M5 UI had ever been rendered by anyone**. That env problem did
+**not** recur here: Playwright drove the Plan tab normally.
+
+### Results — `tests/e2e/invest-m5.spec.ts`
+- **QA-M5-1** NO-TRADE renders as a first-class, complete outcome (even with ฿3,000 available) — **PASS**
+- **QA-M5-2** suggestions with tags + amounts; buy/sell/hold labels; buys fully allocate ฿3,000 — **PASS**
+- **QA-M5-3** effective look-through NVDA **27.4%** vs direct 23.4% (M0's 26–29% band) — **PASS**
+- **QA-M5-4** stress renders a **range only**, never the computed `pointEstimate` — **PASS**
+- **QA-M5-5** seeded unclassified custom asset → `blocked` reads as guidance; classify unblocks — **PASS**
+- **QA-M5-6** plan persists + reads back identical; no edit path in the UI — **PASS**
+- **QA-M5-7** target allocation sum-to-100% validation (60% / 180% refused) — **PASS**
+- **QA-M5-8** English + dark theme; disclaimer idle **and** on result, both locales — **PASS**
+- **QA-M5-9** no order/trade/broker-shaped network call on plan generation — **PASS**
+
+### Order-independence (real numbers)
+Isolation `invest-m5` **twice → 10/10 both**. Full `invest-*` suite (setup + 20) **three times → 21/21 all
+three**, exit 0, zero fails/skips. No M1/M3 regression from M5.
+
+### The NO-TRADE UX judgment — **passes**
+Rendered, captured, visually inspected (`qa-lab/projects/jodsa/runs/evidence/qa-m5-no-trade-2026-07-17.png`).
+It reads as a *considered answer*, not an absence of one: NO-TRADE badge + a bold headline explaining why
++ portfolio value + a full drift table reading 0.0 straight down + concentration (incl. look-through) +
+stress ranges + disclaimer, and the plan is **saved to history** like any other. A NO-TRADE plan renders
+strictly more evidence than an action plan minus its suggestion cards. Not broken, not empty.
+
+Two **cosmetic observations — not defects, not items, nothing to fix**: (1) the NO-TRADE badge uses the
+muted `secondary` variant while the action verdict uses solid `default`, so the reassuring outcome is
+styled less prominently (defensible as calm-by-design; the headline carries it); (2) `ไม่มีคำแนะนำเฉพาะเจาะจง`
+is small muted grey text — the one spot with an empty-state texture, redeemed by the headline above.
+
+### Harness note (qa-lab's own bug, already fixed — not an app issue)
+QA-M5-7 failed once on the first pass: my absence-check regex `/ต้องรวมเป็น 100%/` also matched the
+**static hint** above the inputs (`...(ต้องรวมเป็น 100%) จะถูกบันทึกไว้...`), which is always present. The DOM
+proved the app correct — warning gone, submit enabled. Fixed in-spec (keyed on `ตอนนี้รวม`).
+
+### Corrected premise confirmed (`36e38d0` was right, pm-desk's brief was stale)
+The owner's 3 custom assets are classified (live `unclassified = 0`), so the `blocked` state is **not**
+reproducible from his account. QA-M5-5 **seeds its own** fresh unclassified custom asset via the real J4
+"+ create asset" exit — user-created assets ship `proxy_class = null` (`0009` backfills `is_system` only).
+
+### Not covered (stated plainly)
+- The **owner's real seeded portfolio** was not the fixture — the harness runs as test user A and resets
+  its own rows; M0's *shape* was reconstructed instead (VOO/NVDA/Thai-feeder weights copied from M0, with
+  AMZN/MSFT standing in for GOOGL/ASML). So "effective NVDA ~27%" is verified as **rendered arithmetic on
+  an M0-shaped book**, not a live readout of the owner's account — same scope caveat pm-desk flagged.
+- Synthetic **FX 1.0** in fixtures (real FX + the blank-FX exclusion path are QA-M1/QA-M3's).
+- **`plans` DB-level immutability** remains untested by anyone (pm-desk forward note 1) — E2E only proves
+  the UI exposes no edit path. Still the highest-value small addition: one assertion in the `M5 RLS` block.
+
+### Files written (qa-lab write boundary only)
+`tests/e2e/invest-m5.spec.ts` (new) · `tests/e2e/helpers/invest.ts` (+`addCustomHolding`/`openPlanTab`/
+`setTargetAllocation`/`submitPlan`) · `tests/e2e/helpers/admin.ts` (+`setAssetProxyClass`; `resetInvestData`
+now also wipes `plans` — no FK to holdings, would otherwise pollute history across tests).
+**No application source, schema, env, or CI touched.**
+
+---
+
 ## [INVEST-M5] APPROVED (code + unit) — 2026-07-16
 **From**: pm-desk
 **Status**: APPROVED — next gate is qa-lab `QA-M5` (behavioral / E2E). **No correction items.**
