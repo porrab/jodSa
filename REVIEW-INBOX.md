@@ -723,7 +723,15 @@ Residuals resolved this cycle: **M8-USER-1** — migration `0007` applied to liv
 M7 (Ledger Correctness & Editing) shipped in `64ad101`/`894ac95`/`71c374b`: edit transactions (RLS-scoped, `ref_code` structurally immutable, J3 detail sheet); dedup false-positive fix (real EMVCo TLV walk + dropped bare `อ้างอิง` labels + J2 duplicate-conflict override); 2-digit BE year; recurring-actually-deducts (`needsMaterialization` undefined-safe, per-rule insert isolation, ≤-today clamp, J7 last-deducted/next-due/error). Gates re-run by pm-desk: `tsc` 0, `vitest` 180/180 live-RLS. QA-M7 prod-build E2E GREEN (recurring deducts once on the due date · no early deduction · edit persists · dup-override), independently re-verified against `pnpm start`.
 
 Two residuals carried forward (neither blocks M8):
-- [ ] **(id: M7-USER-1)** [user step] — verify the deployed **Vercel** bundle is at/after `64ad101` and **redeploy**; check function logs for `[recurrence] occurrence insert failed`. A stale deploy is the leading hypothesis for the original "recurring never deducts" field report; the fix is proven on a local production build, but the live site only confirms-fixed once it runs the new bundle. (No local Vercel access — user action.)
+- [x] **(id: M7-USER-1)** [user step] — RESOLVED 2026-07-17 by events, verified by orchestrator.
+  `git merge-base --is-ancestor 64ad101 origin/main` → **true**: the M7-D recurring fix is in the
+  deployed line and origin/main is now **52 commits past it** (`c646e93`). The stale-deploy hypothesis
+  died back on 2026-07-11 when M7+M8 were pushed (`1917ece`) — since then qa-lab's **QA-M7 verified the
+  recurring behaviour itself on a production build** (rule due today deducts exactly once; no early
+  deduction), which is the outcome this item existed to confirm, and stronger evidence than a log grep.
+  Prod healthy (`/recurring`, `/dashboard` → 307 auth redirect). No Vercel function-log check needed:
+  the behaviour it was meant to diagnose is proven working. *(Original ask: verify the deployed Vercel
+  bundle is at/after `64ad101` and redeploy; check function logs for `[recurrence] occurrence insert failed`.)*
 - [ ] **(id: QA-M7-H1)** [qa-lab harness] — the M7/M3 E2E specs share one test user + mixed reset strategy, so a consolidated one-shot run is order-flaky (`m3-recurring` fails right after the OCR-heavy `m7-dup-override`, passes in isolation). qa-lab hardens its own suite; not an app/dev defect.
 
 ---
