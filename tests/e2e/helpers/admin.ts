@@ -79,6 +79,10 @@ export async function resetAllUserData(userId: string): Promise<void> {
  */
 export async function resetInvestData(userId: string): Promise<void> {
   const a = adminClient()
+  // M5 (0009): `plans` rows are independent of holdings (inputs/outputs are jsonb
+  // snapshots, no FK), so they'd survive a holdings wipe and pollute plan history.
+  const { error: pErr } = await a.from('plans').delete().eq('user_id', userId)
+  if (pErr) throw new Error(`reset plans failed: ${pErr.message}`)
   const { error: txErr } = await a.from('asset_transactions').delete().eq('user_id', userId)
   if (txErr) throw new Error(`reset asset_transactions failed: ${txErr.message}`)
   const { error: snapErr } = await a.from('portfolio_snapshots').delete().eq('user_id', userId)
@@ -88,6 +92,27 @@ export async function resetInvestData(userId: string): Promise<void> {
   // custom (owned) assets only — leave the 19 shared is_system reference rows intact
   const { error: aErr } = await a.from('assets').delete().eq('user_id', userId).eq('is_system', false)
   if (aErr) throw new Error(`reset custom assets failed: ${aErr.message}`)
+}
+
+/**
+ * M5 — set a user-created custom asset's `proxy_class` directly (harness seeding).
+ * The real classify journey (plan `blocked` → picker → unblocked) is the subject of
+ * QA-M5-5 and is driven through the UI there; every OTHER M5 spec needs its fixture
+ * already classified, so it seeds the end state instead of re-driving that flow.
+ * Never touches `is_system` rows — those are backfilled by migration 0009.
+ */
+export async function setAssetProxyClass(
+  userId: string,
+  assetName: string,
+  proxyClass: string,
+): Promise<void> {
+  const { error } = await adminClient()
+    .from('assets')
+    .update({ proxy_class: proxyClass })
+    .eq('user_id', userId)
+    .eq('name', assetName)
+    .eq('is_system', false)
+  if (error) throw new Error(`setAssetProxyClass ${assetName} failed: ${error.message}`)
 }
 
 export async function deleteUserByEmail(email: string): Promise<void> {
