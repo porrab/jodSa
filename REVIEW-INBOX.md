@@ -38,6 +38,27 @@ M5 analysis methodology: `Resources/portfolio-risk-review/portfolio-risk-methodo
   `workers/portfolio.worker.ts` must copy that split — row-segmentation grammar is genuinely new work.
   **Verified unbuilt 2026-07-17:** no `workers/portfolio.worker.ts` on disk.
 
+  **📸 Corpus spec — what the owner needs to shoot (asked 2026-07-17, answered here so it survives).**
+  Target: `qa-lab/projects/jodsa/corpus/` (same home as the slip corpus; qa-lab is versioned now).
+  The acceptance is **≥85% of positions' *current value*** correct — so the corpus must stress
+  *row segmentation + number reading*, not variety for its own sake. ~10 shots covering:
+  - **Varied position counts** (the roadmap's own word): one with **1–3** rows, one with **~5**, one with
+    **10+ / needs scrolling** — row-splitting fails differently at each length.
+  - **Each tab, because currency + name shape change:** `หุ้นสหรัฐฯ` (USD, short tickers) · `หุ้นไทย` (THB) ·
+    `กองทุนรวม` (long Thai fund names that wrap — the hardest segmentation case) · `ทั้งหมด` (mixed currencies
+    in one list — the case most likely to mis-assign a currency).
+  - **Collapsed list vs one expanded row** — the expanded card exposes `จำนวนหุ้นคงเหลือ / ราคา / ต้นทุนต่อหุ้น /
+    ต้นทุนรวม`; decide whether M2 reads only the list or also the detail, and shoot for that decision.
+  - **Summary card visible** (`มูลค่าสินทรัพย์ทั้งหมด` + `1 USD = xx.xx THB`) in ≥1 shot — it carries the FX rate
+    and a total the parser can self-check against.
+  - **A losing position (red text)** if one exists — every current holding is green; red is a different
+    render path and `-` signs are a classic OCR miss.
+  - **Fractional qty with many decimals** (e.g. `0.0140444`) — already present, keep at least one.
+  - **Light theme** if Dime has one; otherwise note that dark-only is the corpus's known limit.
+  ⚠️ **Label every shot** (ground truth: symbol + current value per row). Unlabelled screenshots are not a
+  corpus — "no corpus, no objective exit" is the M2 rule inherited from the slip milestone, and 85% is
+  unmeasurable without the answers written down.
+
 ### Done (see CLOSED history for the verdict records)
 M0 gate PASS · M1 · M3 · M5 — all code+unit APPROVED **and** qa-lab GREEN; migrations `0008` + `0009`
 applied live; deployed.
