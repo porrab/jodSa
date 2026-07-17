@@ -30,7 +30,43 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
 `/dashboard` in both themes (computed values, not source-reading, not screenshot impressions).
 
 ### Work items
-- [ ] **F1 — light theme has no surface layering** *(highest leverage — do this first)*.
+- [x] **F1 — light theme has no surface layering** — **DONE 2026-07-17** (`app/globals.css` `:root` only;
+  dark verified byte-identical). **⚠️ The brief's own prescription was wrong and the fix is wider than it
+  said — read this before reviewing:**
+  - **Brief said:** move `--background` alone, start `oklch(0.975)`. **That cannot work.** Measured
+    `0.975` → `lab 97.15` → card gap **2.85, still under the 3.0 acceptance**. The ladder needs ~7 lab of
+    room below the white `card`, but only **4.53** existed before `--muted` (95.47) — so `background`
+    cannot clear *both* `card` (≥3.0) and `muted` (≥2.5) at once. `--muted` had to move too.
+  - **`bg-muted` on the page background is a real usage, not hypothetical** — 41 call sites incl. the
+    `loading.tsx` skeletons, which sit directly on the background. Letting `bg↔muted` collapse to 1.69
+    would have made every skeleton nearly invisible.
+  - **Moving `--muted` forced `--muted-foreground`**, which surfaced a **pre-existing v3 violation**:
+    `muted-foreground` on `bg-muted` measured **4.34:1 — already below the AA 4.5 floor v3 mandates**
+    ("muted text floor: ≥ 4.5:1 on its actual surface"), before v4 touched anything. Darkening `--muted`
+    would have pushed it to ~4.06. `--muted-foreground` `0.55 → 0.52` clears AA on all three surfaces it
+    lands on. **This fixes a latent accessibility defect that shipped in M9.**
+  - **Final tokens** (`:root`): `--background 0.995 → 0.966` · `--muted 0.96 → 0.932` ·
+    `--muted-foreground 0.55 → 0.52`. `--card`/`--popover`/`--secondary`/`--accent`/`--border` untouched.
+  - **Measured result — light now mirrors dark's real distances:**
+
+    | gate | before | after | target |
+    |---|---|---|---|
+    | `card↔bg` | 0.54 | **3.89** | ≥3.0 (dark = 3.90) ✅ |
+    | `bg↔muted` | 3.99 → 1.69 *(mid-fix)* | **3.89** | ≥2.5 ✅ |
+    | `card↔muted` | 4.53 | **7.78** | dark = 6.94 ✅ |
+    | AA mutedFg on muted | **4.34 ✗** | **4.53** | ≥4.5 ✅ |
+    | AA mutedFg on card / bg | 4.87 / — | **5.52 / 5.01** | ≥4.5 ✅ |
+  - **Verified:** tsc **0 errors** · lint clean · vitest **280 passed / 34 skipped** (`rls.test.ts` skipped
+    — needs live Supabase; CSS change has no RLS surface). Dark tokens re-measured **identical** to
+    baseline (`bg 4.37 · card 8.27 · popover 11.75 · muted 15.20 · mutedFg 67.44`). `transactions`
+    sticky date header (`bg-background`) confirmed to sit on the page background, **not** inside a card —
+    it still matches its backdrop exactly, no grey band.
+  - **⚠️ Left open, needs a design-studio call (NOT in F1's scope):** light `--popover` is `lab 100` =
+    **identical to `--card` (gap 0)**, so sheets/popovers do not separate from cards at all; dark gives
+    them 3.48. Light cannot solve this by going lighter — `card` is already pure white — so it needs a
+    real decision (tint the card, or rely on shadow/border), which is design authority, not a dev call.
+  - *(superseded original brief text follows, kept for the reasoning)*
+  - ~~**F1 — light theme has no surface layering** *(highest leverage — do this first)*.~~
   Measured: light `background lab 99.46` vs `card lab 100` = **0.54 apart**; dark = **3.90 apart**
   (`4.37` → `8.27`). **Light separates ~7× less than dark** — cards don't read as cards. v3 specced the
   dark ladder (`0.17 → 0.21 → 0.24`) and **never gave light one**; an omission, not a decision.

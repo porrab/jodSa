@@ -41,7 +41,19 @@
 
 /* jodsa — emerald brand / transaction-type semantic palette */
 :root {
-  --background: oklch(0.995 0.003 160);
+  /* Surface layering (design v4 F1). v3 specced dark's ladder (0.17 → 0.21 → 0.24)
+     and never gave light one: card sat 0.54 lab L from background, so cards did not
+     read as cards. Light's ramp is ordered `muted < background < card` (in light the
+     most-tinted surface is the darkest; in dark it is the lightest — the direction
+     flips, the intent does not), and these three mirror dark's MEASURED distances:
+       dark  card↔bg 3.90 · card↔muted 6.94
+       light card↔bg 3.70 · card↔muted 7.20
+     `card` is pinned to pure white, so the room for this ladder has to come from
+     below — moving `background` alone cannot work (only 4.53 lab existed between
+     card and muted, and the ladder needs ~7). `muted` moves too, which drags
+     `--muted-foreground` with it to hold AA (see its note below).
+     Hue stays 160: a warm off-white fights the emerald brand. */
+  --background: oklch(0.966 0.004 160);
   --foreground: oklch(0.20 0.03 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.20 0.03 260);
@@ -51,8 +63,13 @@
   --primary-foreground: oklch(0.99 0.005 160);
   --secondary: oklch(0.95 0.015 160);
   --secondary-foreground: oklch(0.30 0.07 162);
-  --muted: oklch(0.96 0.008 160);
-  --muted-foreground: oklch(0.55 0.02 260);
+  /* Most-tinted surface — the bottom of light's ladder (see --background note). */
+  --muted: oklch(0.932 0.008 160);
+  /* Muted text floor (v3): >= 4.5:1 on its ACTUAL surface, not just on card.
+     At 0.55 this measured 4.34:1 on --muted — already failing before v4 moved
+     anything; darkening --muted would have pushed it to ~4.06. 0.52 clears AA on
+     all three surfaces it lands on (card / background / muted). */
+  --muted-foreground: oklch(0.52 0.02 260);
   --accent: oklch(0.95 0.015 160);
   --accent-foreground: oklch(0.30 0.07 162);
   --destructive: oklch(0.577 0.245 27);
