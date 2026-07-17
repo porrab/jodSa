@@ -15,6 +15,92 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [SPEC-5] Design v4 — visual-layer amendment — 2026-07-17 · from design-studio
+**Status**: OPEN — **not a milestone**, inbox work on the shipped expense core. Design v4 AMENDS v3's
+visual layer; it does **not** reset anything. **Journeys J1–J7, nav, brand, type-colour semantics,
+dark-theme tokens, density budget and every v3 anti-pattern stay binding and untouched.**
+
+**Authoritative spec:** `idea-forge/ideas/jodsa/docs/07-design.md` — **§ v4 first, then § v3**
+(v3 remains authoritative for everything v4 does not name). Design authority is still that file, **not**
+the v1 snapshot at `project/jodsa/docs/source-idea/docs/07-design.md`.
+
+**Why:** owner review 2026-07-17 — *"it still doesn't look good"*. **No new user field feedback**, which
+is exactly why the scope is the visual layer only: v3's IA came from two rounds of user testing and
+shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** on a live authenticated
+`/dashboard` in both themes (computed values, not source-reading, not screenshot impressions).
+
+### Work items
+- [ ] **F1 — light theme has no surface layering** *(highest leverage — do this first)*.
+  Measured: light `background lab 99.46` vs `card lab 100` = **0.54 apart**; dark = **3.90 apart**
+  (`4.37` → `8.27`). **Light separates ~7× less than dark** — cards don't read as cards. v3 specced the
+  dark ladder (`0.17 → 0.21 → 0.24`) and **never gave light one**; an omission, not a decision.
+  Fix in `app/globals.css` `:root`: start at `--background: oklch(0.975 0.004 160)`, card stays
+  `oklch(1 0 0)`, sheet/popover separates via border + existing `--shadow-soft`. **Keep hue 160** — warm
+  off-white fights the emerald brand.
+  **Acceptance: measure, don't eyeball** — light `background` vs `card` ≥ **3.0 lab L** apart (same
+  perceptual band as dark's 3.90), verified via computed values in-browser.
+- [ ] **F2 — amount input: invisible in light, boxed in dark** — **a bug, not a style choice.**
+  `components/transaction-form.tsx`'s amount input has deliberate overrides
+  (`border-0 bg-transparent px-0 text-4xl font-semibold tabular-nums shadow-none` = intent is a naked big
+  number), but the shadcn base `dark:bg-input/30` sits ahead of them and the `dark:` variant beats the
+  unprefixed `bg-transparent`. Measured in light: `borderWidth: 0px`, `background: rgba(0,0,0,0)`,
+  `box-shadow` fully transparent → **zero visual presence on the most important control in J1 (< 10 s log)**.
+  **Fix:** keep the naked number (matches the override intent + v3's one-focal-number rule) → **remove
+  `dark:bg-input/30` from this input**; then give it a **1px `--border` bottom rule in both themes** and
+  keep the existing `focus-visible` ring. Zero affordance in a timed journey is a missing control, not
+  minimalism. Both themes must render the same affordance.
+- [ ] **F3 — no middle type tier; rank-bearing text painted muted.**
+  Measured on Home: focal `36px/700/lab 7.07`, then **everything else `14px` at `lab 47.73`** — ยอดรวมทุกบัญชี
+  (14/400) · เดือนนี้ใช้ไป (14/400) · **รายการวันนี้ (14/600 — a section heading dressed as a caption)** ·
+  ยังไม่มีรายการวันนี้ (14/400). The ladder is `36 → 14` with **nothing between**: v3 specced "base 16 ·
+  secondary 14" and `globals.css` sets `body { font-size: 1rem }` correctly, but every Home element is
+  overridden to `text-sm`, so **the 16px tier exists nowhere on screen**. Four ranks share one colour.
+  **Fix:** section headings → `16px/600/foreground`; primary row content (transaction name, account name)
+  → `16px/foreground`; reserve `muted-foreground`+14px for genuinely secondary text (labels, timestamps,
+  meta). Adds contrast *between ranks* — **not** more elements; v3's density budget is unchanged.
+  ⚠️ **Do NOT touch the focal number.** At `36px/700/tabular-nums` it already implements v3 exactly. An
+  earlier v4 draft assumed it was too small; measurement disproved it. Don't re-propose it.
+- [ ] **F4 — empty states are bare text; the mascot is idle.** `ยังไม่มีรายการวันนี้` is 14px muted text in
+  a box that F1 makes nearly invisible. Eight expressions already live at `project/jodsa/public/mascot/`
+  wired through `components/mascot.tsx`. v3 banned the **mascot hero on Home** — that was about
+  *placement*, not the asset.
+  **Fix:** mascot permitted **only** in empty states · first-run/J4 guided account creation ·
+  parse-success (J2) · error states; paired with one plain-language line, plus v3's inline **"+ สร้าง…"**
+  action where an empty list blocks a journey (empty-source rule — unchanged).
+  **Still banned:** mascot on Home, on any populated list, or inside any timed journey.
+- [ ] **F5 — typeface `IBM Plex Sans Thai` → `IBM Plex Sans Thai Looped`** (`app/layout.tsx`).
+  Not a defect — a voice mismatch: Plex is IBM's corporate face (precise, cool); JodSa is personal money
+  for general Thai users. Same family ⇒ x-height/metrics/line-height carry over ⇒ drop-in
+  `next/font/google` swap with **no relayout risk** on a shipped app, while looped Thai glyphs read
+  warmer and more native. (A humanist face like Anuphan is a bigger warmth jump but changes metrics —
+  not justified by v4.)
+  **Verify before committing:** (a) family actually available via `next/font/google` at the weights in
+  use, and (b) `tabular-nums` still applies to amounts. **If either fails → stay on `IBM Plex Sans Thai`
+  and report back. Do not silently substitute a third font.**
+
+### Not defects — verified this pass, do NOT "fix"
+- **Bottom nav is correct**: measured `position: fixed`, `bottom: 0px`, zero gap below. An earlier
+  screenshot reading suggested it floated mid-screen; the computed values disproved it (the capture
+  framed the whole window, not the viewport).
+- **Focal number is correct** (see F3 warning above).
+
+### Known gap in this brief
+Mobile-viewport density was **not** verified — viewport emulation on the review machine was unreliable
+(`outerWidth 1463` vs `innerWidth 268`; DevTools/zoom interference). The mobile bottom nav (4 + centre ＋)
+was seen rendering per v3, but per-screen density on a real phone viewport is **unchecked**. This does
+not block F1–F5 — all five are token/class-level and viewport-independent. Flag anything density-related
+you hit while implementing.
+
+### New anti-patterns (additive to v3's list — full reasoning in § v4)
+❌ Importing a marketing site's density into a tool screen (`themoneythings.com` is a landing page; take
+its hierarchy rules, never its spacing-per-screen) · ❌ re-litigating v3's journeys on aesthetic grounds ·
+❌ reintroducing gradients/hero blocks/blur as "making it prettier" · ❌ a control with zero affordance in
+a timed journey · ❌ rank-bearing text painted `muted-foreground` · ❌ theme-asymmetric component styling
+(a base `dark:` utility silently beating a local override) · ❌ shipping a colour/spacing change verified
+by eye when it is measurable.
+
+---
+
 ## [SPEC-4] `/invest` module — **1 milestone unbuilt** — 2026-07-14 · from idea-forge
 **Status**: OPEN — GREENLIT Phase-2 build, **cannot close until M2 lands**. Builds INTO this app as the
 `app/(app)/invest/` route group — not a fresh scaffold. Blueprint audited **SHIP, 0 blockers**.
