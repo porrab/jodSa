@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { formatTHB } from '@/lib/money'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { usePendingTx } from '@/components/pending-tx-provider'
+import { Mascot } from '@/components/mascot'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -46,14 +47,24 @@ export default function HomeTodayList({
 
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-semibold text-muted-foreground">
+      {/* Section heading, not a caption (design v4 F3): Home's ladder ran
+          36px → 14px with nothing between, and four different ranks all shared
+          `muted-foreground`. A heading is `foreground` at the 16px base tier;
+          `muted-foreground` + 14px is reserved for genuinely secondary text. */}
+      <h2 className="text-base font-semibold">
         {t('todayTransactions', { count: transactions.length + pending.length })}
       </h2>
 
       {transactions.length === 0 && pending.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-          {t('noTransactionsToday')}
-        </p>
+        /* Empty state carries the mascot (design v4 F4). v3 bans the mascot from
+           Home's hero because Home is J1 and J1 is speed — but an empty list is
+           the one place on this screen with nothing to be fast about, so it is
+           where warmth costs the user nothing. `shrug`, never a celebratory
+           expression: the brand rule is that the mascot never applauds. */
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center">
+          <Mascot expr="shrug" className="size-16 opacity-80" />
+          <p className="text-sm text-muted-foreground">{t('noTransactionsToday')}</p>
+        </div>
       ) : (
         <div className="rounded-lg border divide-y">
           {/* Provisional rows (design v4 F6). Subdued and NOT tappable — there is
@@ -66,7 +77,7 @@ export default function HomeTodayList({
               className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left opacity-60"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm">
+                <p className="truncate text-base">
                   {p.label}
                   {p.category && (
                     <span className="ml-1.5 text-xs text-muted-foreground">
@@ -76,7 +87,7 @@ export default function HomeTodayList({
                 </p>
                 <p className="text-xs text-muted-foreground">{t('pendingSave')}</p>
               </div>
-              <span className={cn('shrink-0 text-sm font-semibold tabular-nums', TYPE_TEXT[p.type])}>
+              <span className={cn('shrink-0 text-base font-semibold tabular-nums', TYPE_TEXT[p.type])}>
                 {p.type === 'income' ? '+' : p.type === 'expense' ? '-' : ''}
                 {formatTHB(p.amountSatang)}
               </span>
@@ -98,7 +109,10 @@ export default function HomeTodayList({
                 className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">
+                  {/* Primary row content sits at the 16px base tier (design v4
+                      F3); the category chip and timestamp are the secondary
+                      rank and keep muted + small. */}
+                  <p className="truncate text-base">
                     {label}
                     {tx.category && (
                       <span className="ml-1.5 text-xs text-muted-foreground">
@@ -110,7 +124,7 @@ export default function HomeTodayList({
                     {format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
                   </p>
                 </div>
-                <span className={cn('shrink-0 text-sm font-semibold tabular-nums', TYPE_TEXT[tx.type])}>
+                <span className={cn('shrink-0 text-base font-semibold tabular-nums', TYPE_TEXT[tx.type])}>
                   {prefix}{formatTHB(tx.amount_satang)}
                 </span>
               </button>

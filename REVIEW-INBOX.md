@@ -111,7 +111,17 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   `dark:bg-input/30` from this input**; then give it a **1px `--border` bottom rule in both themes** and
   keep the existing `focus-visible` ring. Zero affordance in a timed journey is a missing control, not
   minimalism. Both themes must render the same affordance.
-- [ ] **F3 — no middle type tier; rank-bearing text painted muted.**
+- [x] **F3 — no middle type tier; rank-bearing text painted muted** — **DONE 2026-07-20**
+  (`components/home-today-list.tsx`). Home's ladder was `36 → 14` with nothing between, and four ranks
+  shared `muted-foreground`. Now: section heading `รายการวันนี้` → **16px / 600 / `foreground`** (was
+  14px/600/muted — a heading dressed as a caption); primary row content (label + row amount) → **16px**;
+  `muted-foreground` + small kept for the genuinely secondary rank (category chip, timestamp).
+  **Measured after:** heading `16px / 600 / lab 7.07`, label `14px / 400 / lab 44.25`, focal
+  `36px / 700 / lab 7.07 + tabular-nums`. Ladder is now **36 → 16 → 14 with distinct colours**.
+  ✅ **Focal untouched**, exactly as the brief warned. No new elements — this adds contrast between
+  ranks, so v3's density budget is unchanged.
+  - *(superseded original text follows)*
+  - ~~**F3 — no middle type tier; rank-bearing text painted muted.**~~
   Measured on Home: focal `36px/700/lab 7.07`, then **everything else `14px` at `lab 47.73`** — ยอดรวมทุกบัญชี
   (14/400) · เดือนนี้ใช้ไป (14/400) · **รายการวันนี้ (14/600 — a section heading dressed as a caption)** ·
   ยังไม่มีรายการวันนี้ (14/400). The ladder is `36 → 14` with **nothing between**: v3 specced "base 16 ·
@@ -122,7 +132,23 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   meta). Adds contrast *between ranks* — **not** more elements; v3's density budget is unchanged.
   ⚠️ **Do NOT touch the focal number.** At `36px/700/tabular-nums` it already implements v3 exactly. An
   earlier v4 draft assumed it was too small; measurement disproved it. Don't re-propose it.
-- [ ] **F4 — empty states are bare text; the mascot is idle.** `ยังไม่มีรายการวันนี้` is 14px muted text in
+- [x] **F4 — empty states are bare text; the mascot is idle** — **DONE 2026-07-20.**
+  Home's empty state now shows `shrug` above the copy (`components/home-today-list.tsx`), and **J4
+  first-run** — the journey the brief names explicitly — shows `thinking` in the guided
+  create-first-account sheet (`components/first-account-sheet.tsx`). Neither is a celebratory
+  expression: the brand rule that the mascot never applauds still holds, and the Home **hero** stays
+  mascot-free per v3 (J1 is speed; only the empty list, which has nothing to be fast about, gets it).
+  - 🔴 **Bug found and fixed while doing this — it affected code that shipped in M9, not just the new
+    usages:** the mascot SVGs hardcode a `#141414` stroke on a `#ffffff` body, so on the dark theme's
+    `~#0a0d12` surfaces **the linework vanished and the mascot rendered as a smudge** (verified by
+    screenshot, before/after). Fixed centrally with `dark:invert` in `components/mascot.tsx`, so the
+    **pre-existing** dark-theme mascots on `/transactions`, the recurring form and `budget-bar` are
+    fixed too. Verified in dark: light lines on a dark body, monochrome and on-brand.
+  - **Scope note for the reviewer:** F4 grants *permission*, not an obligation — ~10 other empty states
+    (accounts, budgets, groups, sessions, invest, …) are eligible but were **deliberately left alone**;
+    only the two the brief names were changed. Adding the rest is a design call, not a bug.
+  - *(superseded original text follows)*
+  - ~~**F4 — empty states are bare text; the mascot is idle.**~~ `ยังไม่มีรายการวันนี้` is 14px muted text in
   a box that F1 makes nearly invisible. Eight expressions already live at `project/jodsa/public/mascot/`
   wired through `components/mascot.tsx`. v3 banned the **mascot hero on Home** — that was about
   *placement*, not the asset.
@@ -130,7 +156,17 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   parse-success (J2) · error states; paired with one plain-language line, plus v3's inline **"+ สร้าง…"**
   action where an empty list blocks a journey (empty-source rule — unchanged).
   **Still banned:** mascot on Home, on any populated list, or inside any timed journey.
-- [ ] **F5 — typeface `IBM Plex Sans Thai` → `IBM Plex Sans Thai Looped`** (`app/layout.tsx`).
+- [x] **F5 — typeface `IBM Plex Sans Thai` → `IBM Plex Sans Thai Looped`** — **DONE 2026-07-20**
+  (`app/layout.tsx`). **Both gates the brief demanded were checked before committing, not assumed:**
+  (a) the family exists in `next/font/google` at **exactly the weights in use** — verified against
+  Next's own `font-data.json`: `IBM Plex Sans Thai Looped | 100,200,300,400,500,600,700`, identical to
+  the outgoing cut, so 400/500/600/700 is a like-for-like swap; (b) **`tabular-nums` still applies** —
+  measured on the focal balance after the swap: `font-variant-numeric: tabular-nums`. Neither gate
+  failed, so no revert was needed and **no third font was substituted**.
+  Verified live: `font-family` resolves to `"IBM Plex Sans Thai Looped"`; same family ⇒ metrics carry
+  over ⇒ no relayout (screenshots before/after show identical layout, warmer Thai glyphs).
+  - *(superseded original text follows)*
+  - ~~**F5 — typeface `IBM Plex Sans Thai` → `IBM Plex Sans Thai Looped`** (`app/layout.tsx`).~~
   Not a defect — a voice mismatch: Plex is IBM's corporate face (precise, cool); JodSa is personal money
   for general Thai users. Same family ⇒ x-height/metrics/line-height carry over ⇒ drop-in
   `next/font/google` swap with **no relayout risk** on a shipped app, while looped Thai glyphs read

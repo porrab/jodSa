@@ -32,7 +32,14 @@ export function Mascot({
       alt={alt ?? ''}
       aria-hidden={alt ? undefined : true}
       draggable={false}
-      className={cn('select-none', className)}
+      // `dark:invert` is load-bearing, not decoration: the SVGs hardcode a
+      // #141414 stroke on a #ffffff body, so on the dark theme's ~#0a0d12
+      // surfaces the linework disappears and the mascot reads as a smudge
+      // (caught rendering the design v4 F4 empty state). Inverting flips it to
+      // light lines on a dark body, which stays monochrome and on-brand.
+      // Applies to every usage, so the pre-existing dark-theme mascots on
+      // /transactions, the recurring form and budget-bar are fixed too.
+      className={cn('select-none dark:invert', className)}
     />
   )
 }

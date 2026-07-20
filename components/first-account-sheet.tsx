@@ -7,6 +7,7 @@ import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet'
 import AccountQuickCreateForm from '@/components/account-quick-create-form'
+import { Mascot } from '@/components/mascot'
 
 /**
  * J4 — first run. Auto-opens once when the signed-in user has zero accounts
@@ -27,7 +28,12 @@ export default function FirstAccountSheet({ hasAccounts }: { hasAccounts: boolea
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-2xl px-4 pb-8">
-        <SheetHeader>
+        {/* J4 first-run is one of the places design v4 F4 permits the mascot:
+            nothing here is timed, and it is the user's first impression of the
+            product. `thinking`, not a celebratory expression — the brand rule
+            holds that the mascot never applauds. */}
+        <SheetHeader className="items-center text-center">
+          <Mascot expr="thinking" className="size-20 opacity-80" />
           <SheetTitle>{t('onboardingTitle')}</SheetTitle>
           <SheetDescription>{t('onboardingHint')}</SheetDescription>
         </SheetHeader>
