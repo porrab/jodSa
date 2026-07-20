@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { createTransaction, updateTransaction } from '@/app/actions/transactions'
 import { usePendingTx } from '@/components/pending-tx-provider'
+import { toDatetimeLocal, type TxFormValues } from '@/lib/quick-add'
 import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
@@ -130,6 +131,22 @@ export default function TransactionForm({
 
   const [state, formAction, isPending] = useActionState(
     async (prev: { error: string }, fd: FormData) => {
+      // SPEC5-1: snapshot the user's RAW input before `fillFormData` normalises
+      // it. That function rewrites `datetime` to a UTC ISO string for the server;
+      // reading it back afterwards to rebuild the form (as this did) hands
+      // `<input type="datetime-local">` a value it rejects, so a failed save
+      // returned with the required date field blank. The restore payload and the
+      // server payload are two different contracts — build the restore one first.
+      const restoreValues: TxFormValues = {
+        type,
+        amount: (fd.get('amount') as string) || undefined,
+        account_id: accountId,
+        to_account_id: type === 'transfer' ? toAccountId : undefined,
+        category: category || undefined,
+        counterparty: (fd.get('counterparty') as string) || undefined,
+        datetime: toDatetimeLocal(fd.get('datetime') as string),
+      }
+
       fillFormData(fd)
 
       // Optimistic J1 path (design v4 F6). Hand the write to the provider, which
@@ -154,15 +171,7 @@ export default function TransactionForm({
               (type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
             category: category || null,
           },
-          {
-            type,
-            amount: fd.get('amount') as string,
-            account_id: accountId,
-            to_account_id: type === 'transfer' ? toAccountId : undefined,
-            category: category || undefined,
-            counterparty: (fd.get('counterparty') as string) || undefined,
-            datetime: (fd.get('datetime') as string) || undefined,
-          },
+          restoreValues,
         )
         onSuccess?.()
         return { error: '' }

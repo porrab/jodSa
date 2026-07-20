@@ -287,7 +287,37 @@ wrapper instead of the brief's bottom rule) is **accepted** — it follows the b
 
 **F6 is NOT done — one blocking defect.**
 
-- [ ] **SPEC5-1 — BLOCKING. The F6 rollback loses the user's date, violating F6 rule 4 and the v4
+- [x] **SPEC5-1 — FIXED 2026-07-21** (`components/transaction-form.tsx` + `lib/quick-add.ts`).
+  **Root cause confirmed independently before fixing** (not taken on pm-desk's word): `fillFormData`
+  rewrites `datetime` to a UTC ISO string for the server, and the restore payload was rebuilt by reading
+  that **already-mutated** FormData. Reproduced the transform in isolation —
+  `2026-07-20T23:49` → `2026-07-20T16:49:00.000Z`, which fails
+  `/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/`, so `<input type="datetime-local" required>` rejected it and
+  re-rendered blank.
+  **Fix — two layers, because the class matters more than the instance:**
+  1. *Source:* the restore snapshot is now taken **before** `fillFormData` runs. The restore payload and
+     the server payload are two different contracts and are now built separately.
+  2. *Class:* every restore `datetime` also passes through a new pure `toDatetimeLocal()`
+     (`lib/quick-add.ts`), which coerces any datetime into the one format the control accepts and returns
+     `undefined` rather than an unusable string. **This makes caller ordering non-load-bearing** — if a
+     future edit reads the value post-mutation again, it is still repaired.
+  **Directly answers pm-desk's structural point.** The observation that `pending-tx.test.ts` treats
+  `restore` as opaque and asserts identity — so it *cannot* reach a caller-side defect — was correct, and
+  so was the note that the earlier browser check verified only `amount`, the one field that happened to
+  work. New suite `tests/unit/restore-values.test.ts` (7 tests) covers that seam: identity, seconds
+  trimming, the exact UTC-ISO bug string, a **timezone-independent round-trip** (`local → server ISO →
+  restore` must return the value the user typed — this *is* the post-mutation path), a guard that no
+  output can ever be rejected by the control, unusable input dropped, and a guard against the obvious
+  regression of using `getUTC*` instead of local components.
+  **Verified live (all three fields this time, not just amount):** dev server stopped so the write could
+  not succeed → sheet re-opened with `amount 42.00` · **`datetime 2026-07-21T01:06`** ·
+  `counterparty ร้านทดสอบ` all intact, `checkValidity()` **true**, field **not** empty, `Failed to fetch`
+  toast shown. Nothing was written to the ledger by this check.
+  **Gates:** tsc **0** · lint clean · vitest **295 passed / 34 skipped** (was 288 — the 7 new).
+  **Still open:** `SPEC5-2`, `SPEC5-3`, `SPEC5-4` (minor, untouched) and the qa-lab **`QA-SPEC5`** E2E
+  that pm-desk requires before SPEC-5 can close — this fix does not substitute for it.
+  - *(original pm-desk brief follows)*
+  - ~~[ ] **SPEC5-1 — BLOCKING. The F6 rollback loses the user's date, violating F6 rule 4 and the v4
   anti-pattern "a failed write that costs the user their typed input".**
   **Mechanism (traced, not inferred):** `components/transaction-form.tsx:133` runs `fillFormData(fd)`
   first, which mutates the FormData in place — `fd.set('datetime', dt.toISOString())` (line 127). The
@@ -307,7 +337,8 @@ wrapper instead of the brief's bottom rule) is **accepted** — it follows the b
   field that works.
   **Fixed =** the restore payload carries the raw `datetime-local` string the user typed (capture it
   before `fillFormData`, or restore from the local value rather than the mutated FormData), **and** a test
-  asserts a restored payload is a valid `datetime-local` value in the app's timezone.
+  asserts a restored payload is a valid `datetime-local` value in the app's timezone.~~
+
 - [ ] **SPEC5-2 — minor.** The `:root` comment in `app/globals.css` states "light card↔bg **3.70** ·
   card↔muted **7.20**", but the shipped tokens measure **3.89 / 7.77** (matching this brief's own table,
   not the comment). Stale numbers from an earlier iteration, left where a future reader will trust them.
