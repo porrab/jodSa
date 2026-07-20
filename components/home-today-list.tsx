@@ -8,6 +8,7 @@ import { CategoryLabel } from '@/lib/categories'
 import { cn } from '@/lib/utils'
 import { formatTHB } from '@/lib/money'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
+import { usePendingTx } from '@/components/pending-tx-provider'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -41,19 +42,47 @@ export default function HomeTodayList({
   const dateLocale = locale === 'th' ? th : enUS
   const [detailTx, setDetailTx] = useState<Transaction | null>(null)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
+  const { pending } = usePendingTx()
 
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-muted-foreground">
-        {t('todayTransactions', { count: transactions.length })}
+        {t('todayTransactions', { count: transactions.length + pending.length })}
       </h2>
 
-      {transactions.length === 0 ? (
+      {transactions.length === 0 && pending.length === 0 ? (
         <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
           {t('noTransactionsToday')}
         </p>
       ) : (
         <div className="rounded-lg border divide-y">
+          {/* Provisional rows (design v4 F6). Subdued and NOT tappable — there is
+              no saved record to open a detail sheet for yet. Deliberately no
+              spinner and no motion: the brief calls for a visual pending state,
+              and `prefers-reduced-motion` users must get the same affordance. */}
+          {pending.map((p) => (
+            <div
+              key={p.tempId}
+              className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left opacity-60"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm">
+                  {p.label}
+                  {p.category && (
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      <CategoryLabel value={p.category} />
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">{t('pendingSave')}</p>
+              </div>
+              <span className={cn('shrink-0 text-sm font-semibold tabular-nums', TYPE_TEXT[p.type])}>
+                {p.type === 'income' ? '+' : p.type === 'expense' ? '-' : ''}
+                {formatTHB(p.amountSatang)}
+              </span>
+            </div>
+          ))}
+
           {transactions.map((tx) => {
             const acct = accountMap[tx.account_id]
             const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null

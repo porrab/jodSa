@@ -13,6 +13,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { createTransaction, updateTransaction } from '@/app/actions/transactions'
+import { usePendingTx } from '@/components/pending-tx-provider'
+import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import InlineCreateAccount from '@/components/inline-create-account'
@@ -34,6 +36,7 @@ export default function TransactionForm({
   lastByCategory = {},
   globalLastAccountId = null,
   editId,
+  optimistic = false,
 }: {
   accounts: Account[]
   onSuccess?: () => void
@@ -54,8 +57,22 @@ export default function TransactionForm({
   // never part of the edit payload (transactionUpdateSchema excludes it — J3:
   // "everything editable except ref_code"), so there's no field for it here.
   editId?: string
+  /**
+   * Opt into the optimistic J1 path (design v4 F6): hand the write to
+   * `PendingTxProvider`, show a provisional row, and close immediately instead of
+   * blocking on the round-trip.
+   *
+   * ⚠️ Only the global quick-add sheet passes this. It is deliberately NOT used
+   * for edits, nor for the slip-import confirm — a slip's duplicate verdict is
+   * decided server-side (`23505` on `UNIQUE(user_id, ref_code)`) and v3 specs a
+   * whole UI for it, so a slip row must never be shown as saved before the
+   * server has ruled. Manual entry is safe precisely because `ref_code` is null
+   * there, so that collision cannot fire.
+   */
+  optimistic?: boolean
 }) {
   const t = useTranslations('transaction')
+  const pendingTx = usePendingTx()
   const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
   const fallbackAccountId = accounts[0]?.id ?? null
   const [accountId, setAccountId] = useState(() =>
@@ -97,18 +114,60 @@ export default function TransactionForm({
     .toISOString()
     .slice(0, 16)
 
+  /** Shared field normalisation — both submit paths must build the SAME payload. */
+  const fillFormData = (fd: FormData) => {
+    fd.set('type', type)
+    fd.set('account_id', accountId)
+    if (type === 'transfer') fd.set('to_account_id', toAccountId)
+    if (category) fd.set('category', category)
+    // Convert local datetime to offset-aware ISO
+    const dtLocal = fd.get('datetime') as string
+    if (dtLocal) {
+      const dt = new Date(dtLocal)
+      fd.set('datetime', dt.toISOString())
+    }
+  }
+
   const [state, formAction, isPending] = useActionState(
     async (prev: { error: string }, fd: FormData) => {
-      fd.set('type', type)
-      fd.set('account_id', accountId)
-      if (type === 'transfer') fd.set('to_account_id', toAccountId)
-      if (category) fd.set('category', category)
-      // Convert local datetime to offset-aware ISO
-      const dtLocal = fd.get('datetime') as string
-      if (dtLocal) {
-        const dt = new Date(dtLocal)
-        fd.set('datetime', dt.toISOString())
+      fillFormData(fd)
+
+      // Optimistic J1 path (design v4 F6). Hand the write to the provider, which
+      // outlives this form — the sheet unmounts the moment we call onSuccess, so
+      // an action awaited here would be torn down before it could roll back.
+      if (optimistic && !editId) {
+        const amountSatang = parseInputToSatang(fd.get('amount') as string)
+        if (!amountSatang) {
+          const error = t('invalidAmount')
+          toast.error(error)
+          return { error }
+        }
+        const account = accounts.find((a) => a.id === accountId)
+        const toAccount = accounts.find((a) => a.id === toAccountId)
+        pendingTx.submit(
+          fd,
+          {
+            type,
+            amountSatang,
+            label:
+              (fd.get('counterparty') as string) ||
+              (type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
+            category: category || null,
+          },
+          {
+            type,
+            amount: fd.get('amount') as string,
+            account_id: accountId,
+            to_account_id: type === 'transfer' ? toAccountId : undefined,
+            category: category || undefined,
+            counterparty: (fd.get('counterparty') as string) || undefined,
+            datetime: (fd.get('datetime') as string) || undefined,
+          },
+        )
+        onSuccess?.()
+        return { error: '' }
       }
+
       const result = editId ? await updateTransaction(prev, fd) : await createTransaction(prev, fd)
       if (!result.error) {
         toast.success(t('saved'))
@@ -156,7 +215,9 @@ export default function TransactionForm({
             placeholder="0.00"
             defaultValue={defaultValues?.amount}
             required
-            className="h-14 border-0 bg-transparent px-0 text-3xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
+            // See quick-add-card.tsx: the Input base's `md:text-sm` outranks the
+            // unprefixed size at >= md, so the hero amount needs its own md: rule.
+            className="h-14 border-0 bg-transparent px-0 text-3xl font-semibold tabular-nums shadow-none focus-visible:ring-0 md:text-3xl"
           />
         </div>
       </div>

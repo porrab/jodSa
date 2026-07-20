@@ -1,9 +1,24 @@
 export type TxType = 'income' | 'expense' | 'transfer'
 
-export type QuickAddPrefill = Partial<{
+/**
+ * Every field `TransactionForm` can be seeded with. Widened from `{type, amount}`
+ * for design v4 F6: when an optimistic create fails we re-open the sheet with the
+ * user's work intact, which means carrying back more than the two fields Home's
+ * quick-add card seeds.
+ */
+export type TxFormValues = Partial<{
   type: TxType
   amount: string
+  account_id: string
+  to_account_id: string
+  category: string
+  counterparty: string
+  datetime: string
+  ref_code: string
+  bank_code: string
 }>
+
+export type QuickAddPrefill = TxFormValues
 
 export const QUICK_ADD_EVENT = 'jodsa:quick-add'
 

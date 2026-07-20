@@ -12,6 +12,7 @@ import {
 import AppNav from '@/components/app-nav'
 import TransactionForm from '@/components/transaction-form'
 import FirstAccountSheet from '@/components/first-account-sheet'
+import PendingTxProvider from '@/components/pending-tx-provider'
 import type { LastAccountMap } from '@/lib/last-account'
 import { QUICK_ADD_EVENT, type QuickAddPrefill } from '@/lib/quick-add'
 import type { Database } from '@/lib/supabase/types'
@@ -45,8 +46,18 @@ export default function AppShell({
 
   const close = useCallback(() => setOpen(false), [])
 
+  /**
+   * An optimistic create failed (design v4 F6 rule 4): put the user's work back
+   * on screen instead of making them retype it. Re-typing an amount because the
+   * network blinked is a worse outcome than the wait the optimism removed.
+   */
+  const restore = useCallback((values: QuickAddPrefill) => {
+    setPrefill(values)
+    setOpen(true)
+  }, [])
+
   return (
-    <>
+    <PendingTxProvider onFailure={restore}>
       <FirstAccountSheet hasAccounts={accounts.length > 0} />
       <div className="flex min-h-svh">
         <AppNav />
@@ -70,10 +81,13 @@ export default function AppShell({
               globalLastAccountId={globalLastAccountId}
               defaultValues={prefill}
               onSuccess={close}
+              // J1's create path only — see the prop's doc comment for why edits
+              // and slip-import confirms must stay on the blocking path.
+              optimistic
             />
           </div>
         </SheetContent>
       </Sheet>
-    </>
+    </PendingTxProvider>
   )
 }

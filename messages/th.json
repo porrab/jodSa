@@ -75,7 +75,8 @@
     "refCode": "อ้างอิงสลิป: {code}",
     "noAccountsInlineHint": "ยังไม่มีบัญชี — สร้างบัญชีก่อนเริ่มบันทึกรายการ",
     "transferNeedsSecondAccount": "ต้องมีอย่างน้อย 2 บัญชีเพื่อโอนเงินระหว่างกัน",
-    "filterAll": "ทั้งหมด"
+    "filterAll": "ทั้งหมด",
+    "invalidAmount": "จำนวนเงินไม่ถูกต้อง"
   },
   "account": {
     "title": "บัญชี",
@@ -356,7 +357,8 @@
     "monthExpenseLine": "เดือนนี้ใช้ไป {amount}",
     "budgetRemainingLine": "งบเหลือ {amount}",
     "todayTransactions": "รายการวันนี้ ({count})",
-    "noTransactionsToday": "ยังไม่มีรายการวันนี้"
+    "noTransactionsToday": "ยังไม่มีรายการวันนี้",
+    "pendingSave": "กำลังบันทึก…"
   },
   "group": {
     "title": "กลุ่ม / ทริป",

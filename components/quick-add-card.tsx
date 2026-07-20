@@ -34,8 +34,15 @@ export default function QuickAddCard() {
   return (
     <Card>
       <CardContent className="space-y-3 py-4">
-        <div className="flex items-center gap-2">
-          <span className="text-3xl font-semibold tabular-nums text-muted-foreground">฿</span>
+        {/* Affordance must match the sheet's amount field (design v4 F2): the same
+            value was entered through two inputs with two different affordances —
+            bordered in the sheet, nothing at all here. Naked `bg-transparent
+            border-0` also left the base `dark:bg-input/30` as the only thing
+            drawing a box, so this field appeared in dark and vanished in light.
+            Same wrapper as `transaction-form.tsx`; only the type scale differs
+            (this is Home's focal input). */}
+        <div className="flex items-center gap-2 rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+          <span className="select-none text-3xl font-semibold tabular-nums text-muted-foreground">฿</span>
           <Input
             type="text"
             inputMode="decimal"
@@ -45,7 +52,12 @@ export default function QuickAddCard() {
             // Spec: "Do not auto-focus the amount / auto-raise the keyboard on open" —
             // the user might be checking a balance, not logging.
             autoFocus={false}
-            className="h-12 border-0 bg-transparent px-0 text-4xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
+            // `md:text-4xl` is not redundant: the shadcn Input base carries
+            // `md:text-sm`, and a media-query rule outranks the unprefixed
+            // `text-4xl` at >= md — so without this the amount rendered at 14px
+            // on desktop next to a 30px ฿. Same class-collision family as the
+            // `dark:bg-input/30` bug this field was fixed for (design v4 F2).
+            className="h-14 border-0 bg-transparent px-0 text-4xl font-semibold tabular-nums shadow-none focus-visible:ring-0 md:text-4xl dark:bg-transparent"
             aria-label={t('amountLabel')}
           />
         </div>

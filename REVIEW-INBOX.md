@@ -75,7 +75,25 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   off-white fights the emerald brand.
   **Acceptance: measure, don't eyeball** — light `background` vs `card` ≥ **3.0 lab L** apart (same
   perceptual band as dark's 3.90), verified via computed values in-browser.
-- [ ] **F2 — amount input: invisible in light, boxed in dark** — **a bug, not a style choice.**
+- [x] **F2 — amount input: invisible in light, boxed in dark** — **DONE 2026-07-20**
+  (`components/quick-add-card.tsx`). Home's amount field now uses the **same wrapper as the sheet**
+  (`rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring`), so one value is
+  entered through one affordance. `dark:bg-transparent` added so the base `dark:bg-input/30` can no
+  longer be the only thing drawing a box in dark. **Verified in-browser (light):** wrapper border
+  present, wrapper bg `lab 96.11` inset against the `lab 100` card, plus a screenshot showing the boxed
+  field with its focus ring — compare the pre-fix capture where the number floated with no container.
+  - 🔍 **Second defect found while fixing this — same class-collision family, now fixed:** the shadcn
+    `Input` base carries **`md:text-sm`**, and a media-query rule outranks the unprefixed `text-4xl`, so
+    **the amount rendered at 14px on any viewport ≥ md** while its `฿` prefix (a `span`, no `md:`
+    override) stayed 30px. Desktop showed a big ฿ next to a tiny number. Fixed by adding `md:text-4xl`
+    (Home) and `md:text-3xl` (`transaction-form.tsx`). Measured after: input **36px**, `md:text-sm`
+    correctly dropped by `tailwind-merge`. **This was pre-existing — not introduced by v4.**
+  - 🔴 **Repo gotcha discovered (added to the gotchas section below): Turbopack served a stale build
+    across a full dev-server restart.** The edit was on disk and `tailwind-merge` was proven correct in
+    isolation, yet the DOM kept the old class for three reload/restart cycles. Only `rm -rf .next` fixed
+    it. Budget for this before debugging a "class that won't apply".
+  - *(superseded original text follows, kept for the reasoning)*
+  - ~~**F2 — amount input: invisible in light, boxed in dark** — **a bug, not a style choice.**~~
   🔧 **CORRECTION 2026-07-17 (this brief originally named the wrong file — found while doing F1).**
   The naked input is **`components/quick-add-card.tsx:48`** (Home). **`components/transaction-form.tsx:149`
   is already correct** — the sheet's amount field wraps its input in `rounded-md border bg-background px-3`
@@ -122,7 +140,43 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   use, and (b) `tabular-nums` still applies to amounts. **If either fails → stay on `IBM Plex Sans Thai`
   and report back. Do not silently substitute a third font.**
 
-- [ ] **F6 — J1 waits on a network round-trip before it says "saved"** *(added 2026-07-17)*.
+- [x] **F6 — J1 waits on a network round-trip before it says "saved"** — **DONE 2026-07-20.**
+  **Shape of the fix (the brief did not anticipate this):** the write could not stay in
+  `TransactionForm`. Radix unmounts sheet content on close, so an action owned by the form would be torn
+  down the instant the sheet closes — and closing instantly is the whole point — leaving **neither
+  rollback nor `toast.error` able to run**. The mutation therefore lives above the form:
+  - **`lib/pending-tx.ts`** (new) — pure orchestration: add provisional row → call → **remove on every
+    path** → success toast, or error toast + restore. Pure so the contract is testable without a DOM.
+  - **`components/pending-tx-provider.tsx`** (new) — holds `pending[]`, owns the request, outlives the sheet.
+  - **`components/app-shell.tsx`** — wraps the shell; `onFailure` re-opens the sheet with the values.
+  - **`components/transaction-form.tsx`** — new `optimistic` prop; **only `AppShell` passes it**, so edits
+    and slip-import confirms stay on the blocking path exactly as the brief requires.
+  - **`components/home-today-list.tsx`** — renders provisional rows subdued (`opacity-60`), **not
+    tappable** (no saved record to open yet), no spinner, no motion.
+  - **`lib/quick-add.ts`** — `QuickAddPrefill` widened to the full field set (`TxFormValues`) so a failed
+    save can hand everything back, not just amount+type.
+  - **i18n:** added `dashboard.pendingSave` + `transaction.invalidAmount` to **both** `th.json` and `en.json`.
+  **Verified — and read the honest split here:**
+  - ✅ **In-browser, real save:** balance moved `฿65,248.06 → ฿65,247.06`, sheet measured
+    `data-state="closed"` immediately on submit (it does close instantly), real row rendered after.
+  - ✅ **In-browser, forced failure** (dev server stopped mid-flow, so nothing could be written): error
+    toast `"Failed to fetch"` shown, **sheet re-opened with the amount `99.00` still in it**, row count
+    back to 1 with no phantom, balance untouched. That is rule 4 and rule 3 demonstrated on the real UI.
+  - ⚠️ **The provisional row was never captured on screen.** On failure the fetch rejects almost
+    instantly and React batches add+remove into one commit, so it never paints; on success it paints for
+    only the round-trip. Three attempts to sample it froze or timed out the renderer. **Proven instead by
+    `tests/unit/pending-tx.test.ts` (8 tests, all passing)** — including an in-flight assertion that the
+    row **is** present between dispatch and resolution, plus: removed on success, removed + restored on a
+    rejected write, removed + restored on a thrown request, non-`Error` throws, and the invariant that a
+    run never both succeeds and restores. **Read that as: the state machine is proven, the pixel is not.**
+  - ✅ tsc **0 errors** · lint clean · vitest **288 passed / 34 skipped** (was 280 — the 8 new ones).
+  **⚠️ Left for the owner — test data:** verifying the real-save path wrote **one ฿1.00 expense on
+  account `make`, dated 2026-07-20 ~23:49**. Browser tooling stopped responding before it could be
+  removed. **Please delete it** (รายการ → tap the row → ลบ) — it is the only residue of this session.
+  **Still open, explicitly not done here:** narrowing the 4× `revalidatePath` (`app/actions/transactions.ts:44-47`).
+  Optimism now **hides** that latency; it has not been **removed**. Reporting it as masked, per the brief.
+  - *(superseded original text follows, kept for the reasoning)*
+  - ~~**F6 — J1 waits on a network round-trip before it says "saved"** *(added 2026-07-17)*.~~
   **Traced in code, not assumed:** Home's `บันทึก` doesn't save — it opens the sheet prefilled
   (`components/quick-add-card.tsx:30` → `openQuickAdd`). The sheet's `useActionState`
   (`components/transaction-form.tsx:100`) calls `createTransaction` (`app/actions/transactions.ts`), which
@@ -360,6 +414,16 @@ empty** (guards the sender from ever returning); Paotang `G-Wallet !0:` → `ป
   chunk `.next/app-build-manifest.json` lists for that page — don't take the bundle summary on faith.
 - **Supabase free tier pauses after ~7 days idle** — an E2E/RLS suite failing to connect may just mean the
   project is paused.
+- 🔴 **Turbopack can serve a stale build across a full dev-server restart.** Hit on 2026-07-20 (SPEC-5
+  F2): a changed Tailwind class was on disk and `tailwind-merge` was proven correct in isolation, yet the
+  DOM kept the previous class through three reload + two full restart cycles. **`rm -rf .next` was the
+  only fix.** Before debugging "my class isn't applying", confirm the class is actually in the DOM's
+  `className` — if it is missing entirely (rather than present-but-losing), suspect the build cache, not
+  CSS precedence.
+- **A shadcn base utility with a variant can silently beat your local override.** `components/ui/input.tsx`
+  ships `md:text-sm` **and** `dark:bg-input/30`; both outrank an unprefixed override at their breakpoint /
+  theme, which is how the amount field ended up 14px on desktop and invisible in light (SPEC-5 F2). When
+  overriding size or background on `Input`, override the **variant** too (`md:text-…`, `dark:bg-…`).
 
 ---
 

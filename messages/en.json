@@ -75,7 +75,8 @@
     "refCode": "Slip reference: {code}",
     "noAccountsInlineHint": "No accounts yet — add one to start logging",
     "transferNeedsSecondAccount": "You need a second account to transfer between",
-    "filterAll": "All"
+    "filterAll": "All",
+    "invalidAmount": "Invalid amount"
   },
   "account": {
     "title": "Accounts",
@@ -356,7 +357,8 @@
     "monthExpenseLine": "Spent this month {amount}",
     "budgetRemainingLine": "budget left {amount}",
     "todayTransactions": "Today ({count})",
-    "noTransactionsToday": "Nothing logged today yet"
+    "noTransactionsToday": "Nothing logged today yet",
+    "pendingSave": "Saving…"
   },
   "group": {
     "title": "Groups / Trips",
