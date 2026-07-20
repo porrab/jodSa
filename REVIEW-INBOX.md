@@ -76,7 +76,15 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   **Acceptance: measure, don't eyeball** — light `background` vs `card` ≥ **3.0 lab L** apart (same
   perceptual band as dark's 3.90), verified via computed values in-browser.
 - [ ] **F2 — amount input: invisible in light, boxed in dark** — **a bug, not a style choice.**
-  `components/transaction-form.tsx`'s amount input has deliberate overrides
+  🔧 **CORRECTION 2026-07-17 (this brief originally named the wrong file — found while doing F1).**
+  The naked input is **`components/quick-add-card.tsx:48`** (Home). **`components/transaction-form.tsx:149`
+  is already correct** — the sheet's amount field wraps its input in `rounded-md border bg-background px-3`
+  with a `focus-within` ring. **Do not change the sheet.**
+  This makes F2 **worse than first stated:** the same value (amount) is entered through **two inputs with
+  two different affordances** — bordered in the sheet, invisible on Home — *and* the Home one changes
+  appearance between themes. **The inconsistency is the defect; the theme asymmetry below is its
+  mechanism.** Fix Home to match the sheet.
+  `components/quick-add-card.tsx`'s amount input has deliberate overrides
   (`border-0 bg-transparent px-0 text-4xl font-semibold tabular-nums shadow-none` = intent is a naked big
   number), but the shadcn base `dark:bg-input/30` sits ahead of them and the `dark:` variant beats the
   unprefixed `bg-transparent`. Measured in light: `borderWidth: 0px`, `background: rgba(0,0,0,0)`,
@@ -114,11 +122,46 @@ shipped in M9 (closed 2026-07-13). Findings below were **measured in-browser** o
   use, and (b) `tabular-nums` still applies to amounts. **If either fails → stay on `IBM Plex Sans Thai`
   and report back. Do not silently substitute a third font.**
 
+- [ ] **F6 — J1 waits on a network round-trip before it says "saved"** *(added 2026-07-17)*.
+  **Traced in code, not assumed:** Home's `บันทึก` doesn't save — it opens the sheet prefilled
+  (`components/quick-add-card.tsx:30` → `openQuickAdd`). The sheet's `useActionState`
+  (`components/transaction-form.tsx:100`) calls `createTransaction` (`app/actions/transactions.ts`), which
+  validates → inserts through RLS → runs **`revalidatePath` on 4 routes** (`:44-47`) → only then resolves.
+  The CTA sits disabled reading "กำลังบันทึก" (`:262`) the whole time. **J1 is the most repeated action in
+  the product and its success criterion is < 10 s.**
+  **Change — optimistic commit, scoped hard:**
+  1. **J1 manual entry only.** On submit close the sheet immediately and render the row in "รายการวันนี้"
+     in a **pending** state (subdued — not a spinner); on success it quietly becomes normal.
+  2. ❌ **Never on J2 slip confirm.** The duplicate verdict is server-side (`23505` on
+     `UNIQUE(user_id, ref_code)`, handled at `app/actions/transactions.ts:40`) and v3 specs a whole UI for
+     it. Manual entry is safe *because* `ref_code` is null there, so that collision cannot fire.
+  3. ❌ **The balance must not move optimistically.** The list records what the user did; the focal
+     `ยอดรวม` is computed truth about money. A balance that jumps then reverts is alarming in a way a
+     disappearing row is not — and it keeps v3's one-focal-number rule honest.
+  4. **Failure costs the user nothing:** remove the pending row, keep the existing `toast.error`, and
+     **reopen the sheet with every field still filled**. Re-typing an amount is worse than the wait this
+     removes.
+  5. Pending state is visual, not motion-heavy; respect `prefers-reduced-motion`.
+  **Dev's call, not design's — but name it honestly:** the latency being masked is largely the 4×
+  `revalidatePath` inside the action. Optimism *hides* it; narrowing the revalidation would *remove* it.
+  Do either or both — but **do not report a masked slow write as a fixed one.**
+  **Context for reviewers:** F6 is the *only* survivor of a list of perceived-performance techniques the
+  owner raised. Rejected as serving no journey here: blur-up (no images), virtual lists (lists are short),
+  prefetch (4 nav destinations). **Already shipped, needs nothing:** skeletons (`loading.tsx` × 4, ~23
+  `animate-pulse`), toast-not-modal (`sonner` in `app/layout.tsx` + `toast.success/error` in the form),
+  press physics (`.press`). A design-skill catalogue (`nutlope/hallmark`) was evaluated and **not
+  adopted** — it targets AI-templated *landing pages*, while F1–F5 are structural bugs; mood-selected
+  themes would also break the brief's own "every choice traces to a constraint" rule.
+
 ### Not defects — verified this pass, do NOT "fix"
 - **Bottom nav is correct**: measured `position: fixed`, `bottom: 0px`, zero gap below. An earlier
   screenshot reading suggested it floated mid-screen; the computed values disproved it (the capture
   framed the whole window, not the viewport).
 - **Focal number is correct** (see F3 warning above).
+- **`components/transaction-form.tsx:149` (the sheet's amount field) is correct** — bordered wrapper +
+  `focus-within` ring. Only Home's `quick-add-card.tsx:48` is naked (F2 correction above).
+- **Skeletons, toast-not-modal and press physics are already shipped** and were re-verified this pass —
+  do not "add" them (F6 context).
 
 ### Known gap in this brief
 Mobile-viewport density was **not** verified — viewport emulation on the review machine was unreliable
