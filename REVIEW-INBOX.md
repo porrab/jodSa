@@ -268,6 +268,91 @@ a timed journey · ❌ rank-bearing text painted `muted-foreground` · ❌ theme
 (a base `dark:` utility silently beating a local override) · ❌ shipping a colour/spacing change verified
 by eye when it is measurable.
 
+### pm-desk review verdict — **CHANGES NEEDED** — 2026-07-21 · from pm-desk
+**Record:** `pm-desk/projects/jodsa/reviews/SPEC-5-review.md` (full evidence). **Reviewed at** `21cbff5`.
+**Gates re-run independently:** `npx tsc --noEmit` exit 0 · `npx next lint` clean · `npx vitest run`
+**288 passed / 34 skipped** (34 = `rls.test.ts`, needs live Supabase) — all three match the dev's report.
+
+**F1–F5 APPROVED.** F1's acceptance number was re-derived from the tokens on disk, not accepted on
+report: light `card↔bg` **3.89** (≥ 3.0 ✅), AA `muted-foreground` **5.51 / 5.00 / 4.52** on
+card/bg/muted (all ≥ 4.5 ✅), and the pre-existing M9 violation re-measures at **4.33:1** — the dev found
+and fixed a real latent a11y defect. "Dark untouched" is proven from the diff (`a5d8169` is entirely
+inside `:root`; `.dark` has zero changed lines). F5's font gate re-confirmed against Next's own
+`font-data.json` (`IBM Plex Sans Thai Looped` → 100–700, identical to the outgoing cut). F4's
+`dark:invert` survived a falsification attempt: brand emerald (`#159E7B`) exists **only** in
+`mascot-app-icon.svg`, which `MascotExpr` cannot address — the six reachable expressions are strictly
+`#141414` + `#ffffff`, so the "monochrome, light untouched" claim holds. F2's deviation (full bordered
+wrapper instead of the brief's bottom rule) is **accepted** — it follows the brief's own later correction
+("fix Home to match the sheet's affordance"), which supersedes the earlier decision paragraph.
+
+**F6 is NOT done — one blocking defect.**
+
+- [ ] **SPEC5-1 — BLOCKING. The F6 rollback loses the user's date, violating F6 rule 4 and the v4
+  anti-pattern "a failed write that costs the user their typed input".**
+  **Mechanism (traced, not inferred):** `components/transaction-form.tsx:133` runs `fillFormData(fd)`
+  first, which mutates the FormData in place — `fd.set('datetime', dt.toISOString())` (line 127). The
+  optimistic branch then builds its restore payload by reading that **already-mutated** FormData:
+  `datetime: (fd.get('datetime') as string)` (line 164). So `onFailure` receives a **UTC ISO string**
+  (`2026-07-20T16:49:00.000Z`), which `AppShell.restore` feeds back into
+  `<Input type="datetime-local" … required />` (lines 313–317). `datetime-local` accepts only
+  `YYYY-MM-DDTHH:mm[:ss]`, so the browser rejects it and the field comes back **blank** — and it is
+  `required`, so the user cannot just resubmit. Even if the format parsed, it is UTC where the control
+  expects local: a 7-hour shift in Asia/Bangkok.
+  **Repro:** open quick-add from Home, fill amount + set a datetime, stop the dev server, submit → error
+  toast fires and the sheet reopens with the amount intact but **the date field empty**.
+  **Why nothing caught it:** `tests/unit/pending-tx.test.ts` passes `restore` as an opaque
+  `{ amount: '120.00' }` and asserts object identity — the defect is in how the payload is *constructed*
+  in `transaction-form.tsx`, a seam `lib/pending-tx.ts` never sees, so the 8 tests are structurally
+  incapable of reaching it. The in-browser failure check verified one field (amount), and amount is the
+  field that works.
+  **Fixed =** the restore payload carries the raw `datetime-local` string the user typed (capture it
+  before `fillFormData`, or restore from the local value rather than the mutated FormData), **and** a test
+  asserts a restored payload is a valid `datetime-local` value in the app's timezone.
+- [ ] **SPEC5-2 — minor.** The `:root` comment in `app/globals.css` states "light card↔bg **3.70** ·
+  card↔muted **7.20**", but the shipped tokens measure **3.89 / 7.77** (matching this brief's own table,
+  not the comment). Stale numbers from an earlier iteration, left where a future reader will trust them.
+  **Fixed =** the comment states the real measured values.
+- [ ] **SPEC5-3 — minor, hardening.** `usePendingTx()` falls back to `noop` (`submit: () => {}`) when used
+  outside `PendingTxProvider`, while `transaction-form.tsx:167` calls `onSuccess?.()` unconditionally
+  after `pendingTx.submit(...)`. Unreachable today (only `AppShell` passes `optimistic`, and it provides
+  the provider) — but if that pairing is ever broken, the sheet closes reporting success and **the
+  transaction is silently discarded**. That landmine should not stay armed in a finance app.
+  **Fixed =** the default context throws (or dev-warns) instead of silently no-oping.
+- [ ] **SPEC5-4 — minor, possibly an intentional design call.** F3 specifies the secondary tier as
+  `muted-foreground` + **14px** and names timestamps; Home ships timestamp + category chip at `text-xs`
+  (**12px**), so the shipped ladder is 36 → 16 → 12 and the 14px tier still does not exist on Home.
+  Pre-existing, not introduced by F3. **Fixed =** either move them to `text-sm`, or record it as a
+  deliberate deviation so the next reader does not re-open it.
+
+**Residuals — assessed, and what happens to each:**
+- **The ฿1.00 test expense on account `make` (2026-07-20 ~23:49) blocks nothing here** — it affects no
+  verdict, gate or test. But it is real: a dev session wrote into the owner's live ledger and could not
+  clean up, so the owner's balance is off by ฿1.00 until deleted manually (รายการ → tap the row → ลบ).
+  pm-desk cannot verify whether it is still present (no DB access, not authenticated). Use a disposable
+  test account for live-path verification next time.
+- **Light `--popover` == `--card` (gap 0) — pm-desk AGREES with the dev, including with escalating it.**
+  Confirmed independently: both `oklch(1 0 0)` → lab 100.00, gap **0.00**, versus dark's popover↔card
+  **3.48**. It cannot be fixed by going lighter (card is pinned to pure white), so the options are
+  tinting `--card` or committing to shadow+border alone — brand/visual-language calls above dev
+  authority. **Routed to design-studio; NOT a dev correction item and not held against this delivery.**
+- **`revalidatePath` ×4 not narrowed — no violation, no action in SPEC-5.** v4 demanded the dev "say which
+  one shipped", and they said *masked*. Correct behaviour. Logged as forward tech-debt: the write is as
+  slow as it ever was, and optimism now means nobody will feel it — which is exactly how such latency
+  never gets fixed. Phase-2 item.
+
+**Observation for qa-lab, not a dev fix:** the ＋ FAB opens quick-add from every page
+(`app-nav.tsx:84`), but provisional rows render only on Home (`home-today-list.tsx`). Saving from
+`/transactions` now closes the sheet instantly with no visible feedback until the toast lands, where it
+previously held the sheet on "กำลังบันทึก". Spec-compliant (F6 scopes the row to "รายการวันนี้") but a real
+behaviour change outside Home.
+
+**SPEC-5 stays OPEN.** Closure needs **SPEC5-1 landed** *and* a **qa-lab E2E (`QA-SPEC5`)** covering:
+(i) optimistic save — provisional row paints, subdued, not tappable, **balance does not move**;
+(ii) forced failure — row rolls back, error toast, sheet reopens with **every field intact, datetime
+included**; (iii) slip-import confirm and edit still block (no optimism); (iv) contrast + mascot in both
+themes, including the mobile viewport the v4 brief itself left unchecked. **8 unit tests over a pure
+orchestrator are not sufficient evidence for a change to J1** — this review is the demonstration.
+
 ---
 
 ## [SPEC-4] `/invest` module — **1 milestone unbuilt** — 2026-07-14 · from idea-forge
