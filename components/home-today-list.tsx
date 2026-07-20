@@ -80,12 +80,12 @@ export default function HomeTodayList({
                 <p className="truncate text-base">
                   {p.label}
                   {p.category && (
-                    <span className="ml-1.5 text-xs text-muted-foreground">
+                    <span className="ml-1.5 text-sm text-muted-foreground">
                       <CategoryLabel value={p.category} />
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground">{t('pendingSave')}</p>
+                <p className="text-sm text-muted-foreground">{t('pendingSave')}</p>
               </div>
               <span className={cn('shrink-0 text-base font-semibold tabular-nums', TYPE_TEXT[p.type])}>
                 {p.type === 'income' ? '+' : p.type === 'expense' ? '-' : ''}
@@ -111,16 +111,18 @@ export default function HomeTodayList({
                 <div className="min-w-0 flex-1">
                   {/* Primary row content sits at the 16px base tier (design v4
                       F3); the category chip and timestamp are the secondary
-                      rank and keep muted + small. */}
+                      rank — `muted-foreground` at 14px, NOT 12px: v3's type
+                      rule is "12px only for chart axes", because v2's 12px UI
+                      text was a named squint source (SPEC5-4). */}
                   <p className="truncate text-base">
                     {label}
                     {tx.category && (
-                      <span className="ml-1.5 text-xs text-muted-foreground">
+                      <span className="ml-1.5 text-sm text-muted-foreground">
                         <CategoryLabel value={tx.category} />
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
                   </p>
                 </div>

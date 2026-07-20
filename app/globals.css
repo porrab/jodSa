@@ -45,9 +45,13 @@
      and never gave light one: card sat 0.54 lab L from background, so cards did not
      read as cards. Light's ramp is ordered `muted < background < card` (in light the
      most-tinted surface is the darkest; in dark it is the lightest — the direction
-     flips, the intent does not), and these three mirror dark's MEASURED distances:
+     flips, the intent does not), and these three mirror dark's MEASURED distances.
+     Numbers below are lab L gaps read from the SHIPPED tokens via the browser's
+     own computed values (not predicted, and not hand-derived — an oklch→Lab
+     calculation lands ~0.01 off, which is how the previous stale figures here
+     survived review):
        dark  card↔bg 3.90 · card↔muted 6.94
-       light card↔bg 3.70 · card↔muted 7.20
+       light card↔bg 3.89 · card↔muted 7.78
      `card` is pinned to pure white, so the room for this ladder has to come from
      below — moving `background` alone cannot work (only 4.53 lab existed between
      card and muted, and the ladder needs ~7). `muted` moves too, which drags

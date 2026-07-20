@@ -339,21 +339,50 @@ wrapper instead of the brief's bottom rule) is **accepted** — it follows the b
   before `fillFormData`, or restore from the local value rather than the mutated FormData), **and** a test
   asserts a restored payload is a valid `datetime-local` value in the app's timezone.~~
 
-- [ ] **SPEC5-2 — minor.** The `:root` comment in `app/globals.css` states "light card↔bg **3.70** ·
+- [x] **SPEC5-2 — FIXED 2026-07-21** (`app/globals.css`). The `:root` comment now states the real
+  numbers. **And the first correction was itself wrong**, which is worth recording: writing pm-desk's
+  derived `7.77` produced a comment that still disagreed with the browser's **7.78**. An oklch→Lab hand
+  derivation and the browser's own colour pipeline land ~0.01 apart — that gap is exactly how the
+  original stale figures survived. The comment now carries the **browser-computed** values
+  (`card↔bg 3.89 · card↔muted 7.78`) *and names the method*, so the next reader can reproduce them
+  instead of re-deriving a different answer.
+  - *(original pm-desk brief follows)*
+  - ~~[ ] **SPEC5-2 — minor.** The `:root` comment in `app/globals.css` states "light card↔bg **3.70** ·
   card↔muted **7.20**", but the shipped tokens measure **3.89 / 7.77** (matching this brief's own table,
   not the comment). Stale numbers from an earlier iteration, left where a future reader will trust them.
-  **Fixed =** the comment states the real measured values.
-- [ ] **SPEC5-3 — minor, hardening.** `usePendingTx()` falls back to `noop` (`submit: () => {}`) when used
+  **Fixed =** the comment states the real measured values.~~
+
+- [x] **SPEC5-3 — FIXED 2026-07-21** (`components/pending-tx-provider.tsx`). The default context no
+  longer silently no-ops: `submit` **throws** with a message naming the cause, while `pending` still
+  reads as an empty array (a consumer rendering provisional rows outside the provider should show none,
+  not crash). Rationale kept in the code: `transaction-form.tsx` calls `onSuccess?.()` immediately after
+  `submit`, so a no-op meant *the sheet closes reporting success while the transaction is discarded*.
+  Unreachable today — `optimistic` has exactly one call site and `AppShell` mounts the provider — but a
+  finance app should fail loudly rather than quietly lose a write. **Not unit-tested:** the guard lives
+  in a React context default and this repo has no DOM test environment (adding one needs an owner-approved
+  dependency); tsc covers the type and the path is unreachable by construction.
+  - *(original pm-desk brief follows)*
+  - ~~[ ] **SPEC5-3 — minor, hardening.** `usePendingTx()` falls back to `noop` (`submit: () => {}`) when used
   outside `PendingTxProvider`, while `transaction-form.tsx:167` calls `onSuccess?.()` unconditionally
   after `pendingTx.submit(...)`. Unreachable today (only `AppShell` passes `optimistic`, and it provides
   the provider) — but if that pairing is ever broken, the sheet closes reporting success and **the
   transaction is silently discarded**. That landmine should not stay armed in a finance app.
-  **Fixed =** the default context throws (or dev-warns) instead of silently no-oping.
-- [ ] **SPEC5-4 — minor, possibly an intentional design call.** F3 specifies the secondary tier as
+  **Fixed =** the default context throws (or dev-warns) instead of silently no-oping.~~
+
+- [x] **SPEC5-4 — FIXED 2026-07-21** (`components/home-today-list.tsx`), and it was **not** a deliberate
+  deviation. pm-desk left it open as "possibly intentional"; checking v3 settles it —
+  `idea-forge/ideas/jodsa/docs/07-design.md:364` reads *"12 px only for chart axes. (v2 allowed 12 in UI
+  — a squint source.)"*, so 12px UI text is a **direct v3 violation**, pre-dating F3. All four
+  `text-xs` → `text-sm` on Home. **Verified in-browser: 0 elements at 12px remain on Home**, secondary
+  tier measures 14px. Home's ladder is now **36 → 16 → 14** as F3 specifies. The stale "muted + small"
+  comment was updated too, so it does not become the next SPEC5-2.
+  - *(original pm-desk brief follows)*
+  - ~~[ ] **SPEC5-4 — minor, possibly an intentional design call.** F3 specifies the secondary tier as
   `muted-foreground` + **14px** and names timestamps; Home ships timestamp + category chip at `text-xs`
   (**12px**), so the shipped ladder is 36 → 16 → 12 and the 14px tier still does not exist on Home.
   Pre-existing, not introduced by F3. **Fixed =** either move them to `text-sm`, or record it as a
-  deliberate deviation so the next reader does not re-open it.
+  deliberate deviation so the next reader does not re-open it.~~
+
 
 **Residuals — assessed, and what happens to each:**
 - **The ฿1.00 test expense on account `make` (2026-07-20 ~23:49) blocks nothing here** — it affects no
