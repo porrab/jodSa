@@ -15,6 +15,56 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [SPEC-5] E2E RED — F6 optimistic save is inert — 2026-07-21 · from qa-lab
+**Status**: OPEN — **blocks SPEC-5 closure.** Record: `qa-lab/projects/jodsa/runs/QA-SPEC5-2026-07-21.md`.
+Tested at `d94e3dc` on a **production build** (`pnpm build` → `pnpm start`), independently
+reproduced on `pnpm dev` (clean `.next` both times — **not** the Turbopack-stale gotcha). Run:
+**9 passed / 2 failed**; the 2 failures are one defect. New specs (qa-lab, write-boundary):
+`project/jodsa/tests/e2e/spec5-optimistic.spec.ts` + `project/jodsa/tests/e2e/spec5-visual.spec.ts`.
+
+**F1–F5 rendered claims that pm-desk could not verify (no browser run) are GREEN** — all measured on
+painted pixels, both themes + the mobile viewport the v4 brief left unchecked: **F1** light
+`card↔bg` ≥ 3.0 L\* (reproduces 3.89); **F2** amount wrapper border visible in BOTH themes + amount
+≥ 30px on desktop; **F3** ladder 36→16→14 with distinct colours, focal untouched; **F4** `shrug`
+mascot in the empty state, `filter` contains `invert` in dark; **SPEC5-4** zero 12px text on Home.
+Edit still blocks (no optimism). No visual/typography/mascot defects found.
+
+### Items
+- [ ] **(id: QA-SPEC5-1)** [blocker] **F6 optimistic J1 save does not run in the built app.** The
+  quick-add sheet **blocks** on the disabled "กำลังบันทึก..." button until `createTransaction`
+  resolves (~1.0–1.7s live), **renders no provisional row at any point**, and closes only *after*
+  the write — i.e. the pre-F6 blocking behavior. v4 F6 (i) "provisional row paints, subdued, not
+  tappable" and the whole "close immediately" premise are unmet.
+  - **repro:** Home → type an amount in the quick-add card → บันทึก → in the sheet press บันทึกรายการ
+    (also reproduces via the ＋ FAB and on a re-opened sheet). Spec: `tests/e2e/spec5-optimistic.spec.ts`
+    `SPEC5-F6`.
+  - **expected:** on submit the sheet closes instantly, a subdued non-tappable provisional row
+    appears in "รายการวันนี้", balance unchanged until the server confirms, then it resolves to the real row.
+  - **actual:** sheet stays open on a disabled "saving" button; a `MutationObserver` on `.opacity-60`
+    records the provisional row **zero** times; `data-state` flips to `closed` only at ~+1.25s
+    (write completion), never at +0.
+  - **traced (not inferred):** the branch `optimistic && !editId` is at
+    `components/transaction-form.tsx:155`; a live React-fiber probe of the mounted sheet form shows
+    **`optimistic: true`, `editId: undefined`**, yet the reducer awaits the blocking
+    `createTransaction` at `transaction-form.tsx:180`. `AppShell` passes `optimistic`
+    (`app-shell.tsx:86`) and mounts `PendingTxProvider` (`app-shell.tsx:60`) — the wiring reads
+    correct on disk, so the fault is at the branch/closure/`useActionState` runtime seam. **Root-cause
+    + post-mortem is dev work;** qa-lab's finding is that the optimistic branch does not execute in
+    the shipped build.
+  - **consequence for SPEC5-1:** the datetime-restore fix (`a7056c6`) is proven only by
+    `tests/unit/restore-values.test.ts`. Its **integration cannot be exercised** because
+    `onFailure(restore)` lives on the optimistic branch alone; on the blocking path an aborted write
+    leaves the sheet open (never re-mounted) with inputs retained, which *mimics* the intended
+    rollback and would false-GREEN a naive test. The `SPEC5-1` spec's anti-false-pass gate (sheet
+    must close on submit) fails, confirming the F6 rollback path never runs. **The demonstration
+    pm-desk required for SPEC5-1 does not exist until F6 works.**
+  - **fixed =** the optimistic branch actually runs for J1 manual create (sheet closes immediately,
+    provisional row visible, balance frozen, rollback re-opens with every field incl. datetime), and
+    `tests/e2e/spec5-optimistic.spec.ts` (`SPEC5-F6` + `SPEC5-1`) goes GREEN. Attach a post-mortem
+    on why a structurally-correct `optimistic && !editId` branch was skipped at runtime.
+
+### Dev notes
+
 ## [SPEC-5] Design v4 — visual-layer amendment — 2026-07-17 · from design-studio
 **Status**: OPEN — **not a milestone**, inbox work on the shipped expense core. Design v4 AMENDS v3's
 visual layer; it does **not** reset anything. **Journeys J1–J7, nav, brand, type-colour semantics,
