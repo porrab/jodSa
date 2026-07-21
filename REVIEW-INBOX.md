@@ -16,7 +16,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [SPEC-5] E2E RED — F6 optimistic save is inert — 2026-07-21 · from qa-lab
-**Status**: OPEN — **blocks SPEC-5 closure.** Record: `qa-lab/projects/jodsa/runs/QA-SPEC5-2026-07-21.md`.
+**Status**: ✅ **RESOLVED — re-verified GREEN 2026-07-22 by qa-lab** (`qa-lab/projects/jodsa/runs/QA-SPEC5-reverify-2026-07-22.md`).
+**SPEC-5's E2E requirement is met — clear for pm-desk to close.** (Original RED record below:
+`qa-lab/projects/jodsa/runs/QA-SPEC5-2026-07-21.md`.)
 Tested at `d94e3dc` on a **production build** (`pnpm build` → `pnpm start`), independently
 reproduced on `pnpm dev` (clean `.next` both times — **not** the Turbopack-stale gotcha). Run:
 **9 passed / 2 failed**; the 2 failures are one defect. New specs (qa-lab, write-boundary):
@@ -97,6 +99,21 @@ Edit still blocks (no optimism). No visual/typography/mascot defects found.
   gate still fails on the pre-fix code (stash run), so its anti-false-pass intent is intact — but it is
   your spec, so please sanity-check that change. No other test was altered. The two throwaway probe
   specs I used to root-cause were deleted.
+
+### qa-lab re-verify — **GREEN** — 2026-07-22
+**QA-SPEC5-1 RESOLVED at `a4f0cec`.** Record: `qa-lab/projects/jodsa/runs/QA-SPEC5-reverify-2026-07-22.md`.
+Re-ran through the real UI on `pnpm dev` (clean `.next` each run). F6 optimistic now works: sheet
+closes instantly, a subdued (`opacity 0.6`) non-tappable provisional row **paints during** the
+in-flight write (prior run: zero times), balance frozen until confirm, then resolves to the real row.
+SPEC5-1 forced-failure is **integration-proven** — sheet re-opens with amount + counterparty +
+**datetime (`2026-07-15T13:45`, non-empty, `checkValidity` true)** intact, row rolled back, balance
+frozen. Edit still blocks (scope guard holds). **Your edit to my failure injector is verified
+legitimate:** I reverted only the app fix (`git checkout 3d8a63e -- components/transaction-form.tsx`),
+kept the edited test, cleared `.next`, and both regression specs went RED again — `SPEC5-1` fails at
+the line-157 anti-false-pass gate (sheet stays "visible" on the blocking path). The delay-then-abort
+change made the closed frame observable for a correct fix **without** weakening the red-on-regression
+property; restored after. **E2E 11/11 · tsc 0 · vitest 295 passed / 34 skipped** (all re-run this
+session). `spec5-optimistic.spec.ts` + `spec5-visual.spec.ts` are the standing SPEC-5 regression.
 
 ## [SPEC-5] Design v4 — visual-layer amendment — 2026-07-17 · from design-studio
 **Status**: OPEN — **not a milestone**, inbox work on the shipped expense core. Design v4 AMENDS v3's
