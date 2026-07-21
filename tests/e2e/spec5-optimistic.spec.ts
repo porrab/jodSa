@@ -42,8 +42,10 @@ test.beforeEach(async () => {
 /**
  * Route the J1 create/update Server Action (POST to /dashboard). `delayMs` holds
  * the response open so the provisional row stays paintable; `abort` forces the
- * offline/rejected-write branch. GET navigations + RSC prefetches pass straight
- * through.
+ * offline/rejected-write branch. When BOTH are given the delay is applied FIRST,
+ * then the abort — so the optimistic close+reopen are separated in time and
+ * observable (see the forced-failure test's gate). GET navigations + RSC
+ * prefetches pass straight through.
  */
 async function routeServerAction(
   page: Page,
@@ -53,11 +55,11 @@ async function routeServerAction(
     const req = route.request()
     const isAction = req.method() === 'POST' && !!req.headers()['next-action']
     if (isAction) {
+      if (mode.delayMs) await new Promise((r) => setTimeout(r, mode.delayMs))
       if (mode.abort) {
         await route.abort('failed')
         return
       }
-      if (mode.delayMs) await new Promise((r) => setTimeout(r, mode.delayMs))
     }
     await route.continue()
   }
@@ -133,7 +135,15 @@ test('SPEC5-1 — forced failure: row rolls back, error toast fires, sheet reope
   await page.getByLabel('ผู้รับ / ผู้โอน').fill('ร้านทดสอบ QA') // counterparty
   await page.getByLabel('วันที่และเวลา').fill(DT) // datetime-local
 
-  await routeServerAction(page, { abort: true })
+  // Delay the write ~800ms THEN abort. The delay is what makes the anti-false-pass
+  // gate observable: on the optimistic path the sheet closes instantly and stays
+  // closed for the whole ~800ms window before onFailure re-opens it, so `toBeHidden`
+  // reliably catches the closed state. On the OLD blocking path the sheet would sit
+  // OPEN on a disabled "saving" button for that same window and never go hidden —
+  // so this gate still fails RED on the regression it guards. (A zero-delay abort
+  // let React batch the close+reopen into one commit, hiding the closed frame and
+  // false-failing a correct fix — QA-SPEC5-1 root-cause.)
+  await routeServerAction(page, { delayMs: 800, abort: true })
   await page.getByRole('button', { name: 'บันทึกรายการ', exact: true }).click()
 
   // ANTI-FALSE-PASS GATE (design v4 F6): the optimistic path closes the sheet
@@ -142,15 +152,15 @@ test('SPEC5-1 — forced failure: row rolls back, error toast fires, sheet reope
   // write settles), then on an aborted write the sheet never closes at all and its
   // inputs merely retain what was typed — which would let every field assertion
   // below pass WITHOUT the F6 rollback path ever running. This gate fails in that
-  // case: on the optimistic path the sheet is hidden at least momentarily between
-  // the instant close and the restore re-open.
+  // case: on the optimistic path the sheet is hidden for the ~800ms delay window
+  // between the instant close and the restore re-open.
   await expect(page.getByRole('heading', { name: QUICK_ADD_TITLE })).toBeHidden({ timeout: 2000 })
 
   // Failure must be loud.
   await expect(page.locator('[data-sonner-toast]')).toBeVisible()
 
   // Sheet reopens (F6 rule 4).
-  await expect(page.getByRole('heading', { name: QUICK_ADD_TITLE })).toBeVisible()
+  await expect(page.getByRole('heading', { name: QUICK_ADD_TITLE })).toBeVisible({ timeout: 4000 })
 
   // Every field intact.
   await expect(page.getByLabel('จำนวนเงิน (บาท)')).toHaveValue('42')

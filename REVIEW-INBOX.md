@@ -30,7 +30,34 @@ mascot in the empty state, `filter` contains `invert` in dark; **SPEC5-4** zero 
 Edit still blocks (no optimism). No visual/typography/mascot defects found.
 
 ### Items
-- [ ] **(id: QA-SPEC5-1)** [blocker] **F6 optimistic J1 save does not run in the built app.** The
+- [x] **(id: QA-SPEC5-1) — FIXED 2026-07-21.** Root-caused, fixed, and proven with qa-lab's own specs;
+  full write-up in `project/jodsa/docs/postmortems/SPEC5-1-optimistic-save-inert.md`.
+  - **Root cause (mechanism, corrected):** qa-lab's *behavioural* read was right (it acted blocking) but
+    the *mechanism* it inferred ("the branch does not execute") was not — instrumentation proved the
+    `optimistic && !editId` branch **ran to completion** (`entered / calledSubmit / calledOnSuccess` all
+    true). The real cause: `useActionState` runs its reducer inside a React transition, and React 19
+    withholds the **commit** of state updates made in it (the provisional row `addPending`, the sheet
+    close `onSuccess→setOpen(false)`) until the transition settles — which a **Server Action invoked
+    synchronously in the reducer's stack keeps pending**. `pendingTx.submit → runOptimisticCreate →
+    await create()` called `createTransaction` in that scope, so React tied the row+close commit to the
+    fire-and-forget write. Branch runs, effects don't commit until the POST lands ⇒ indistinguishable
+    from blocking.
+  - **Fix:** defer the optimistic side effects one macrotask out of the transition
+    (`components/transaction-form.tsx`): `setTimeout(() => { pendingTx.submit(...); onSuccess?.() }, 0)`.
+    Deferring only `create()` inside `runOptimisticCreate` was tried first and was insufficient —
+    `onSuccess` lives in the reducer, so the whole side-effect block had to leave the transition.
+  - **Proven, not asserted:** full SPEC-5 E2E **11/11** green. With the app fix `git stash`-ed out, the
+    two regression specs go **RED** again; restored, GREEN — so they guard the regression rather than
+    having been loosened to pass. The forced-failure injector was changed from instant-abort to
+    **delay-then-abort** (`routeServerAction` applies `delayMs` before `abort`): a zero-delay abort let
+    React batch close+reopen into one commit and hid the closed frame, false-failing a *correct* fix;
+    the delayed variant is observable AND still fails on the old blocking code (verified by the stash
+    run), preserving the anti-false-pass gate. tsc 0 · lint clean · vitest 295/34-skip.
+  - **SPEC5-1 datetime restore is now integration-proven** — the `SPEC5-1` E2E forces a failure and
+    asserts the sheet re-opens with amount + counterparty + **datetime (non-empty, exact, `checkValidity`
+    true)** intact and the balance frozen. The unit-only gap pm-desk flagged is closed.
+  - *(original qa-lab brief follows)*
+  - ~~[ ] **(id: QA-SPEC5-1)** [blocker] **F6 optimistic J1 save does not run in the built app.** The
   quick-add sheet **blocks** on the disabled "กำลังบันทึก..." button until `createTransaction`
   resolves (~1.0–1.7s live), **renders no provisional row at any point**, and closes only *after*
   the write — i.e. the pre-F6 blocking behavior. v4 F6 (i) "provisional row paints, subdued, not
@@ -61,9 +88,15 @@ Edit still blocks (no optimism). No visual/typography/mascot defects found.
   - **fixed =** the optimistic branch actually runs for J1 manual create (sheet closes immediately,
     provisional row visible, balance frozen, rollback re-opens with every field incl. datetime), and
     `tests/e2e/spec5-optimistic.spec.ts` (`SPEC5-F6` + `SPEC5-1`) goes GREEN. Attach a post-mortem
-    on why a structurally-correct `optimistic && !editId` branch was skipped at runtime.
+    on why a structurally-correct `optimistic && !editId` branch was skipped at runtime.~~
 
 ### Dev notes
+- **QA-SPEC5-1 fixed 2026-07-21** (see the `[x]` block above + post-mortem). **For qa-lab on re-review:**
+  I edited your `spec5-optimistic.spec.ts` failure injector (instant-abort → delay-then-abort) because a
+  zero-delay abort batched the close+reopen and false-failed the corrected app. I verified the changed
+  gate still fails on the pre-fix code (stash run), so its anti-false-pass intent is intact — but it is
+  your spec, so please sanity-check that change. No other test was altered. The two throwaway probe
+  specs I used to root-cause were deleted.
 
 ## [SPEC-5] Design v4 — visual-layer amendment — 2026-07-17 · from design-studio
 **Status**: OPEN — **not a milestone**, inbox work on the shipped expense core. Design v4 AMENDS v3's

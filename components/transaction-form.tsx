@@ -161,19 +161,28 @@ export default function TransactionForm({
         }
         const account = accounts.find((a) => a.id === accountId)
         const toAccount = accounts.find((a) => a.id === toAccountId)
-        pendingTx.submit(
-          fd,
-          {
-            type,
-            amountSatang,
-            label:
-              (fd.get('counterparty') as string) ||
-              (type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
-            category: category || null,
-          },
-          restoreValues,
-        )
-        onSuccess?.()
+        const preview = {
+          type,
+          amountSatang,
+          label:
+            (fd.get('counterparty') as string) ||
+            (type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
+          category: category || null,
+        }
+        // Defer ALL optimistic side effects out of useActionState's transition.
+        // React 19 runs this reducer inside a transition and holds the COMMIT of
+        // every state update made within it — the provisional row (`addPending`)
+        // and the instant sheet close (`onSuccess` → `setOpen(false)`) — until
+        // the transition settles, which a Server Action started in-scope keeps
+        // pending. Running the side effects one macrotask later, after the
+        // reducer has returned and the transition has settled, lets them commit
+        // immediately; the write still fires, just detached from the transition.
+        // Without this, F6 is indistinguishable from the old blocking path
+        // (QA-SPEC5-1: the branch runs but nothing commits until the POST lands).
+        setTimeout(() => {
+          pendingTx.submit(fd, preview, restoreValues)
+          onSuccess?.()
+        }, 0)
         return { error: '' }
       }
 
