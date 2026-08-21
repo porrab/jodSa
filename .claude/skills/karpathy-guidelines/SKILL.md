@@ -2,6 +2,8 @@
 name: karpathy-guidelines
 description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, surface assumptions, and define verifiable success criteria.
 license: MIT
+category: Development
+tags: [coding-discipline, llm]
 ---
 
 > **Workspace fit.** These four behaviors are the workspace default for all coding sessions. *Simplicity First* and *Surgical Changes* in particular override any urge to "improve" adjacent code. Pairs with the `tdd` skill (Goal-Driven Execution → write the failing test first).

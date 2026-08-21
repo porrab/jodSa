@@ -1,6 +1,8 @@
 ---
 name: tdd
 description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
+category: Testing
+tags: [testing, coding-discipline]
 ---
 
 > **Workspace fit.** Default test discipline for every `project/<slug>` build. Vertical-slice tracer bullets map to milestones — one slice ≈ one milestone acceptance check that qa-lab can verify. Use the project's own runner (pytest, vitest, etc.); the TypeScript snippets in [tests.md](tests.md) are illustrative — translate them to the project's stack.
