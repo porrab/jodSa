@@ -6,8 +6,9 @@ description: >
   pattern for payment sessions. Use whenever adding a table, writing/altering an RLS
   policy, or wiring the guest /pay/<token> flow. Do NOT use to justify bypassing RLS
   with the service role at runtime.
-category: Security
-tags: [supabase, rls, database]
+metadata:
+  category: Security
+  tags: [supabase, rls, database]
 ---
 
 # Supabase RLS

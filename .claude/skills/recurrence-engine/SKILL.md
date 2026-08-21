@@ -6,8 +6,9 @@ description: >
   and skip-exceptions, idempotently. Use when implementing or modifying recurring
   expense generation (subscriptions and weekly costs like "travel Tue-Thu+Sat").
   Do NOT use for one-off transactions or for forecasting beyond the rule's end_date.
-category: Development
-tags: [domain-logic, scheduling]
+metadata:
+  category: Development
+  tags: [domain-logic, scheduling]
 ---
 
 # Recurrence Engine
