@@ -1,6 +1,6 @@
 ---
 name: recurrence-engine
-description: >
+description: >-
   Expand a recurring_rules row into concrete dated occurrences for a requested
   date range, honoring weekday exclusions, Asia/Bangkok timezone, start/end bounds,
   and skip-exceptions, idempotently. Use when implementing or modifying recurring

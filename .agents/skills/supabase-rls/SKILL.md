@@ -1,6 +1,6 @@
 ---
 name: supabase-rls
-description: >
+description: >-
   Author and review Row Level Security policies for JodSa's Supabase Postgres:
   multi-tenant owner isolation (owner = auth.uid()) and the guest capability-token
   pattern for payment sessions. Use whenever adding a table, writing/altering an RLS

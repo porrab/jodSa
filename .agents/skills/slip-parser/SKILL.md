@@ -1,6 +1,6 @@
 ---
 name: slip-parser
-description: >
+description: >-
   Parse a Thai bank/PromptPay payment slip image entirely client-side into a
   structured transaction. Use whenever implementing or modifying the slip-reading
   pipeline — QR decoding, tesseract.js OCR (tha+eng), field extraction heuristics,
