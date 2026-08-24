@@ -45,6 +45,10 @@ RIGHT (vertical):
   ...
 ```
 
+## Anti-Pattern: Tautological Tests
+
+**The assertion must not recompute the expected value the way the code does.** `expect(add(a, b)).toBe(a + b)`, a snapshot derived by hand with the same formula, a constant asserted equal to itself — all of these pass by construction and can never disagree with the code. Expected values come from an independent source of truth: a known-good literal, a worked example, or the spec.
+
 ## Workflow
 
 ### 1. Planning
@@ -108,6 +112,6 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 [ ] Test describes behavior, not implementation
 [ ] Test uses public interface only
 [ ] Test would survive internal refactor
-[ ] Code is minimal for this test
-[ ] No speculative features added
+[ ] Code is minimal for this test — nothing speculative added
+[ ] Expected value comes from an independent source, not recomputed
 ```
