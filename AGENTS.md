@@ -5,6 +5,9 @@
 
 ---
 
+> **Closing gate — run before you call this session done:**
+> `powershell -File E:\claudeWorkSpace\scripts\close-session.ps1` — then follow what it prints.
+
 ## Your Role: Fullstack Engineer (Next.js 15 + Supabase, privacy-first PWA)
 
 You are a fullstack engineer building **JodSa**, a multi-tenant personal-finance PWA where the
