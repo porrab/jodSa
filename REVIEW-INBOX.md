@@ -120,6 +120,37 @@ is a REST call, no SDK) against the React 19 / Next 15 lockfile, and add `.env.e
 
 ---
 
+## [FIELD-4] UX/UI field feedback round 4 — **PARKED, do not build yet** — 2026-09-02 · from owner
+
+**Status**: PARKED / collecting. The owner cleared all expense transactions on 2026-09-02 to start a fresh
+book and will **use the app for ~1 month, then send one consolidated feedback batch** (~early Oct 2026).
+Do **not** implement these piecemeal — they are logged now only so they survive the wait. Re-open as a
+normal build item when the owner sends the full batch.
+
+Two items captured so far:
+
+- [ ] **Date input format** — the date field should start / display as **`dd/mm/yy`**. Current behaviour
+  not yet audited against this; check the add-transaction date control and any other date entry point
+  (recurring rule dates, filters) for the same convention.
+
+- [ ] **Recurring rules — start/end date must be optional.** Today `recurring_rules.start_date` is
+  `NOT NULL` (`db/schema.ts`, `0001_initial.sql`); `end_date` is already nullable. Desired semantics:
+  **no dates given = runs indefinitely**. The owner explicitly said a **stop button** on the rule is an
+  acceptable alternative to date-bounding — *"ไม่ต้องหักชั่วคราวก็ได้"* (a temporary-pause/skip mechanism is
+  **not** required). So the minimum viable shape is: optional start/end + an explicit stop/deactivate
+  action, no pause semantics.
+  ⚠️ Touches schema + the materialization guard (`recurring_rules.materialized_through`,
+  `0006_perf_balance_rpc_materialize_guard.sql`) — an unbounded rule changes what "already materialized"
+  means. Design before coding; see the M7-D post-mortem (`docs/postmortems/M7-D-recurring-never-deducts.md`)
+  for how this area has burned us before.
+
+**Data context for whoever picks this up:** as of 2026-09-02 the owner's book is empty by design —
+`transactions` 0 rows, `groups` 0 rows, all 6 accounts kept with their original opening balances, and the
+`/invest` side (6 holdings, 6 asset_transactions, 2 plans) untouched. A JSON backup of the 26 deleted
+transactions was handed to the owner; it is **not** in the repo.
+
+---
+
 ## Open harness / user items
 
 - [ ] **(id: QA-M7-H1)** [qa-lab harness — **not an app/dev defect**, non-blocking] — the M7/M3 E2E specs
