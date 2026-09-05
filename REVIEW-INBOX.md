@@ -15,6 +15,38 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [QA-INVEST-1] Fully-sold holding keeps its market value in `/invest` — 2026-09-05 · from owner session
+**Status**: OPEN — reproduced live on prod (`jod-sa.vercel.app`) with the owner's real book.
+
+**What happened.** Recorded the owner's real ASML sale (0.0140444 units @ $1,870.35, fee $0.02,
+2026-09-05) as a `ขาย` asset-transaction. The write succeeded and the units aggregation is correct —
+the Assets tab now shows **ASML Holding N.V. · 0 หน่วย**.
+
+**The defect.** With units at 0, the position still reports a non-zero market value and still occupies
+a concentration slice:
+- Assets tab row still reads **US$25.49** next to `0 หน่วย`.
+- Overview `มูลค่ารวม` stayed **฿21,278.73** — unchanged across the sale.
+- Concentration list still shows **ASML Holding N.V. 4.0%**.
+
+Cost basis *did* update (`ต้นทุนรวม` ฿18,573.54 → ฿18,229.70, `กำไร` ฿2,705.19 → ฿3,049.03), so the sale
+reached the ledger; only the market-value / concentration derivation ignores it.
+
+**Why it matters beyond cosmetics.** Concentration is the **load-bearing input** for the M5 planner
+under the permanent M0 guardrail (suggestions must rest on concentration + drift). A phantom 4.0% sleeve
+skews every other weight — VOO 42.5% / NVDA 23.4% are computed against an inflated denominator, and NVDA
+sits right under the owner's own ~25% trim trigger. A stale sold position can therefore move a real
+buy/sell suggestion.
+
+**Where to look.** The per-asset aggregation proven in INVEST-M3 (`reviews/INVEST-M3-review.md`) merges
+transactions before computing concentration; the suspicion is that market value is derived from the
+asset's last known price/snapshot rather than from `units × price`, so `units = 0` never zeroes it.
+
+**Repro**: open `/invest` → any holding → เพิ่มรายการ → ประเภท `ขาย` for the full unit count → save →
+reload → Assets tab and ภาพรวม.
+
+**Not yet checked**: whether a fully-sold holding is meant to disappear from the list entirely, or stay
+at 0/฿0 as history. That is a product decision — state it before fixing.
+
 ## [SPEC-4] `/invest` module — **1 milestone unbuilt** — 2026-07-14 · from idea-forge
 **Status**: OPEN — GREENLIT Phase-2 build, **cannot close until M2 lands**. Builds INTO this app as the
 `app/(app)/invest/` route group — not a fresh scaffold. Blueprint audited **SHIP, 0 blockers**.
