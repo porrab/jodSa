@@ -15,6 +15,34 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [QA-INVEST-2] No ballast/defensive risk group — sleeve plan cannot be tracked — 2026-09-09 · from owner session
+**Status**: OPEN — hit while recording the owner's real VT + SGOV purchases on prod.
+
+**What's missing.** `risk_group` offers exactly three values (`db/schema.ts`, surfaced in the
+add-holding dialog): `core` / `satellite` / `risk_capital`. The owner's standing allocation plan
+(`fin-desk/advisory/profile.md`) runs on **three different sleeves**: แกนโต (growth core) ·
+**ตัวถ่วง (ballast)** · ดาวเทียม (satellite). There is no bucket for ballast.
+
+**Consequence.** SGOV — bought specifically as the ballast sleeve — had to be filed under `core`
+alongside VT and VOO. The app now reports core ≈ 74% when the owner's plan means
+**63.3% growth core + 11.8% ballast**. Those two numbers carry opposite meanings: growth core is
+the thing being *diluted toward*, ballast is the thing being *held against* it. Merging them makes
+the plan untrackable in the app that exists to track it.
+
+**Why it matters beyond labelling.** M5's planner reasons over sleeve weights under the permanent
+M0 guardrail (suggestions rest on concentration + drift). A ballast position counted as growth core
+overstates equity exposure and understates the defensive sleeve, so drift is measured against the
+wrong target — on a book where ballast is deliberately 11.8% and rising.
+
+**Where to look.** `risk_group` enum in `db/schema.ts` + the holdings form and the aggregation that
+feeds the concentration/plan views. Adding a fourth value is a migration plus a display pass; the
+alternative (a free-text sleeve tag) is weaker because the planner needs a closed set.
+
+**Not decided**: whether the fourth value is `ballast`/`defensive`, and whether existing `core` rows
+need a backfill prompt. Product call — state it before building.
+
+**Repro**: `/invest` → เพิ่มสินทรัพย์ → any asset → กลุ่มความเสี่ยง shows only the three options.
+
 ## [QA-INVEST-1] Fully-sold holding keeps its market value in `/invest` — 2026-09-05 · from owner session
 **Status**: OPEN — reproduced live on prod (`jod-sa.vercel.app`) with the owner's real book.
 
