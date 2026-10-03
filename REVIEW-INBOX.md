@@ -35,6 +35,13 @@ Verbatim (Thai), with a one-line reading of each:
     through the normal server action — validation + revalidation intact. Replaces the manual multi-form sync
     (and the temptation to write to Supabase with the service-role key, which `.env.local` reserves for migrations).
 
+11. **ปรับ / migrate การเขียนข้อมูลให้มี REST endpoints (owner-requested 2026-10-03)** → today every write is
+    a Next.js Server Action (build-scoped action id + session cookie), so no script/agent can sync data without
+    driving the UI. Add `app/api/v1/...` route handlers (accounts, transactions, transfers, holdings) authenticated
+    by a **revocable personal access token** (scoped to the owner's `user_id`, RLS still enforced — never the
+    service-role key). Decide first: keep Server Actions for the UI and call shared service functions from both,
+    vs. move the UI onto the REST layer. Largest item in this batch — design/plan before build.
+
 Gap found while syncing balances 2026-10-03: there is **no way to move cash into an investment** — a
 transfer needs a destination *account*, and `/invest` buys don't debit any account. Buying VT+SGOV
 (฿13,492.76 from Dime! Save) can only be recorded as an **expense** (inflates spending totals) or not at all
