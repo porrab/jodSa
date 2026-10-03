@@ -30,6 +30,11 @@ Verbatim (Thai), with a one-line reading of each:
 8. หน้าหลักไม่ขึ้นเป้าหมาย ทำให้ไม่ตระหนักถึง → show savings goals on the home dashboard.
 9. อัปสลิปจากหน้าแรกได้เลย ไม่ต้องย้ายหน้า → slip upload directly from home, no extra navigation.
 
+10. **ปุ่ม "ปรับยอดให้ตรงธนาคาร" (owner-approved 2026-10-03)** → per account: owner types the real bank
+    balance, the app computes the difference and writes one labelled adjustment transaction (expense or income)
+    through the normal server action — validation + revalidation intact. Replaces the manual multi-form sync
+    (and the temptation to write to Supabase with the service-role key, which `.env.local` reserves for migrations).
+
 Gap found while syncing balances 2026-10-03: there is **no way to move cash into an investment** — a
 transfer needs a destination *account*, and `/invest` buys don't debit any account. Buying VT+SGOV
 (฿13,492.76 from Dime! Save) can only be recorded as an **expense** (inflates spending totals) or not at all
