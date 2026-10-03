@@ -30,6 +30,11 @@ Verbatim (Thai), with a one-line reading of each:
 8. หน้าหลักไม่ขึ้นเป้าหมาย ทำให้ไม่ตระหนักถึง → show savings goals on the home dashboard.
 9. อัปสลิปจากหน้าแรกได้เลย ไม่ต้องย้ายหน้า → slip upload directly from home, no extra navigation.
 
+Gap found while syncing balances 2026-10-03: there is **no way to move cash into an investment** — a
+transfer needs a destination *account*, and `/invest` buys don't debit any account. Buying VT+SGOV
+(฿13,492.76 from Dime! Save) can only be recorded as an **expense** (inflates spending totals) or not at all
+→ Dime! Save still shows ~฿12,552 that was spent on ETFs. Wanted: an "ลงทุน" transfer/link from an account to a holding.
+
 Related observation (fin-desk monthly review 2026-10-01, not owner-reported): the `/budgets` → ภาพรวม
 "รายรับ/รายจ่าย 6 เดือนล่าสุด" chart renders **0 for every month** although ~100 September expenses exist. Unverified
 whether it is a query or a render defect — check while in this batch.
