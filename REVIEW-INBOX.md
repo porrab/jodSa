@@ -15,6 +15,25 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [OWNER-FB-20261003] Owner usability feedback batch — 2026-10-03 · from owner (via fin-desk session)
+**Status**: PARKED — **do not start yet.** The owner wants these collected and built **together in one
+session**, on their go-ahead. Product calls (layout, wording) belong to the owner / design-studio before build.
+
+Verbatim (Thai), with a one-line reading of each:
+1. ปุ่มบันทึกรายจ่ายด้วยสลิป — ถ้าหายาก ควรอยู่ตรงปุ่ม "+" แบบกรอกปกติด้วย → put slip-upload next to the normal "+ add" entry.
+2. tune วันที่ให้ตรวจถูกขึ้น → improve date detection (slip OCR / import).
+3. หน้าสรุปการเงินทั้งหมดมาจากไหน หุ้นด้วยไหม → the overall money summary must say what it sums, and whether `/invest` holdings are included.
+4. เพิ่ม note ว่ารายการนี้ใช้ทำอะไร — ช่องผู้รับ/โอน: ไม่ใส่ = ใช้ชื่อเดิม, พิมพ์ = ใช้ตามที่พิมพ์ → editable label/note overriding the payee name.
+5. แสดงใช้จ่ายรวมรายวันด้วย → daily spending total (e.g. per date header in `/transactions`).
+6. flow เลือกบัญชีโอน เลียนแบบ MAKE by KBank (กล่องเลื่อน) — ถ้าติดข้อจำกัดเว็บก็ไม่เป็นไร → swipeable account picker for transfers; optional.
+7. สีโอนยังดูไม่ชัดเจน → transfer rows need a more distinct colour.
+8. หน้าหลักไม่ขึ้นเป้าหมาย ทำให้ไม่ตระหนักถึง → show savings goals on the home dashboard.
+9. อัปสลิปจากหน้าแรกได้เลย ไม่ต้องย้ายหน้า → slip upload directly from home, no extra navigation.
+
+Related observation (fin-desk monthly review 2026-10-01, not owner-reported): the `/budgets` → ภาพรวม
+"รายรับ/รายจ่าย 6 เดือนล่าสุด" chart renders **0 for every month** although ~100 September expenses exist. Unverified
+whether it is a query or a render defect — check while in this batch.
+
 ## [QA-INVEST-2] No ballast/defensive risk group — sleeve plan cannot be tracked — 2026-09-09 · from owner session
 **Status**: OPEN — hit while recording the owner's real VT + SGOV purchases on prod.
 
