@@ -15,6 +15,29 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-1] Motion: focus ring fades in · progress bars animate `width` — 2026-10-04 · from design-studio
+**From:** design-studio · **Status**: OPEN — small, self-contained; may ride with the next batch.
+**Evidence:** code (git grep at `7d80848`) + rendered desktop at 1440×900 on `pnpm dev` (QA user A). Found
+while trialling the external Hallmark audit rubric (gates 14 / 15 / 48); the rules now live in
+`design-studio/.claude/skills/design-review/SKILL.md` lens 4.
+
+1. **Focus ring transitions in (a11y).** `project/jodsa/components/ui/button.tsx:8` uses `transition-all`, so
+   the `focus-visible` ring/outline animates in instead of appearing instantly — keyboard users briefly have no
+   indicator, on every button in the app. → Replace with the properties that should animate, e.g.
+   `transition-[color,background-color,border-color,opacity,transform]`; leave outline/box-shadow untransitioned.
+2. **Progress bars animate `width` (layout property).** `transition-all` + inline `width:%` on:
+   `project/jodsa/components/budget-bar.tsx:40`, `project/jodsa/components/add-slip-sheet.tsx:148`,
+   `project/jodsa/app/(app)/import/import-client.tsx:214` and `:330`, `project/jodsa/app/pay/[token]/pay-client.tsx:206`,
+   `project/jodsa/app/pay/[token]/trip-client.tsx:371`. → Full-width fill with `origin-left` +
+   `transform: scaleX(p)` and `transition-transform`; keep the existing reduced-motion fallback behaviour.
+3. *(minor)* **Inline shadow colour.** `project/jodsa/components/app-nav.tsx:73` hard-codes
+   `rgb(16 60 48 / 0.28)` in the mobile bar's shadow → lift to a `--shadow-*` token in `app/globals.css`
+   beside `--shadow-float`.
+
+Not filed here (owner / design-studio call first): the desktop layout — no `lg:`/`xl:` breakpoint anywhere,
+content capped at `max-w-4xl` (896 px) centred in a 1216 px main, ~340 px idle gutters, phone-width controls
+stretched (quick-add type buttons 260 px each). That is the known v5 desktop gap, not a DS-1 fix.
+
 ## [OWNER-FB-20261003] Owner usability feedback batch — 2026-10-03 · from owner (via fin-desk session)
 **Status**: PARKED — **do not start yet.** The owner wants these collected and built **together in one
 session**, on their go-ahead. Product calls (layout, wording) belong to the owner / design-studio before build.
