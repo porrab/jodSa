@@ -15,6 +15,25 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [SPEC-6] Ballast sleeve: classification and reporting — 2026-10-10
+**From:** idea-forge
+**Status:** OPEN — owner approved implementation 2026-10-10; exact live migration requires separate authorization.
+**Related:** QA-INVEST-2.
+
+### Approved change
+- [ ] Extend `holdings.sleeve` to `core|ballast|satellite|risk_capital`; preserve default core, legacy labels and risk-capital warnings.
+- [ ] Add Ballast / ตัวถ่วง (Ballast), portfolio-role wording and contextual helper to create/edit forms, badges, allocation and snapshots.
+- [ ] Hand-author the next CHECK-constraint migration and align schema metadata, Supabase types and Zod validation. Preserve rows, policies, grants, defaults and NOT NULL; no automatic backfill.
+- [ ] Reclassify only through explicit authenticated user edits; preserve broker, ledger, quantities, valuation, FX, cost and P&L. Historical snapshots and plans remain unchanged.
+- [ ] Verify four-value validation/persistence, 60/20/10/10 allocation, same-asset/different-sleeve grouping, old/new snapshots, Thai/English create-edit-reload and live two-user isolation. Coordinate with QA-INVEST-1 valuation fixes.
+
+### Planner boundary and rollout
+The actual field is `sleeve`, not `risk_group`. M5 drift is asset-class-based. Changing core to ballast alone must preserve drift, concentration, stress, risk-capital percentage, suggestions and verdict; missing proxy classification still blocks planning. Sleeve targets, new recommendations and OCR remain out of scope.
+
+**Authority:** `idea-forge` commit `6e49465`; `idea-forge/ideas/jodsa-investments/README.md` Changelog 2026-10-10, `idea-forge/ideas/jodsa-investments/docs/02-architecture.md`, and `idea-forge/ideas/jodsa-investments/docs/04-roadmap.md`.
+**Implementation seams:** `project/jodsa/docs/plans/QA-INVEST-2-ballast-proposal.md`.
+Product/model approval is recorded. Test in non-production first; exact live SQL still needs owner authorization before application. Apply approved migration before enabling ballast writes. Independent qa-lab/pm-desk verification is required; skipped live checks must be reported.
+
 ## [DS-1] Motion: focus ring fades in · progress bars animate `width` — 2026-10-04 · from design-studio
 **From:** design-studio · **Status**: OPEN — small, self-contained; may ride with the next batch.
 **Evidence:** code (git grep at `7d80848`) + rendered desktop at 1440×900 on `pnpm dev` (QA user A). Found
