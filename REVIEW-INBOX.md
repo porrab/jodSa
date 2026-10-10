@@ -65,6 +65,12 @@ Verbatim (Thai), with a one-line reading of each:
     service-role key). Decide first: keep Server Actions for the UI and call shared service functions from both,
     vs. move the UI onto the REST layer. Largest item in this batch — design/plan before build.
 
+12. **ตัวช่วยกรอกข้อมูลย้อนหลัง (owner-requested 2026-10-10)** → "อยากให้มีตัวช่วยกรอกข้อมูลย้อนหลังง่าย ๆ กรณีที่ลืม".
+    Today backfilling a forgotten day = one full add-form per row, date picked by hand each time. Wanted (shape to be
+    designed): pick a past date once → quick-add several rows for that day (amount · category · account) without
+    re-opening the dialog; ideally "copy yesterday's recurring-looking rows" and a gap hint (days with no entries).
+    Pairs with #10 (reconcile button): #12 fills in *what* was forgotten, #10 closes the remainder.
+
 Gap found while syncing balances 2026-10-03: there is **no way to move cash into an investment** — a
 transfer needs a destination *account*, and `/invest` buys don't debit any account. Buying VT+SGOV
 (฿13,492.76 from Dime! Save) can only be recorded as an **expense** (inflates spending totals) or not at all
