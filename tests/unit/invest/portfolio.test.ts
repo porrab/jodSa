@@ -6,6 +6,7 @@ import {
   aggregateByAsset,
   computeConcentration,
   buildSnapshotPayload,
+  getHoldingDisplay,
   DISPLAY_CURRENCY,
   type HoldingInput,
 } from '@/lib/invest/portfolio'
@@ -273,5 +274,178 @@ describe('lib/invest/portfolio — snapshot serialization (portfolio_snapshots j
     expect(reloaded.totals.valueMinor).toBe(savedAt.totals.valueMinor)
     expect(reloaded.totals.pnlMinor).toBe(savedAt.totals.pnlMinor)
     expect(reloaded.allocation.assetClass).toEqual(savedAt.allocation.assetClass)
+  })
+})
+
+// QA-INVEST-1: a fully-sold holding (qty=0 after sell transactions) must contribute
+// zero market value, zero cost, and zero concentration weight — even when the DB row
+// still has a stale current_value_minor set — and a missing FX rate on a closed
+// position must never block plan generation.
+function sellTx(qty: number, price: number, currency: string, fees = 0, fxRate: number | null = null, datetime = '2026-06-01T00:00:00Z') {
+  return {
+    type: 'sell' as const,
+    qty: String(qty),
+    priceMinor: minorToApi(toMinor(price, currency)),
+    feesMinor: minorToApi(toMinor(fees, currency)),
+    fxRate: fxRate !== null ? String(fxRate) : null,
+    datetime,
+  }
+}
+
+describe('lib/invest/portfolio — QA-INVEST-1: fully-sold holding zeroing', () => {
+  // THB holding: bought 100 PTT @ ฿35 = ฿3,500 cost; sold all 100; stale current_value_minor = ฿4,000
+  const fullySoldTHB: HoldingInput = {
+    holdingId: 'h-sold-thb',
+    assetId: 'a-ptt',
+    assetClass: 'thai_set',
+    currency: 'THB',
+    sleeve: 'core',
+    currentValueMinor: minorToApi(toMinor(4000, 'THB')), // stale — position is closed
+    currentValueCurrency: 'THB',
+    currentFxToDisplay: null,
+    transactions: [
+      buyTx(100, 35, 'THB', 0, null, '2026-01-01T00:00:00Z'),
+      sellTx(100, 40, 'THB', 0, null, '2026-06-01T00:00:00Z'),
+    ],
+  }
+
+  // USD holding fully sold, no FX rate anywhere — the case that blocked planning
+  const fullySoldUSDNoFx: HoldingInput = {
+    holdingId: 'h-sold-usd',
+    assetId: 'a-aapl',
+    assetClass: 'us_equity',
+    currency: 'USD',
+    sleeve: 'core',
+    currentValueMinor: minorToApi(toMinor(1500, 'USD')), // stale
+    currentValueCurrency: 'USD',
+    currentFxToDisplay: null,
+    transactions: [
+      buyTx(10, 150, 'USD', 0, null, '2026-01-01T00:00:00Z'), // no fxRate
+      sellTx(10, 160, 'USD', 0, null, '2026-06-01T00:00:00Z'),
+    ],
+  }
+
+  // Partial sale — still has units; existing behaviour must be preserved
+  const partiallySold: HoldingInput = {
+    holdingId: 'h-partial',
+    assetId: 'a-voo',
+    assetClass: 'etf',
+    currency: 'THB',
+    sleeve: 'core',
+    currentValueMinor: minorToApi(toMinor(6000, 'THB')),
+    currentValueCurrency: 'THB',
+    currentFxToDisplay: null,
+    transactions: [
+      buyTx(10, 800, 'THB', 0, null, '2026-01-01T00:00:00Z'), // cost ฿8,000
+      sellTx(3, 900, 'THB', 0, null, '2026-06-01T00:00:00Z'), // 7 remaining
+    ],
+  }
+
+  it('fully-sold THB holding: all money fields are zero, unconverted=false', () => {
+    const v = valueHolding(fullySoldTHB)
+    expect(v.qty).toBe(0)
+    expect(v.costMinor).toBe(0n)
+    expect(v.valueMinor).toBe(0n)
+    expect(v.pnlMinor).toBe(0n)
+    expect(v.effectiveMinor).toBe(0n)
+    expect(v.unconverted).toBe(false)
+  })
+
+  it('fully-sold USD holding with no FX: unconverted=false (does not block planning)', () => {
+    const v = valueHolding(fullySoldUSDNoFx)
+    expect(v.qty).toBe(0)
+    expect(v.unconverted).toBe(false)
+    expect(v.effectiveMinor).toBe(0n)
+  })
+
+  it('fully-sold holding contributes zero to portfolio totals', () => {
+    const valued = [fullySoldTHB, fullySoldUSDNoFx].map((h) => valueHolding(h))
+    const totals = computeTotals(valued)
+    expect(totals.totalValueMinor).toBe(0n)
+    expect(totals.totalCostMinor).toBe(0n)
+    expect(totals.excludedCount).toBe(0) // not excluded — just zero
+  })
+
+  it('fully-sold holding is strictly filtered out and absent from concentration ranking, including fractional sales', () => {
+    const activeTHB: HoldingInput = {
+      holdingId: 'h-active',
+      assetId: 'a-gold',
+      assetClass: 'gold',
+      currency: 'THB',
+      sleeve: 'core',
+      currentValueMinor: minorToApi(toMinor(10000, 'THB')),
+      currentValueCurrency: 'THB',
+      currentFxToDisplay: null,
+      transactions: [buyTx(1, 10000, 'THB', 0)],
+    }
+
+    // Add fractional full-sale coverage matching 0.0140444 units
+    const fractionalSoldTHB: HoldingInput = {
+      holdingId: 'h-sold-frac',
+      assetId: 'a-crypto',
+      assetClass: 'crypto',
+      currency: 'THB',
+      sleeve: 'core',
+      currentValueMinor: minorToApi(toMinor(500, 'THB')), // Stale snapshot
+      currentValueCurrency: 'THB',
+      currentFxToDisplay: null,
+      transactions: [
+        buyTx(0.0140444, 50000, 'THB', 0, null, '2026-01-01T00:00:00Z'),
+        sellTx(0.0140444, 60000, 'THB', 0, null, '2026-06-01T00:00:00Z'),
+      ],
+    }
+
+    const valued = [fullySoldTHB, activeTHB, fractionalSoldTHB].map((h) => valueHolding(h))
+    const concentration = computeConcentration(valued)
+
+    // Only the active gold holding should appear; fully-sold and fractionally-sold at zero must be removed entirely
+    expect(concentration.top).toHaveLength(1)
+    expect(concentration.top[0].assetId).toBe('a-gold')
+    expect(concentration.top[0].valueMinor).toBe(toMinor(10000, 'THB'))
+  })
+
+  it('partial sale: qty>0 path unchanged — valueMinor reflects stored current value', () => {
+    const v = valueHolding(partiallySold)
+    expect(v.qty).toBeCloseTo(7, 9)
+    expect(v.hasCurrentValue).toBe(true)
+    expect(v.valueMinor).toBe(toMinor(6000, 'THB'))
+    expect(v.effectiveMinor).toBe(toMinor(6000, 'THB'))
+    expect(v.unconverted).toBe(false)
+  })
+})
+
+describe('lib/invest/portfolio — QA-INVEST-1: getHoldingDisplay UI seam', () => {
+  it('zero-qty holding forces zeroes for valueMinor, costMinor, and pnlMinor regardless of stale DB values', () => {
+    const h = {
+      current_value_minor: '50000', // Stale
+      current_value_currency: 'THB',
+      costBasis: { qty: 0, totalCostMinor: '100000' } // Stale cost
+    }
+    const d = getHoldingDisplay(h, 'THB')
+    expect(d.valueMinor).toBe('0')
+    expect(d.costMinor).toBe('0')
+    expect(d.pnlMinor).toBe(0n)
+  })
+
+  it('active holding passes through real values and computes pnl if currencies match', () => {
+    const h = {
+      current_value_minor: '150000',
+      current_value_currency: 'USD',
+      costBasis: { qty: 10, totalCostMinor: '100000' }
+    }
+    const d = getHoldingDisplay(h, 'USD')
+    expect(d.valueMinor).toBe('150000')
+    expect(d.costMinor).toBe('100000')
+    expect(d.pnlMinor).toBe(50000n)
+  })
+
+  it('null P&L if value currency differs from asset base', () => {
+    const h = {
+      current_value_minor: '150000',
+      current_value_currency: 'THB',
+      costBasis: { qty: 10, totalCostMinor: '100000' }
+    }
+    const d = getHoldingDisplay(h, 'USD')
+    expect(d.pnlMinor).toBeNull()
   })
 })

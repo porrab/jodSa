@@ -203,8 +203,8 @@ export default function PayClient({
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{ width: `${progress.percent}%` }}
+                className="h-full w-full origin-left rounded-full bg-primary transition-transform duration-300 motion-reduce:transition-none"
+                style={{ transform: `scaleX(${progress.percent / 100})` }}
               />
             </div>
           </div>

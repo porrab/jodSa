@@ -4,10 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { generatePlanSchema } from '@/lib/validators/invest'
 import { toMinor, minorToApi } from '@/lib/invest/money'
-import { valueHolding, DISPLAY_CURRENCY, type HoldingInput } from '@/lib/invest/portfolio'
-import { resolveHoldings, type ResolveInput } from '@/lib/invest/planner/resolve'
+import { DISPLAY_CURRENCY } from '@/lib/invest/portfolio'
+import { resolveHoldings, mapToResolveInputs, type ResolveInput } from '@/lib/invest/planner/resolve'
 import { buildPlan } from '@/lib/invest/planner/plan'
-import type { AssetClass, Sleeve } from '@/lib/validators/invest'
 import type { UnclassifiedHolding } from '@/lib/invest/planner/types'
 
 /**
@@ -29,56 +28,7 @@ async function loadResolveInputs(
   if (aErr) throw new Error(aErr.message)
   if (tErr) throw new Error(tErr.message)
 
-  const assetById = new Map((assets ?? []).map((a) => [a.id, a]))
-  const txByHolding = new Map<string, NonNullable<typeof txRaw>>()
-  for (const tx of txRaw ?? []) {
-    const list = txByHolding.get(tx.holding_id) ?? []
-    list.push(tx)
-    txByHolding.set(tx.holding_id, list)
-  }
-
-  return (holdings ?? []).flatMap((h) => {
-    const asset = assetById.get(h.asset_id)
-    if (!asset) return [] // orphaned holding (asset deleted) — skip defensively, FK restrict should prevent this
-
-    const transactions = (txByHolding.get(h.id) ?? []).map((t) => ({
-      type: t.type,
-      qty: t.qty,
-      priceMinor: t.price_minor,
-      feesMinor: t.fees_minor,
-      fxRate: t.fx_rate,
-      datetime: t.datetime,
-    }))
-    const holdingInput: HoldingInput = {
-      holdingId: h.id,
-      assetId: h.asset_id,
-      assetClass: asset.asset_class as AssetClass,
-      currency: asset.currency,
-      sleeve: h.sleeve as Sleeve,
-      currentValueMinor: h.current_value_minor,
-      currentValueCurrency: h.current_value_currency,
-      currentFxToDisplay: h.current_fx_to_display,
-      transactions,
-    }
-    const valued = valueHolding(holdingInput)
-    // Unconverted/unpriceable holdings are excluded from the plan the same way
-    // they're excluded from the M3 dashboard totals — never assumed 1:1.
-    if (valued.unconverted || valued.effectiveMinor === null) return []
-
-    return [
-      {
-        holdingId: h.id,
-        assetId: h.asset_id,
-        symbol: asset.symbol,
-        name: asset.name,
-        assetClass: asset.asset_class as AssetClass,
-        proxyClass: asset.proxy_class,
-        sleeve: h.sleeve as Sleeve,
-        isSystemAsset: asset.is_system,
-        valueMinor: valued.effectiveMinor,
-      } satisfies ResolveInput,
-    ]
-  })
+  return mapToResolveInputs(holdings ?? [], assets ?? [], txRaw ?? [])
 }
 
 export type GeneratePlanState =

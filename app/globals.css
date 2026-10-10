@@ -37,6 +37,7 @@
   /* Consistent elevation scale (calm, emerald-tinted) — soft lift, never harsh */
   --shadow-soft: 0 1px 2px -1px rgb(16 60 48 / 0.08), 0 8px 22px -12px rgb(16 60 48 / 0.18);
   --shadow-float: 0 4px 12px -6px rgb(16 60 48 / 0.16), 0 20px 38px -16px rgb(16 60 48 / 0.32);
+  --shadow-nav: 0 -8px 28px -14px rgb(16 60 48 / 0.28);
 }
 
 /* jodsa — emerald brand / transaction-type semantic palette */

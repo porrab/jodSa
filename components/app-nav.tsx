@@ -70,7 +70,7 @@ export default function AppNav() {
   return (
     <>
       {/* Mobile bottom nav: 4 daily dests + center (＋) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background/85 shadow-[0_-8px_28px_-14px_rgb(16_60_48_/_0.28)] backdrop-blur-lg md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background/85 shadow-[var(--shadow-nav)] backdrop-blur-lg md:hidden">
         {mobileLeft.map(({ href, key, icon: Icon }) => (
           <Link key={href} href={href} className={navItemCls(pathname === href)}>
             <Icon className="size-5" />

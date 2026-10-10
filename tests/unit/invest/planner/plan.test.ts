@@ -221,3 +221,61 @@ describe('lib/invest/planner/plan — determinism (M5 acceptance)', () => {
     expect({ ...a, createdAt: '' }).toEqual({ ...b, createdAt: '' })
   })
 })
+
+// QA-INVEST-1 planner invariance: a fully-sold holding passed in as valueMinor=0n (after
+// valueHolding zeroing) must not block the plan, must not appear in riskCapitalPct, and
+// must leave drift/concentration/suggestions unchanged versus a plan with no such holding.
+describe('lib/invest/planner/plan — QA-INVEST-1: fully-sold holding does not block or distort plan', () => {
+  const activeHoldings: ResolvedHolding[] = [
+    holding({ holdingId: 'h-a', assetId: 'a-voo', symbol: 'VOO', name: 'Vanguard S&P 500 ETF', assetClass: 'etf', proxyClass: 'us_large_cap', valueMinor: toMinor(60000, 'THB') }),
+    holding({ holdingId: 'h-b', assetId: 'a-ptt', symbol: 'PTT', name: 'ปตท.', assetClass: 'thai_set', proxyClass: 'thai_set', valueMinor: toMinor(40000, 'THB') }),
+  ]
+  const target: TargetAllocation = { us_equity: 0, etf: 60, thai_set: 40, thai_fund: 0, gold: 0, crypto: 0 }
+
+  const planWithout = buildPlan({
+    holdings: activeHoldings,
+    targetAllocation: target,
+    newMoneyMinor: toMinor(1000, 'THB'),
+    newMoneyCurrency: 'THB',
+    displayCurrency: 'THB',
+    createdAt: '2026-10-10T00:00:00.000Z',
+  })
+
+  // Add a fully-sold holding: proxyClass set (so resolve would pass), valueMinor=0n
+  // (as valueHolding returns after the fix), sleeve=risk_capital to stress-test riskCapitalPct.
+  const fullySoldHolding: ResolvedHolding = holding({
+    holdingId: 'h-sold', assetId: 'a-sgov', symbol: 'SGOV', name: 'SGOV ETF',
+    assetClass: 'etf', proxyClass: 'us_large_cap', sleeve: 'risk_capital', valueMinor: 0n,
+  })
+
+  const planWith = buildPlan({
+    holdings: [...activeHoldings, fullySoldHolding],
+    targetAllocation: target,
+    newMoneyMinor: toMinor(1000, 'THB'),
+    newMoneyCurrency: 'THB',
+    displayCurrency: 'THB',
+    createdAt: '2026-10-10T00:00:00.000Z',
+  })
+
+  it('plan generates successfully with the fully-sold holding present', () => {
+    expect(planWith.verdict).toBeDefined()
+  })
+
+  it('fully-sold risk_capital holding at valueMinor=0n contributes zero to riskCapitalPct', () => {
+    // riskCapitalPct = sum(risk_capital valueMinor) / total; SGOV is 0n, so no change
+    expect(planWith.riskCapitalPct).toBe(0)
+    expect(planWith.riskCapitalPct).toBe(planWithout.riskCapitalPct)
+  })
+
+  it('allocationDrift is identical with and without the zero-value holding', () => {
+    expect(planWith.allocationDrift).toEqual(planWithout.allocationDrift)
+  })
+
+  it('totalValueMinor is unchanged by the zero-value holding', () => {
+    expect(planWith.totalValueMinor).toBe(planWithout.totalValueMinor)
+  })
+
+  it('suggestions are identical — zero-weight holding does not trigger or suppress any action', () => {
+    expect(planWith.suggestions).toEqual(planWithout.suggestions)
+  })
+})

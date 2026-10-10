@@ -11,7 +11,31 @@
  * surfaced by the plan UI when this function reports unclassified holdings.
  */
 import type { AssetClass, Sleeve } from '@/lib/validators/invest'
+import type { Database } from '@/lib/supabase/types'
 import type { ResolvedHolding, ResolveResult, UnclassifiedHolding } from './types'
+import { valueHolding, type HoldingInput } from '@/lib/invest/portfolio'
+
+type Tables = Database['public']['Tables']
+
+export type PlannerAssetData = Pick<
+  Tables['assets']['Row'],
+  'id' | 'symbol' | 'name' | 'asset_class' | 'currency' | 'proxy_class' | 'is_system'
+>
+
+export type PlannerHoldingData = Pick<
+  Tables['holdings']['Row'],
+  | 'id'
+  | 'asset_id'
+  | 'sleeve'
+  | 'current_value_minor'
+  | 'current_value_currency'
+  | 'current_fx_to_display'
+>
+
+export type PlannerTransactionData = Pick<
+  Tables['asset_transactions']['Row'],
+  'holding_id' | 'type' | 'qty' | 'price_minor' | 'fees_minor' | 'fx_rate' | 'datetime'
+>
 
 export type ResolveInput = {
   holdingId: string
@@ -59,4 +83,66 @@ export function resolveHoldings(inputs: ResolveInput[]): ResolveResult {
     return { ok: false, unclassified }
   }
   return { ok: true, holdings: resolved }
+}
+
+export function mapToResolveInputs(
+  holdings: PlannerHoldingData[],
+  assets: PlannerAssetData[],
+  transactions: PlannerTransactionData[]
+): ResolveInput[] {
+  const assetById = new Map(assets.map((a) => [a.id, a]))
+  const txByHolding = new Map<string, PlannerTransactionData[]>()
+
+  for (const tx of transactions) {
+    const list = txByHolding.get(tx.holding_id) ?? []
+    list.push(tx)
+    txByHolding.set(tx.holding_id, list)
+  }
+
+  return holdings.flatMap((h) => {
+    const asset = assetById.get(h.asset_id)
+    if (!asset) return []
+
+    const holdingTxs = txByHolding.get(h.id) ?? []
+    const holdingInput: HoldingInput = {
+      holdingId: h.id,
+      assetId: h.asset_id,
+      assetClass: asset.asset_class,
+      currency: asset.currency,
+      sleeve: h.sleeve,
+      currentValueMinor: h.current_value_minor,
+      currentValueCurrency: h.current_value_currency,
+      currentFxToDisplay: h.current_fx_to_display,
+      transactions: holdingTxs.map((t) => ({
+        type: t.type,
+        qty: t.qty,
+        priceMinor: t.price_minor,
+        feesMinor: t.fees_minor,
+        fxRate: t.fx_rate,
+        datetime: t.datetime,
+      })),
+    }
+
+    const valued = valueHolding(holdingInput)
+    // Exclude unconverted, unpriceable, AND fully sold (qty === 0) positions
+    // from the plan pipeline entirely. This stops custom null-proxy closed
+    // positions from blocking plan generation, while still blocking on active ones.
+    if (valued.unconverted || valued.effectiveMinor === null || valued.qty === 0) {
+      return []
+    }
+
+    return [
+      {
+        holdingId: h.id,
+        assetId: h.asset_id,
+        symbol: asset.symbol,
+        name: asset.name,
+        assetClass: asset.asset_class,
+        proxyClass: asset.proxy_class,
+        sleeve: h.sleeve,
+        isSystemAsset: asset.is_system,
+        valueMinor: valued.effectiveMinor,
+      } satisfies ResolveInput,
+    ]
+  })
 }

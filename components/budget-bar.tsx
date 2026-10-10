@@ -37,10 +37,10 @@ export default function BudgetBar({
 
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
-          className={`h-full rounded-full transition-all ${
+          className={`h-full w-full origin-left rounded-full transition-transform motion-reduce:transition-none ${
             status.over ? 'bg-expense' : 'bg-primary'
           }`}
-          style={{ width: `${status.ratio * 100}%` }}
+          style={{ transform: `scaleX(${Math.min(status.ratio, 1)})` }}
         />
       </div>
 

@@ -108,6 +108,27 @@ export function valueHolding(h: HoldingInput, displayCurrency: string = DISPLAY_
   const nativeCurrency = h.currency.toUpperCase()
   const cb = computeCostBasis(h.transactions)
 
+  // A fully-sold holding (qty reaches 0 after sell transactions) must contribute
+  // zero to all monetary aggregates — the stored current_value_minor is stale once
+  // position is closed. Force unconverted=false so a missing FX rate on a closed
+  // position never blocks plan generation.
+  if (cb.qty === 0) {
+    return {
+      holdingId: h.holdingId,
+      assetId: h.assetId,
+      assetClass: h.assetClass,
+      currency: nativeCurrency,
+      sleeve: h.sleeve,
+      qty: 0,
+      costMinor: 0n,
+      hasCurrentValue: h.currentValueMinor !== null && h.currentValueMinor !== undefined,
+      valueMinor: 0n,
+      pnlMinor: 0n,
+      effectiveMinor: 0n,
+      unconverted: false,
+    }
+  }
+
   let costMinor: bigint | null
   let costUnconverted = false
   if (nativeCurrency === display) {
@@ -267,7 +288,7 @@ export type ConcentrationResult = { top: ConcentrationEntry[]; top1Pct: number; 
 
 /** Top-N positions by % of the (asset-merged) portfolio; flags anything ≥ `threshold` (default 25%). */
 export function computeConcentration(rows: ValuedHolding[], topN = 5, threshold = 0.25): ConcentrationResult {
-  const positions = aggregateByAsset(rows)
+  const positions = aggregateByAsset(rows).filter((p) => p.qty > 0)
   const total = positions.reduce((s, p) => s + p.valueMinor, 0n)
 
   const ranked = positions
@@ -354,4 +375,41 @@ export function buildSnapshotPayload(rows: ValuedHolding[], displayCurrency: str
       sleeve: serializeBuckets(computeAllocation(rows, 'sleeve')),
     },
   }
+}
+
+export type HoldingDisplaySource = {
+  current_value_minor: string | null
+  current_value_currency: string | null
+  costBasis: {
+    qty: number
+    totalCostMinor: string
+  }
+}
+
+export type HoldingDisplayOutput = {
+  /** Display value; null means "no current value" (unless sold, then "0") */
+  valueMinor: string | null
+  costMinor: string
+  pnlMinor: bigint | null
+}
+
+/**
+ * UI presentation logic for a single holding, guaranteeing fully-sold holdings
+ * visually zero-out their value, cost, and P&L despite stale snapshots.
+ */
+export function getHoldingDisplay(h: HoldingDisplaySource, assetCurrency: string): HoldingDisplayOutput {
+  const isZeroQty = h.costBasis.qty === 0
+  const currencyMatches = (h.current_value_currency ?? assetCurrency) === assetCurrency
+
+  if (isZeroQty) {
+    return { valueMinor: '0', costMinor: '0', pnlMinor: 0n }
+  }
+
+  const valueMinor = h.current_value_minor
+  const costMinor = h.costBasis.totalCostMinor
+  const pnlMinor = valueMinor && currencyMatches
+    ? BigInt(valueMinor) - BigInt(costMinor)
+    : null
+
+  return { valueMinor, costMinor, pnlMinor }
 }

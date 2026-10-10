@@ -21,6 +21,7 @@ import {
 import { createHolding, updateHolding, deleteHolding } from '@/app/actions/invest/holdings'
 import { addAssetTransaction, deleteAssetTransaction } from '@/app/actions/invest/transactions'
 import { createCustomAsset } from '@/app/actions/invest/assets'
+import { getHoldingDisplay } from '@/lib/invest/portfolio'
 import {
   ASSET_CLASSES, SLEEVES, ASSET_TX_TYPES, CURRENCIES,
   type AssetClass, type Sleeve, type AssetTxType,
@@ -451,12 +452,8 @@ function HoldingDetailSheet({
 
   if (!holding) return null
   const currency = holding.asset?.currency ?? 'THB'
+  const display = getHoldingDisplay(holding, currency)
   const cb = holding.costBasis
-  const valueCurrencyMatches = holding.current_value_currency === currency
-  const pnl =
-    holding.current_value_minor && valueCurrencyMatches
-      ? BigInt(holding.current_value_minor) - BigInt(cb.totalCostMinor)
-      : null
 
   return (
     <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
@@ -485,16 +482,16 @@ function HoldingDetailSheet({
 
               <div className="space-y-1">
                 <p className="text-2xl font-bold tabular-nums text-focal">
-                  {holding.current_value_minor
-                    ? formatMoney(holding.current_value_minor, holding.current_value_currency ?? currency)
+                  {display.valueMinor
+                    ? formatMoney(display.valueMinor, holding.current_value_currency ?? currency)
                     : t('noCurrentValue')}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t('qtyHeld', { qty: cb.qty })} · {t('costBasisLine', { amount: formatMoney(cb.totalCostMinor, currency) })}
+                  {t('qtyHeld', { qty: cb.qty })} · {t('costBasisLine', { amount: formatMoney(display.costMinor, currency) })}
                 </p>
-                {pnl !== null && (
-                  <p className={`text-sm font-medium tabular-nums ${pnl < 0n ? 'text-destructive' : 'text-primary'}`}>
-                    {t('pnlLine', { amount: formatMoney(pnl, currency) })}
+                {display.pnlMinor !== null && (
+                  <p className={`text-sm font-medium tabular-nums ${display.pnlMinor < 0n ? 'text-destructive' : 'text-primary'}`}>
+                    {t('pnlLine', { amount: formatMoney(display.pnlMinor, currency) })}
                   </p>
                 )}
               </div>
@@ -576,31 +573,35 @@ export default function InvestClient({ holdings, assets }: { holdings: Holding[]
         </div>
       ) : (
         <div className="divide-y rounded-lg border">
-          {holdings.map((h) => (
-            <button
-              key={h.id}
-              type="button"
-              onClick={() => setDetailId(h.id)}
-              className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{h.asset?.name ?? t('unknownAsset')}</p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-1">
-                  <Badge variant="secondary" className="text-xs">{t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)}</Badge>
-                  <Badge variant={sleeveVariant(h.sleeve)} className="text-xs">{t(`sleeve.${h.sleeve}`)}</Badge>
+          {holdings.map((h) => {
+            const rowCurrency = h.asset?.currency ?? 'THB'
+            const rowDisplay = getHoldingDisplay(h, rowCurrency)
+            return (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => setDetailId(h.id)}
+                className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{h.asset?.name ?? t('unknownAsset')}</p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                    <Badge variant="secondary" className="text-xs">{t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)}</Badge>
+                    <Badge variant={sleeveVariant(h.sleeve)} className="text-xs">{t(`sleeve.${h.sleeve}`)}</Badge>
+                  </div>
                 </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-sm font-semibold tabular-nums">
-                  {h.current_value_minor
-                    ? formatMoney(h.current_value_minor, h.current_value_currency ?? h.asset?.currency ?? 'THB')
-                    : formatMoney(h.costBasis.totalCostMinor, h.asset?.currency ?? 'THB')}
-                </p>
-                <p className="text-xs text-muted-foreground">{t('qtyHeld', { qty: h.costBasis.qty })}</p>
-              </div>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold tabular-nums">
+                    {rowDisplay.valueMinor
+                      ? formatMoney(rowDisplay.valueMinor, h.current_value_currency ?? rowCurrency)
+                      : formatMoney(rowDisplay.costMinor, rowCurrency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t('qtyHeld', { qty: h.costBasis.qty })}</p>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </button>
+            )
+          })}
         </div>
       )}
 

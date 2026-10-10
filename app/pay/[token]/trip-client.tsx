@@ -368,7 +368,7 @@ function SendSlipSheet({
                   <span>{ts(`stage_${progress.stage}`)}</span><span>{progress.percent}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress.percent}%` }} />
+                  <div className="h-full w-full origin-left rounded-full bg-primary transition-transform motion-reduce:transition-none" style={{ transform: `scaleX(${progress.percent / 100})` }} />
                 </div>
               </div>
             </div>
