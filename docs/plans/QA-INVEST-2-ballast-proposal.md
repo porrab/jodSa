@@ -7,7 +7,7 @@
 
 # QA-INVEST-2: add an explicit ballast sleeve
 
-**Status: PROPOSED — approval required before changing the data model.** Add `ballast` as a fourth holding sleeve, expose it in the existing create/edit and allocation views, and let the owner explicitly reclassify holdings. This document is a decision proposal, not a canonical blueprint amendment, implementation, migration authorization, or QA closure.
+**Status: APPROVED FOR IMPLEMENTATION — owner approval recorded 2026-10-10.** Add `ballast` as a fourth holding sleeve, expose it in the existing create/edit and allocation views, and let the owner explicitly reclassify holdings. Approval covers the key/copy, reporting-only scope, manual reclassification and unchanged planner behavior below. Canonical amendment: `idea-forge/ideas/jodsa-investments/docs/02-architecture.md` ("Ballast sleeve") and README Changelog 2026-10-10. This is not authorization to apply a live migration and is not an implementation or QA completion claim.
 
 Evidence baseline: `project/jodsa` commit `5a74ed7`, inspected 2026-10-10. No production database or owner portfolio was inspected. Historical weights and the SGOV misclassification are the owner's report in QA-INVEST-2, not reverified current balances.
 
@@ -28,7 +28,7 @@ Explicitly out of scope: sleeve target percentages, sleeve-based planner drift o
 | Changing core to ballast necessarily changes investment suggestions | `project/jodsa/lib/invest/planner/plan.ts` computes risk-capital percentage from `sleeve === 'risk_capital'`; drift uses asset class, concentration uses positions, and stress uses proxy classes. | With all other inputs equal, changing only core to ballast must preserve allocation drift, concentration, stress, and suggestions. This is an explicit regression test. |
 | Allocation needs a new calculation model | `project/jodsa/lib/invest/portfolio.ts:212` groups sleeve allocation by the row's sleeve key; snapshot serialization already stores sleeve buckets. | Reuse the existing aggregation and denominator; extend the accepted values and display labels. |
 
-## 2. Product decision to approve
+## 2. Approved product decision (2026-10-10)
 
 Use the stable key **`ballast`**. It describes the owner's intended role without claiming that every holding selected into it is inherently defensive or risk-free.
 
@@ -83,7 +83,7 @@ The implementation author supplies passing evidence; qa-lab independently verifi
 
 ## 5. Staged rollout and approval boundary
 
-1. **Decision (S):** owner approves the four-value sleeve model, copy, unchanged default/legacy core meaning, explicit manual reclassification, and reporting-only scope. Then idea-forge amends the live investment blueprint with a dated Changelog and files a SPEC brief; this proposal alone must not be treated as that amendment.
+1. **Decision (S — approved 2026-10-10):** owner approved the four-value sleeve model, copy, unchanged default/legacy core meaning, explicit manual reclassification, and reporting-only scope. The matching canonical amendment and dated Changelog are in `idea-forge/ideas/jodsa-investments/`; the parent session files the SPEC brief in `project/jodsa/REVIEW-INBOX.md` to coordinate the shared inbox.
 2. **Build and non-production proof (M, depends on 1):** route bounded implementation/tests through Antigravity first under workspace rules. Read the repo's Supabase RLS skill before touching the migration. Implement the listed seams, use a reviewed test migration, and obtain independent QA/PM evidence. Coordinate shared UI/portfolio files with QA-INVEST-1's work. Show exact SQL and migration preflight/rollback procedure to the owner.
 3. **Live migration and release (S, depends on 2):** obtain explicit owner authorization to apply the exact migration to live Supabase. The project inbox explicitly prohibits auto-apply. After approval, verify live constraint/policies and apply the atomic expansion before deploying the application that writes ballast. With no ballast rows written yet, old code continues handling its three known values. Verify the deployment handles all four before any manual reclassification. The owner then uses the normal UI to reclassify selected holdings; no migration or agent backfill is implied.
 
@@ -100,4 +100,4 @@ Rollback before any ballast write can restore the original CHECK if the owner au
 | Review claims planner sleeve targets now work | False completion of financial behavior | Pin asset-class drift semantics and planner invariance test; separately scope target-aware planning. |
 | Changes overlap QA-INVEST-1 valuation work | Lost edits or misleading fixture denominator | Coordinate ownership, integrate on its final behavior, and test real holdings through current valuation. |
 
-**Approval needed:** the concrete product/data-model decision in section 2, followed later by approval of the exact live migration. **Unverified:** production constraint identity, current owner holdings/weights, live policy state, migration execution and all proposed tests. No app code, schema, blueprint, inbox status, or production data was changed by this proposal.
+**Approval remaining:** separate owner authorization of the exact live migration. **Unverified by this planning artifact:** production constraint identity, current owner holdings/weights, live policy state, migration execution and proposed tests. This document and the canonical blueprint record approved scope; implementation/testing status belongs to the dev/QA handoff. This planning amendment changes no app code, schema or production data.
