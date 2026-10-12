@@ -38,8 +38,8 @@ The original portfolio tests covered aggregation of active holdings but did not 
 - `pnpm -s tsc --noEmit` — exit 0.
 - `pnpm -s vitest run` — 21 files passed, 1 file skipped; 311 tests passed, 34 RLS tests skipped because live Supabase credentials were not enabled for this run.
 - `pnpm -s lint` — no warnings or errors.
-- QA-owned browser validation of the original action/UI/database path is pending independent execution; production owner data was not modified.
+- Independent qa-lab verification completed 2026-10-12: focused Playwright command passed five browser cases plus setup (`6 passed`, exit 0); existing investment regression passed twenty browser cases plus setup (`21 passed`, exit 0). The real action/UI/database path used synthetic QA accounts; production owner data was not modified. QA spec commit: `32ff8f3`; report commit: `qa-lab` `ff94715`, `qa-lab/projects/jodsa/runs/QA-review-2026-10-10.md` (workspace-root-relative).
 
 ## Action items
 
-- Independent QA runs `tests/e2e/review-20261010.spec.ts` against synthetic users before closure. Owner: qa-lab, tracked in `project/jodsa/REVIEW-INBOX.md` under QA-INVEST-1.
+- Independent QA completed `tests/e2e/review-20261010.spec.ts` against synthetic users before closure; the shared inbox now records the verified resolution and its scope limits.

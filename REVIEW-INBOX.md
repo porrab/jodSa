@@ -35,7 +35,8 @@ The actual field is `sleeve`, not `risk_group`. M5 drift is asset-class-based. C
 Product/model approval is recorded. Test in non-production first; exact live SQL still needs owner authorization before application. Apply approved migration before enabling ballast writes. Independent qa-lab/pm-desk verification is required; skipped live checks must be reported.
 
 ## [DS-1] Motion: focus ring fades in · progress bars animate `width` — 2026-10-04 · from design-studio
-**From:** design-studio · **Status**: OPEN — small, self-contained; may ride with the next batch.
+**From:** design-studio · **Status**: RESOLVED — 2026-10-12 sync: implemented in `project/jodsa` commit `e6ff4cb`; independent qa-lab GREEN at `ff94715`.
+**Closure evidence:** `qa-lab/projects/jodsa/runs/QA-review-2026-10-10.md`; focused keyboard-focus and budget reduced-motion browser checks passed. All six progress fills and the nav shadow token were source-reviewed; transient OCR fills were not separately rendered.
 **Evidence:** code (git grep at `7d80848`) + rendered desktop at 1440×900 on `pnpm dev` (QA user A). Found
 while trialling the external Hallmark audit rubric (gates 14 / 15 / 48); the rules now live in
 `design-studio/.claude/skills/design-review/SKILL.md` lens 4.
@@ -130,7 +131,9 @@ need a backfill prompt. Product call — state it before building.
 **Repro**: `/invest` → เพิ่มสินทรัพย์ → any asset → กลุ่มความเสี่ยง shows only the three options.
 
 ## [QA-INVEST-1] Fully-sold holding keeps its market value in `/invest` — 2026-09-05 · from owner session
-**Status**: OPEN — reproduced live on prod (`jod-sa.vercel.app`) with the owner's real book.
+**Status**: RESOLVED — 2026-10-12 sync: fixed in `project/jodsa` commit `e6ff4cb`; independent qa-lab GREEN at `ff94715`, focused spec `32ff8f3`.
+**Closure evidence:** `qa-lab/projects/jodsa/runs/QA-review-2026-10-10.md`: five focused and twenty existing investment browser cases passed using synthetic QA accounts. Closed holdings remain as zero-valued history and are excluded from concentration/planning; active and reopened unclassified holdings still block planning. Production deployment and owner data were not verified or changed.
+**Post-mortem:** `project/jodsa/docs/postmortems/QA-INVEST-1-closed-holding-stale-value.md`.
 
 **What happened.** Recorded the owner's real ASML sale (0.0140444 units @ $1,870.35, fee $0.02,
 2026-09-05) as a `ขาย` asset-transaction. The write succeeded and the units aggregation is correct —
