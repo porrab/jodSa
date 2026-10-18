@@ -55,7 +55,7 @@ test('QA-M3-1 dashboard totals/cost/P&L, allocation and concentration match the 
   // Allocation, all three axes.
   await expect(page.getByText('แบ่งตามประเภทสินทรัพย์')).toBeVisible()
   await expect(page.getByText('แบ่งตามสกุลเงิน')).toBeVisible()
-  await expect(page.getByText('แบ่งตามระดับความเสี่ยง')).toBeVisible()
+  await expect(page.getByText('แบ่งตามบทบาทในพอร์ต')).toBeVisible()
 
   // Concentration — AAPL at 93.9% fires the ≥25% badge.
   await expect(page.getByText('ความกระจุกตัว')).toBeVisible()
