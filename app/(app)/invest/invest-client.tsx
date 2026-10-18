@@ -235,6 +235,9 @@ function AddHoldingDialog({ assets, onClose }: { assets: Asset[]; onClose: () =>
                 <AlertTriangle className="size-3.5" />{t('riskCapitalWarning')}
               </p>
             )}
+            {sleeve === 'ballast' && (
+              <p className="text-xs text-muted-foreground">{t('ballastHelper')}</p>
+            )}
           </div>
           <div className="space-y-1">
             <Label htmlFor="h-broker">{t('brokerLabel')}</Label>
@@ -383,6 +386,9 @@ function HoldingEditForm({ holding, onDone }: { holding: Holding; onDone: () => 
           <p className="flex items-center gap-1 text-xs text-destructive">
             <AlertTriangle className="size-3.5" />{t('riskCapitalWarning')}
           </p>
+        )}
+        {sleeve === 'ballast' && (
+          <p className="text-xs text-muted-foreground">{t('ballastHelper')}</p>
         )}
       </div>
       <div className="space-y-1">

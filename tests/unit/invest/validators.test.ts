@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest'
 import {
   customAssetSchema,
   holdingCreateSchema,
+  updateHoldingSchema,
   assetTransactionSchema,
   targetAllocationSchema,
   classifyProxyClassSchema,
   generatePlanSchema,
+  SLEEVES,
 } from '@/lib/validators/invest'
 
 describe('lib/validators/invest', () => {
@@ -110,5 +112,62 @@ describe('lib/validators/invest', () => {
       newMoneyCurrency: 'THB',
     })
     expect(negative.success).toBe(false)
+  })
+
+  // ── SPEC-6 ballast sleeve validation ──────────────────────────────────────
+
+  it('SLEEVES contains all four values in approved order', () => {
+    expect(SLEEVES).toEqual(['core', 'ballast', 'satellite', 'risk_capital'])
+  })
+
+  it('holdingCreateSchema accepts all four sleeve values', () => {
+    const base = {
+      assetId: '11111111-1111-1111-1111-111111111111',
+      qty: 1,
+      price: 100,
+      currency: 'USD',
+      fees: 0,
+      datetime: '2026-01-01T00:00',
+    }
+    for (const sleeve of SLEEVES) {
+      const parsed = holdingCreateSchema.safeParse({ ...base, sleeve })
+      expect(parsed.success, `sleeve "${sleeve}" should be valid for create`).toBe(true)
+    }
+  })
+
+  it('holdingCreateSchema defaults sleeve to core when omitted', () => {
+    const parsed = holdingCreateSchema.safeParse({
+      assetId: '11111111-1111-1111-1111-111111111111',
+      qty: 1,
+      price: 100,
+      currency: 'USD',
+      fees: 0,
+      datetime: '2026-01-01T00:00',
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) expect(parsed.data.sleeve).toBe('core')
+  })
+
+  it('updateHoldingSchema accepts all four sleeve values', () => {
+    for (const sleeve of SLEEVES) {
+      const parsed = updateHoldingSchema.safeParse({
+        id: '11111111-1111-1111-1111-111111111111',
+        sleeve,
+      })
+      expect(parsed.success, `sleeve "${sleeve}" should be valid for update`).toBe(true)
+    }
+  })
+
+  it('holdingCreateSchema rejects an invalid sleeve string', () => {
+    const parsed = holdingCreateSchema.safeParse({
+      assetId: '11111111-1111-1111-1111-111111111111',
+      sleeve: 'speculative',
+      qty: 1,
+      price: 100,
+      currency: 'USD',
+      fees: 0,
+      datetime: '2026-01-01T00:00',
+    })
+    expect(parsed.success).toBe(false)
   })
 })

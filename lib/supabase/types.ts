@@ -371,7 +371,7 @@ export interface Database {
           id: string
           user_id: string
           asset_id: string
-          sleeve: 'core' | 'satellite' | 'risk_capital'
+          sleeve: 'core' | 'ballast' | 'satellite' | 'risk_capital'
           broker: string | null
           // bigint columns come back from PostgREST as strings (JS number can't
           // hold a full int64 precisely) — every *_minor field here is a string.
@@ -385,7 +385,7 @@ export interface Database {
           id?: string
           user_id: string
           asset_id: string
-          sleeve?: 'core' | 'satellite' | 'risk_capital'
+          sleeve?: 'core' | 'ballast' | 'satellite' | 'risk_capital'
           broker?: string | null
           current_value_minor?: string | null
           current_value_currency?: string | null
@@ -394,7 +394,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          sleeve?: 'core' | 'satellite' | 'risk_capital'
+          sleeve?: 'core' | 'ballast' | 'satellite' | 'risk_capital'
           broker?: string | null
           current_value_minor?: string | null
           current_value_currency?: string | null

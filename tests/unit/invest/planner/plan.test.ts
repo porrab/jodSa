@@ -279,3 +279,82 @@ describe('lib/invest/planner/plan — QA-INVEST-1: fully-sold holding does not b
     expect(planWith.suggestions).toEqual(planWithout.suggestions)
   })
 })
+
+// SPEC-6: sleeve is a portfolio role/reporting taxonomy, not an input to asset-class drift,
+// look-through concentration, stress testing, or suggestion logic. Changing a holding's sleeve
+// from core to ballast must leave every output of buildPlan strictly invariant.
+describe('lib/invest/planner/plan — SPEC-6: core → ballast sleeve change is plan-invariant', () => {
+  const holdingsBase: ResolvedHolding[] = [
+    holding({
+      holdingId: 'h-voo', assetId: 'a-voo', symbol: 'VOO', name: 'Vanguard S&P 500 ETF',
+      assetClass: 'etf', proxyClass: 'us_large_cap', sleeve: 'core',
+      valueMinor: toMinor(40000, 'THB'),
+    }),
+    holding({
+      holdingId: 'h-gold', assetId: 'a-gold', symbol: null, name: 'Gold Bar',
+      assetClass: 'gold', proxyClass: 'gold', sleeve: 'core',
+      valueMinor: toMinor(30000, 'THB'),
+    }),
+    holding({
+      holdingId: 'h-ptt', assetId: 'a-ptt', symbol: 'PTT', name: 'PTT',
+      assetClass: 'thai_set', proxyClass: 'thai_set', sleeve: 'satellite',
+      valueMinor: toMinor(30000, 'THB'),
+    }),
+  ]
+
+  const target: TargetAllocation = {
+    us_equity: 0, etf: 40, thai_set: 30, thai_fund: 0, gold: 30, crypto: 0,
+  }
+
+  const planCore = buildPlan({
+    holdings: holdingsBase,
+    targetAllocation: target,
+    newMoneyMinor: toMinor(5000, 'THB'),
+    newMoneyCurrency: 'THB',
+    displayCurrency: 'THB',
+    createdAt: '2026-10-12T00:00:00.000Z',
+  })
+
+  // Change the gold holding sleeve from 'core' to 'ballast'
+  const holdingsWithBallast: ResolvedHolding[] = [
+    holdingsBase[0],
+    { ...holdingsBase[1], sleeve: 'ballast' },
+    holdingsBase[2],
+  ]
+
+  const planBallast = buildPlan({
+    holdings: holdingsWithBallast,
+    targetAllocation: target,
+    newMoneyMinor: toMinor(5000, 'THB'),
+    newMoneyCurrency: 'THB',
+    displayCurrency: 'THB',
+    createdAt: '2026-10-12T00:00:00.000Z',
+  })
+
+  it('allocationDrift is strictly invariant between core and ballast', () => {
+    expect(planBallast.allocationDrift).toEqual(planCore.allocationDrift)
+  })
+
+  it('concentration (direct and effective) is strictly invariant', () => {
+    expect(planBallast.concentration).toEqual(planCore.concentration)
+  })
+
+  it('stress testing point estimates and ranges are strictly invariant', () => {
+    expect(planBallast.stress).toEqual(planCore.stress)
+  })
+
+  it('riskCapitalPct remains 0 (ballast is not risk_capital)', () => {
+    expect(planBallast.riskCapitalPct).toBe(0)
+    expect(planBallast.riskCapitalPct).toBe(planCore.riskCapitalPct)
+  })
+
+  it('suggestions and verdict are strictly invariant', () => {
+    expect(planBallast.suggestions).toEqual(planCore.suggestions)
+    expect(planBallast.verdict).toBe(planCore.verdict)
+    expect(planBallast.headline).toBe(planCore.headline)
+  })
+
+  it('totalValueMinor is strictly invariant', () => {
+    expect(planBallast.totalValueMinor).toBe(planCore.totalValueMinor)
+  })
+})

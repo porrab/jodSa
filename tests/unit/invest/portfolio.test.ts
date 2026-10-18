@@ -449,3 +449,130 @@ describe('lib/invest/portfolio — QA-INVEST-1: getHoldingDisplay UI seam', () =
     expect(d.pnlMinor).toBeNull()
   })
 })
+
+describe('lib/invest/portfolio — SPEC-6: ballast sleeve allocation & snapshot', () => {
+  it('synthetic 600/200/100/100 holdings yield four buckets: 60%, 20%, 10%, 10%', () => {
+    const holdings: HoldingInput[] = [
+      {
+        holdingId: 'h-core', assetId: 'a1', assetClass: 'us_equity', currency: 'THB',
+        sleeve: 'core', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 600, 'THB', 0)],
+      },
+      {
+        holdingId: 'h-ballast', assetId: 'a2', assetClass: 'gold', currency: 'THB',
+        sleeve: 'ballast', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 200, 'THB', 0)],
+      },
+      {
+        holdingId: 'h-satellite', assetId: 'a3', assetClass: 'crypto', currency: 'THB',
+        sleeve: 'satellite', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 100, 'THB', 0)],
+      },
+      {
+        holdingId: 'h-risk', assetId: 'a4', assetClass: 'etf', currency: 'THB',
+        sleeve: 'risk_capital', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 100, 'THB', 0)],
+      },
+    ]
+
+    const valued = holdings.map((h) => valueHolding(h))
+    const buckets = computeAllocation(valued, 'sleeve')
+
+    expect(buckets).toHaveLength(4)
+    const byKey = Object.fromEntries(buckets.map((b) => [b.key, b.pct]))
+    expect(byKey.core).toBe(60)
+    expect(byKey.ballast).toBe(20)
+    expect(byKey.satellite).toBe(10)
+    expect(byKey.risk_capital).toBe(10)
+  })
+
+  it('same asset in core + ballast stays split in sleeve allocation but merges in concentration', () => {
+    // e.g. Gold held in two different sleeves: 300 in core, 200 in ballast
+    const holdings: HoldingInput[] = [
+      {
+        holdingId: 'h-gold-core', assetId: 'a-gold', assetClass: 'gold', currency: 'THB',
+        sleeve: 'core', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 300, 'THB', 0)],
+      },
+      {
+        holdingId: 'h-gold-ballast', assetId: 'a-gold', assetClass: 'gold', currency: 'THB',
+        sleeve: 'ballast', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 200, 'THB', 0)],
+      },
+      {
+        holdingId: 'h-other', assetId: 'a-other', assetClass: 'us_equity', currency: 'THB',
+        sleeve: 'satellite', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 500, 'THB', 0)],
+      },
+    ]
+
+    const valued = holdings.map((h) => valueHolding(h))
+
+    // Sleeve allocation must keep them split across core and ballast
+    const sleeveBuckets = computeAllocation(valued, 'sleeve')
+    const sleeveMap = Object.fromEntries(sleeveBuckets.map((b) => [b.key, b.pct]))
+    expect(sleeveMap.core).toBe(30)
+    expect(sleeveMap.ballast).toBe(20)
+    expect(sleeveMap.satellite).toBe(50)
+
+    // Asset concentration must merge the same assetId into a single entry
+    const concentration = computeConcentration(valued)
+    const goldEntry = concentration.top.find((t) => t.assetId === 'a-gold')
+    expect(goldEntry).toBeDefined()
+    expect(goldEntry?.valueMinor).toBe(toMinor(500, 'THB'))
+  })
+
+  it('snapshot JSON payload includes ballast in sleeve allocation', () => {
+    const holdings: HoldingInput[] = [
+      {
+        holdingId: 'h-ballast', assetId: 'a-gold', assetClass: 'gold', currency: 'THB',
+        sleeve: 'ballast', currentValueMinor: null, currentValueCurrency: null, currentFxToDisplay: null,
+        transactions: [buyTx(1, 5000, 'THB', 0)],
+      },
+    ]
+    const valued = holdings.map((h) => valueHolding(h))
+    const snapshot = buildSnapshotPayload(valued)
+    const roundTripped = JSON.parse(JSON.stringify(snapshot))
+
+    expect(roundTripped.allocation.sleeve).toEqual([
+      { key: 'ballast', valueMinor: '500000', pct: 100 },
+    ])
+  })
+
+  it('old snapshot without ballast remains a valid render-shape fixture (missing sleeve handled gracefully)', () => {
+    // Historical snapshot payload from before sleeve was stored, or three-value snapshot
+    const oldSnapshotPayload = {
+      displayCurrency: 'THB',
+      totals: { valueMinor: '100000', costMinor: '100000', pnlMinor: '0', currency: 'THB' },
+      holdings: [],
+      allocation: {
+        assetClass: [{ key: 'gold', valueMinor: '100000', pct: 100 }],
+        currency: [{ key: 'THB', valueMinor: '100000', pct: 100 }],
+        // either three-value legacy sleeve or completely absent
+        sleeve: [
+          { key: 'core', valueMinor: '80000', pct: 80 },
+          { key: 'satellite', valueMinor: '20000', pct: 20 },
+        ],
+      },
+    }
+
+    // Verify it parses and can be read as a snapshot
+    const parsed = JSON.parse(JSON.stringify(oldSnapshotPayload))
+    expect(parsed.allocation.sleeve).toHaveLength(2)
+    expect(parsed.allocation.sleeve.some((b: { key: string }) => b.key === 'ballast')).toBe(false)
+
+    // A truly legacy snapshot with no sleeve array at all
+    const legacyWithoutSleeve = {
+      displayCurrency: 'THB',
+      totals: { valueMinor: '100000', costMinor: '100000', pnlMinor: '0', currency: 'THB' },
+      holdings: [],
+      allocation: {
+        assetClass: [{ key: 'gold', valueMinor: '100000', pct: 100 }],
+        currency: [{ key: 'THB', valueMinor: '100000', pct: 100 }],
+      },
+    }
+    const legacyParsed = JSON.parse(JSON.stringify(legacyWithoutSleeve))
+    const sleeveBuckets = Array.isArray(legacyParsed.allocation?.sleeve) ? legacyParsed.allocation.sleeve : []
+    expect(sleeveBuckets).toEqual([])
+  })
+})

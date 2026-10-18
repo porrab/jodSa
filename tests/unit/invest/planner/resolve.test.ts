@@ -135,4 +135,24 @@ describe('lib/invest/planner/resolve — QA-INVEST-1: mapper behavior', () => {
     // The closed position should be skipped, avoiding a spurious block from `proxyClass === null`
     expect(out).toHaveLength(0)
   })
+
+  // SPEC-6: sleeve is orthogonal to the proxy_class gate. An active holding with sleeve='ballast'
+  // must still block plan generation if its asset lacks a proxy_class.
+  it('SPEC-6: active ballast holding with missing proxy_class still blocks resolution', () => {
+    const a = testAsset({ proxy_class: null })
+    const h = testHolding({ sleeve: 'ballast' })
+    const t1 = tx(h.id, 5, '200')
+
+    const mapped = mapToResolveInputs([h], [a], [t1])
+    expect(mapped).toHaveLength(1)
+    expect(mapped[0].sleeve).toBe('ballast')
+    expect(mapped[0].proxyClass).toBeNull()
+
+    const result = resolveHoldings(mapped)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.unclassified).toHaveLength(1)
+      expect(result.unclassified[0].holdingId).toBe(h.id)
+    }
+  })
 })

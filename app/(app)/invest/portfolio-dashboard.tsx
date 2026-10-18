@@ -199,6 +199,7 @@ function SnapshotDetail({ snapshot, onClose }: { snapshot: SnapshotRow; onClose:
   const t = useTranslations('invest')
   const totals = snapshot.totals as SnapshotTotals
   const allocation = snapshot.allocation as SnapshotAllocation
+  const sleeveBuckets = Array.isArray(allocation?.sleeve) ? allocation.sleeve : []
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
@@ -229,6 +230,17 @@ function SnapshotDetail({ snapshot, onClose }: { snapshot: SnapshotRow; onClose:
               </div>
             ))}
           </div>
+          {sleeveBuckets.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t('allocationBySleeve')}</p>
+              {sleeveBuckets.map((b) => (
+                <div key={b.key} className="flex items-center justify-between text-sm">
+                  <span>{t(`sleeve.${b.key as Sleeve}`)}</span>
+                  <span className="tabular-nums">{b.pct.toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

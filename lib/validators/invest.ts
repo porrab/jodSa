@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const ASSET_CLASSES = ['us_equity', 'etf', 'thai_set', 'thai_fund', 'gold', 'crypto'] as const
 export type AssetClass = (typeof ASSET_CLASSES)[number]
 
-export const SLEEVES = ['core', 'satellite', 'risk_capital'] as const
+export const SLEEVES = ['core', 'ballast', 'satellite', 'risk_capital'] as const
 export type Sleeve = (typeof SLEEVES)[number]
 
 export const ASSET_TX_TYPES = ['buy', 'sell', 'dividend', 'fee'] as const

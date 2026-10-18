@@ -122,7 +122,7 @@
     "pickAsset": "เลือกสินทรัพย์",
     "pickAssetPlaceholder": "ค้นหาสินทรัพย์...",
     "assetClassLabel": "ประเภทสินทรัพย์",
-    "sleeveLabel": "กลุ่มความเสี่ยง",
+    "sleeveLabel": "บทบาทในพอร์ต",
     "brokerLabel": "โบรกเกอร์ / แพลตฟอร์ม (ไม่บังคับ)",
     "brokerPlaceholder": "เช่น Dime, บล.กสิกร",
     "qtyLabel": "จำนวนหน่วย",
@@ -162,9 +162,11 @@
     },
     "sleeve": {
       "core": "หลัก (Core)",
+      "ballast": "ตัวถ่วง (Ballast)",
       "satellite": "เสริม (Satellite)",
       "risk_capital": "เงินเสี่ยงสูง (Risk Capital)"
     },
+    "ballastHelper": "ส่วนที่คุณกำหนดให้ช่วยถ่วงความผันผวนของพอร์ต ไม่ได้หมายความว่าไม่มีความเสี่ยง",
     "txType": {
       "buy": "ซื้อ",
       "sell": "ขาย",
@@ -190,7 +192,7 @@
     "concentratedBadge": "กระจุกตัวสูง",
     "allocationByClass": "แบ่งตามประเภทสินทรัพย์",
     "allocationByCurrency": "แบ่งตามสกุลเงิน",
-    "allocationBySleeve": "แบ่งตามระดับความเสี่ยง",
+    "allocationBySleeve": "แบ่งตามบทบาทในพอร์ต",
     "updatePrices": "อัปเดตราคา",
     "pricesUpdated": "อัปเดตราคาแล้ว",
     "noPricesToUpdate": "กรอกมูลค่าอย่างน้อย 1 รายการเพื่ออัปเดต",

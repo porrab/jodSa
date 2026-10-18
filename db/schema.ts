@@ -168,7 +168,7 @@ export const holdings = pgTable('holdings', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull(),
   assetId: uuid('asset_id').notNull(),
-  sleeve: text('sleeve', { enum: ['core', 'satellite', 'risk_capital'] })
+  sleeve: text('sleeve', { enum: ['core', 'ballast', 'satellite', 'risk_capital'] })
     .default('core')
     .notNull(),
   broker: text('broker'),

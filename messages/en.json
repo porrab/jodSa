@@ -122,7 +122,7 @@
     "pickAsset": "Pick an asset",
     "pickAssetPlaceholder": "Search assets...",
     "assetClassLabel": "Asset class",
-    "sleeveLabel": "Risk sleeve",
+    "sleeveLabel": "Portfolio role",
     "brokerLabel": "Broker / platform (optional)",
     "brokerPlaceholder": "e.g. Dime, Kasikorn Securities",
     "qtyLabel": "Quantity",
@@ -162,9 +162,11 @@
     },
     "sleeve": {
       "core": "Core",
+      "ballast": "Ballast",
       "satellite": "Satellite",
       "risk_capital": "Risk Capital"
     },
+    "ballastHelper": "The part you assign to help stabilize the portfolio; this does not mean it is risk-free.",
     "txType": {
       "buy": "Buy",
       "sell": "Sell",
@@ -190,7 +192,7 @@
     "concentratedBadge": "Concentrated",
     "allocationByClass": "By asset class",
     "allocationByCurrency": "By currency",
-    "allocationBySleeve": "By risk sleeve",
+    "allocationBySleeve": "By portfolio role",
     "updatePrices": "Update Prices",
     "pricesUpdated": "Prices updated",
     "noPricesToUpdate": "Enter at least one value to update",
