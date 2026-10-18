@@ -1,7 +1,7 @@
 # QA-INVEST-2: Ballast Sleeve Runtime Implementation Report
 
-**Status:** Runtime implemented; offline gates pass. Migration review, live persistence/isolation and browser acceptance remain incomplete.  
-**Specification:** SPEC-6 (`docs/plans/QA-INVEST-2-ballast-proposal.md`, `REVIEW-INBOX.md`).  
+**Status:** Runtime implemented; offline gates pass. Migration review, live persistence/isolation and browser acceptance remain incomplete.
+**Specification:** SPEC-6 (`docs/plans/QA-INVEST-2-ballast-proposal.md`, `REVIEW-INBOX.md`).
 **Date:** 2026-10-12.
 
 ---
