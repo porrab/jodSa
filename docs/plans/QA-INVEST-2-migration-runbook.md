@@ -1,11 +1,14 @@
 # QA-INVEST-2 Migration Runbook: 0010_invest_ballast_sleeve.sql
 
-**Status:** Authored for review — no live apply without separate owner authorization.
+**Status:** Owner-authorized live apply completed on 2026-10-18. See
+`QA-INVEST-2-live-migration-2026-10-18.md` for execution and preservation evidence.
+The source-derived expectations below remain the reusable runbook, not a second
+authorization to execute or roll back.
 **File:** `db/migrations/0010_invest_ballast_sleeve.sql`
 **Scope:** Expands `public.holdings.sleeve` CHECK from `core|satellite|risk_capital` to
 `core|ballast|satellite|risk_capital`. No rows updated. No backfill.
 
-> **Production facts unverified.** All constraint names, policy definitions, grant lists,
+> **Historical authoring note (superseded by the live record above).** All constraint names, policy definitions, grant lists,
 > index names, and foreign key names shown in the preflight queries below are expected
 > values derived from reading `db/migrations/0008_invest_holdings.sql`. They have not
 > been confirmed against the live Supabase instance. The preflight queries must be run
@@ -383,7 +386,7 @@ Use a forward fix or compatible application rollback that retains ballast suppor
 
 ## 5. Production status
 
-Production database facts are **unverified**. This runbook was authored by reading only
+At original authoring, production database facts were **unverified**. This runbook was authored by reading only
 the migration source files (`db/migrations/0008_invest_holdings.sql`,
 `db/migrations/0009_invest_plans.sql`) and the proposal
 (`docs/plans/QA-INVEST-2-ballast-proposal.md`). No live Supabase instance, no owner
