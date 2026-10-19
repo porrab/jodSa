@@ -50,8 +50,10 @@ test.beforeEach(async () => {
 })
 
 test.afterAll(async () => {
-  if (clientA) await clientA.auth.signOut()
-  if (clientB) await clientB.auth.signOut()
+  // Revoke only these API sessions; global sign-out also revokes the setup
+  // browser sessions shared by the investment specs that run after this file.
+  if (clientA) await clientA.auth.signOut({ scope: 'local' })
+  if (clientB) await clientB.auth.signOut({ scope: 'local' })
 })
 
 const copy = {
