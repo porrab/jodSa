@@ -61,8 +61,19 @@ content capped at `max-w-4xl` (896 px) centred in a 1216 px main, ~340 px idle g
 stretched (quick-add type buttons 260 px each). That is the known v5 desktop gap, not a DS-1 fix.
 
 ## [OWNER-FB-20261003] Owner usability feedback batch — 2026-10-03 · from owner (via fin-desk session)
-**Status**: PARKED — **do not start yet.** The owner wants these collected and built **together in one
-session**, on their go-ahead. Product calls (layout, wording) belong to the owner / design-studio before build.
+**Status**: UNPARKED 2026-10-20 by the owner — **design first, then build.** Product calls (layout,
+wording) belong to the owner / design-studio before build. Dev: do **not** start the Phase A items until the
+design-studio addendum in `idea-forge/ideas/jodsa/docs/07-design.md` is owner-confirmed and this line says so.
+
+Phasing (2026-10-20):
+- **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
+  "ลงทุน" cash-to-holding gap below. Brief target: a dated OWNER-FB revision section in
+  `idea-forge/ideas/jodsa/docs/07-design.md`, with the open owner decisions listed.
+- **Phase B — defects, no screen design needed:** #2 (invest date shows next day — the `5a74ed7` review
+  record) and the `/budgets` 6-month chart showing 0. Reproduce and fix with a failing test first; may run in
+  parallel with Phase A design.
+- **Phase C — architecture plan before any build:** #11 REST `app/api/v1` + personal access tokens. Needs a
+  written plan (shared service layer vs. UI on REST, token storage/revocation, RLS) reviewed before code.
 
 Verbatim (Thai), with a one-line reading of each:
 1. ปุ่มบันทึกรายจ่ายด้วยสลิป — ถ้าหายาก ควรอยู่ตรงปุ่ม "+" แบบกรอกปกติด้วย → put slip-upload next to the normal "+ add" entry.
