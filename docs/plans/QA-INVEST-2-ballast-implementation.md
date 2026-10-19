@@ -1,6 +1,6 @@
 # QA-INVEST-2: Ballast Sleeve Runtime Implementation Report
 
-**Status:** Runtime implemented; offline gates pass. Migration review, live persistence/isolation and browser acceptance remain incomplete.
+**Status (updated 2026-10-20):** Runtime implemented; owner-authorized migration applied with preservation checks; QA GREEN `757ef83` and independent PM APPROVED `33bff60` for code/spec and targeted behavior. Deployment and owner edits remain unverified.
 **Specification:** SPEC-6 (`docs/plans/QA-INVEST-2-ballast-proposal.md`, `REVIEW-INBOX.md`).
 **Date:** 2026-10-12.
 
@@ -12,7 +12,7 @@ The bounded, owner-approved SPEC-6 runtime implementation adds `ballast` as the 
 
 The sleeve taxonomy represents the portfolio role assigned by the user to stabilize the portfolio. It is strictly reporting-only and is orthogonal to asset-class allocation drift, look-through concentration, stress testing, and recommendation generation.
 
-All implementation changes are strictly confined to the local application runtime and unit test suite. No database mutations, SQL migrations, deployments, or browser E2E runs were performed.
+At original runtime authoring on 2026-10-12, no database mutation or browser run was performed. Subsequent separately authorized migration and independent acceptance are recorded in section 4 below; deployment and owner reclassification are outside that evidence.
 
 ---
 
@@ -79,7 +79,7 @@ All implementation changes are strictly confined to the local application runtim
       </div>
     )}
     ```
-  - The source guards missing sleeve buckets. Legacy snapshot rendering remains unverified until actual browser acceptance runs.
+  - The source guards missing sleeve buckets. Subsequent real historical/new snapshot browser acceptance passed; see section 4.
 - **`app/actions/invest/holdings.ts`**:
   - Verified no changes needed: existing authenticated Server Actions correctly validate against the updated schemas and persist all 4 sleeve values.
 
@@ -123,18 +123,12 @@ All implementation changes are strictly confined to the local application runtim
 
 ---
 
-## 4. Boundaries & Unverified Scope
+## 4. Final acceptance and boundaries (2026-10-20)
 
-Parent verification on 2026-10-14: full Vitest 327 passed / 34 live-RLS skipped, TypeScript exit 0, lint exit 0. Exact observed commands and read-only schema metadata are in `project/jodsa/docs/plans/QA-INVEST-2-offline-gates-2026-10-14.md` (workspace-root-relative). Initial independent SQL review was STATIC RED and requires correction/recheck before live-apply approval.
+- Exact SQL 0010 was separately owner-authorized and committed on 2026-10-18 with unchanged holding contents/count and schema/security metadata. See QA-INVEST-2-live-migration-2026-10-18.md.
+- Independent QA report and sanitized run summary: qa-lab commit 757ef83, workspace path qa-lab/projects/jodsa/runs/QA-SPEC6-ballast-live-2026-10-19.md. Actual final runtime exit 0: 33/33 entries (32 behavior cases + setup), zero skipped, unexpected or flaky. Full unit suite: 327 passed / 34 API-level live-RLS skipped; typecheck and lint exit 0.
+- Independent PM code/spec and targeted behavioral acceptance: APPROVED, pm-desk commit 33bff60, workspace path pm-desk/projects/jodsa/reviews/SPEC-6-ballast-review-2026-10-20.md.
+- QA corrected only global-to-local sign-out in test teardown (cd87d9a), then the whole targeted suite passed; no assertion weakening or app-code change was used.
+- Post-mortem: docs/postmortems/QA-INVEST-2-ballast-classification.md.
 
-In accordance with strict operational boundaries:
-1. **Live Database Migration Unapplied:**
-   - Migration file `db/migrations/0010_invest_ballast_sleeve.sql` and runbook `docs/plans/QA-INVEST-2-migration-runbook.md` were authored previously.
-   - **No migration was executed** against any live or test Supabase instance.
-   - Live apply requires explicit owner authorization following the runbook preflight steps.
-2. **No E2E / Browser Tests:**
-   - Playwright browser tests were not executed to avoid unverified environment side effects.
-3. **No QA / Review Artifact Modifications:**
-   - `REVIEW-INBOX.md` and `tests/e2e/review-20261010.spec.ts` were untouched.
-4. **Publication boundary:**
-   - The parent is preserving the candidate on `codex/ballast-review-20261018` for review. Publishing the review branch does not authorize production SQL or deploying ballast writes. Independent acceptance and owner authorization remain required.
+Production build/deployment, owner portfolio/reclassification, separate DB NULL/unknown/default DML probes and saved historical-plan before/after browser comparison were not executed. Historical plans are protected by unchanged source/write contracts; do not label that a browser mutation test. The broad expense/slip/trip suite was outside this review. No automatic SGOV backfill or planner algorithm change occurred.

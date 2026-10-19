@@ -17,22 +17,24 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [SPEC-6] Ballast sleeve: classification and reporting — 2026-10-10
 **From:** idea-forge
-**Status:** OPEN — owner approved implementation 2026-10-10; exact live migration requires separate authorization.
+**Status:** RESOLVED — 2026-10-20: implementation `8b16f02`, applied owner-authorized SQL 0010, independent QA GREEN `757ef83` and PM APPROVED `33bff60`. Acceptance covers code and targeted behavior; deployment and owner reclassification are not certified.
 **Related:** QA-INVEST-2.
 
 ### Approved change
-- [ ] Extend `holdings.sleeve` to `core|ballast|satellite|risk_capital`; preserve default core, legacy labels and risk-capital warnings.
-- [ ] Add Ballast / ตัวถ่วง (Ballast), portfolio-role wording and contextual helper to create/edit forms, badges, allocation and snapshots.
-- [ ] Hand-author the next CHECK-constraint migration and align schema metadata, Supabase types and Zod validation. Preserve rows, policies, grants, defaults and NOT NULL; no automatic backfill.
-- [ ] Reclassify only through explicit authenticated user edits; preserve broker, ledger, quantities, valuation, FX, cost and P&L. Historical snapshots and plans remain unchanged.
-- [ ] Verify four-value validation/persistence, 60/20/10/10 allocation, same-asset/different-sleeve grouping, old/new snapshots, Thai/English create-edit-reload and live two-user isolation. Coordinate with QA-INVEST-1 valuation fixes.
+- [x] Extend `holdings.sleeve` to `core|ballast|satellite|risk_capital`; preserve default core, legacy labels and risk-capital warnings.
+- [x] Add Ballast / ตัวถ่วง (Ballast), portfolio-role wording and contextual helper to create/edit forms, badges, allocation and snapshots.
+- [x] Hand-author the next CHECK-constraint migration and align schema metadata, Supabase types and Zod validation. Preserve rows, policies, grants, defaults and NOT NULL; no automatic backfill.
+- [x] Reclassify only through explicit authenticated user edits; preserve broker, ledger, quantities, valuation, FX, cost and P&L. Historical snapshots and plans remain unchanged.
+- [x] Verify four-value validation/persistence, 60/20/10/10 allocation, same-asset/different-sleeve grouping, old/new snapshots, Thai/English create-edit-reload and live two-user isolation. Coordinate with QA-INVEST-1 valuation fixes.
+
+**Closure evidence:** `qa-lab/projects/jodsa/runs/QA-SPEC6-ballast-live-2026-10-19.md` and sanitized summary: 32 behavior cases + setup passed, zero skips/failures/flakes; 327 unit tests passed / 34 API-level live-RLS tests skipped, typecheck/lint exit 0. `pm-desk/projects/jodsa/reviews/SPEC-6-ballast-review-2026-10-20.md` independently approves code/spec and targeted behavior. Paths are workspace-root-relative. Post-mortem: `project/jodsa/docs/postmortems/QA-INVEST-2-ballast-classification.md`. Separate DB NULL/unknown/default DML probes, production build/deployment and owner edits were not run; historical-plan preservation is source-contract evidence, not a browser before/after comparison.
 
 ### Planner boundary and rollout
 The actual field is `sleeve`, not `risk_group`. M5 drift is asset-class-based. Changing core to ballast alone must preserve drift, concentration, stress, risk-capital percentage, suggestions and verdict; missing proxy classification still blocks planning. Sleeve targets, new recommendations and OCR remain out of scope.
 
 **Authority:** `idea-forge` commit `6e49465`; `idea-forge/ideas/jodsa-investments/README.md` Changelog 2026-10-10, `idea-forge/ideas/jodsa-investments/docs/02-architecture.md`, and `idea-forge/ideas/jodsa-investments/docs/04-roadmap.md`.
 **Implementation seams:** `project/jodsa/docs/plans/QA-INVEST-2-ballast-proposal.md`.
-Product/model approval is recorded. Test in non-production first; exact live SQL still needs owner authorization before application. Apply approved migration before enabling ballast writes. Independent qa-lab/pm-desk verification is required; skipped live checks must be reported.
+Product/model approval is recorded. Exact SQL 0010 was separately authorized and applied on 2026-10-18 before live ballast QA writes; see `docs/plans/QA-INVEST-2-live-migration-2026-10-18.md`. Independent qa-lab/pm-desk verification is required; skipped live checks must be reported.
 
 ## [DS-1] Motion: focus ring fades in · progress bars animate `width` — 2026-10-04 · from design-studio
 **From:** design-studio · **Status**: RESOLVED — 2026-10-12 sync: implemented in `project/jodsa` commit `e6ff4cb`; independent qa-lab GREEN at `ff94715`.
@@ -103,7 +105,14 @@ Related observation (fin-desk monthly review 2026-10-01, not owner-reported): th
 whether it is a query or a render defect — check while in this batch.
 
 ## [QA-INVEST-2] No ballast/defensive risk group — sleeve plan cannot be tracked — 2026-09-09 · from owner session
-**Status**: OPEN — hit while recording the owner's real VT + SGOV purchases on prod.
+**Status**: RESOLVED — 2026-10-20, under approved SPEC-6; QA GREEN `757ef83`, PM APPROVED `33bff60`. No owner SGOV holding was backfilled or reclassified. Original report arose while recording real VT + SGOV purchases.
+
+**2026-10-18 implementation update:** the original diagnosis below is retained as
+historical context. The actual field is `sleeve`, and the existing planner computes
+drift by asset class, not sleeve. SPEC-6 governs the approved reporting-only
+fourth value. SQL 0010 is now applied with unchanged owner rows and security
+metadata; browser acceptance subsequently passed and PM approved on 2026-10-20.
+No SGOV backfill was performed.
 
 **What's missing.** `risk_group` offers exactly three values (`db/schema.ts`, surfaced in the
 add-holding dialog): `core` / `satellite` / `risk_capital`. The owner's standing allocation plan
