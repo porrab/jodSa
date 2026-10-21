@@ -45,6 +45,9 @@ export default function HomeTodayList({
   const [detailTx, setDetailTx] = useState<Transaction | null>(null)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
   const { pending } = usePendingTx()
+  const todayExpense = transactions
+    .filter((tx) => tx.type === 'expense')
+    .reduce((sum, tx) => sum + tx.amount_satang, 0)
 
   return (
     <div className="space-y-2">
@@ -52,8 +55,13 @@ export default function HomeTodayList({
           36px → 14px with nothing between, and four different ranks all shared
           `muted-foreground`. A heading is `foreground` at the 16px base tier;
           `muted-foreground` + 14px is reserved for genuinely secondary text. */}
-      <h2 className="text-base font-semibold">
-        {t('todayTransactions', { count: transactions.length + pending.length })}
+      <h2 className="flex flex-wrap items-baseline gap-x-1.5 text-base font-semibold">
+        <span>{t('todayTransactions', { count: transactions.length + pending.length })}</span>
+        {todayExpense > 0 && (
+          <span className="text-sm font-normal text-muted-foreground">
+            · {t('todaySpent', { amount: formatTHB(todayExpense) })}
+          </span>
+        )}
       </h2>
 
       {transactions.length === 0 && pending.length === 0 ? (

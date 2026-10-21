@@ -69,6 +69,7 @@
     "save": "Save Transaction",
     "today": "Today",
     "yesterday": "Yesterday",
+    "dailySpent": "Spent {amount}",
     "recurringBadge": "From a recurring rule",
     "edit": "Edit",
     "deleteAction": "Delete transaction",
@@ -359,6 +360,7 @@
     "monthExpenseLine": "Spent this month {amount}",
     "budgetRemainingLine": "budget left {amount}",
     "todayTransactions": "Today ({count})",
+    "todaySpent": "spent {amount}",
     "noTransactionsToday": "Nothing logged today yet",
     "pendingSave": "Saving…"
   },

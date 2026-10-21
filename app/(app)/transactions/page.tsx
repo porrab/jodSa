@@ -58,6 +58,7 @@ export default async function TransactionsPage() {
       <h1 className="text-2xl font-bold">{t('title')}</h1>
       <TransactionsClient
         transactions={transactions ?? []}
+        lastDayMayBePartial={(transactions?.length ?? 0) === 200}
         accounts={accounts ?? []}
         groups={groups ?? []}
         lastByCategory={lastByCategory}

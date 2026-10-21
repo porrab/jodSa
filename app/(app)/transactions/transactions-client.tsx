@@ -35,12 +35,14 @@ type Group = { id: string; title: string }
 
 export default function TransactionsClient({
   transactions,
+  lastDayMayBePartial,
   accounts,
   groups = [],
   lastByCategory,
   globalLastAccountId,
 }: {
   transactions: Transaction[]
+  lastDayMayBePartial: boolean
   accounts: Account[]
   groups?: Group[]
   lastByCategory: LastAccountMap
@@ -67,19 +69,29 @@ export default function TransactionsClient({
   const yesterdayKey = bangkokDayKey(new Date(Date.now() - 86_400_000).toISOString())
 
   function dayLabel(key: string, sampleIso: string): string {
-    if (key === todayKey) return t('today')
-    if (key === yesterdayKey) return t('yesterday')
-    return format(new Date(sampleIso), 'EEE d MMM yyyy', { locale: dateLocale })
+    const date = format(new Date(sampleIso), 'EEE d MMM yyyy', { locale: dateLocale })
+    if (key === todayKey) return `${t('today')} · ${date}`
+    if (key === yesterdayKey) return `${t('yesterday')} · ${date}`
+    return date
   }
 
   // Transactions arrive already sorted datetime-desc, so walking them keeps each
   // day's rows contiguous — collect them into ordered day groups.
-  const dayGroups: { key: string; label: string; items: Transaction[] }[] = []
+  const dayGroups: { key: string; label: string; items: Transaction[]; expenseTotal: number }[] = []
   for (const tx of filteredTransactions) {
     const key = bangkokDayKey(tx.datetime)
     const last = dayGroups[dayGroups.length - 1]
-    if (last && last.key === key) last.items.push(tx)
-    else dayGroups.push({ key, label: dayLabel(key, tx.datetime), items: [tx] })
+    if (last && last.key === key) {
+      last.items.push(tx)
+      if (tx.type === 'expense') last.expenseTotal += tx.amount_satang
+    } else {
+      dayGroups.push({
+        key,
+        label: dayLabel(key, tx.datetime),
+        items: [tx],
+        expenseTotal: tx.type === 'expense' ? tx.amount_satang : 0,
+      })
+    }
   }
 
   return (
@@ -135,14 +147,17 @@ export default function TransactionsClient({
         </div>
       ) : (
         <div className="space-y-4">
-          {dayGroups.map((group) => (
+          {dayGroups.map((group, groupIndex) => (
             <div key={group.key}>
               {/* Day header — sticks under the top bar while its rows scroll.
                   Flat bg (no blur-behind-text — design v3 anti-pattern). */}
-              <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-background px-1 py-1">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {group.label}
-                </h2>
+              <div className="sticky top-0 z-10 -mx-1 mb-1.5 flex items-center justify-between gap-3 bg-background px-1 py-1">
+                <h2 className="text-sm font-semibold text-foreground">{group.label}</h2>
+                {group.expenseTotal > 0 && !(lastDayMayBePartial && groupIndex === dayGroups.length - 1) && (
+                  <p className="shrink-0 text-sm text-muted-foreground">
+                    {t('dailySpent', { amount: formatTHB(group.expenseTotal) })}
+                  </p>
+                )}
               </div>
               <div className="rounded-lg border divide-y">
                 {group.items.map((tx) => {

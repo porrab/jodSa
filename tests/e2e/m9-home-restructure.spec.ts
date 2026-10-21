@@ -47,12 +47,21 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   // Today's transactions section present with the seeded item.
   await expect(page.getByText('รายการวันนี้', { exact: false })).toBeVisible()
   await expect(page.locator('body')).toContainText('500.00')
+  await expect(page.getByRole('heading', { name: /รายการวันนี้ \(1\).*จ่าย.*500\.00/ })).toBeVisible()
 
   // NO chart on Home — this is the acceptance criterion. No Recharts DOM at all,
   // and the 6-month chart heading is absent from /dashboard.
   await expect(page.locator('[class*="recharts"]')).toHaveCount(0)
   await expect(page.getByText('รายรับ/รายจ่าย 6 เดือนล่าสุด')).toHaveCount(0)
   await expect(page.locator('svg.recharts-surface')).toHaveCount(0)
+})
+
+test('OWNER-FB B3 transaction day header shows expense-only daily total', async ({ page }) => {
+  await page.goto('/transactions')
+  await page.waitForLoadState('networkidle')
+
+  await expect(page.getByRole('heading', { name: /วันนี้/ })).toBeVisible()
+  await expect(page.getByText('จ่าย ฿500.00', { exact: true })).toBeVisible()
 })
 
 test('M9-home-2 the 6-month chart renders under งบ → ภาพรวม (lazy), not before', async ({ page }) => {

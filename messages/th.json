@@ -69,6 +69,7 @@
     "save": "บันทึกรายการ",
     "today": "วันนี้",
     "yesterday": "เมื่อวาน",
+    "dailySpent": "จ่าย {amount}",
     "recurringBadge": "จากรายการประจำ",
     "edit": "แก้ไข",
     "deleteAction": "ลบรายการ",
@@ -359,6 +360,7 @@
     "monthExpenseLine": "เดือนนี้ใช้ไป {amount}",
     "budgetRemainingLine": "งบเหลือ {amount}",
     "todayTransactions": "รายการวันนี้ ({count})",
+    "todaySpent": "จ่าย {amount}",
     "noTransactionsToday": "ยังไม่มีรายการวันนี้",
     "pendingSave": "กำลังบันทึก…"
   },
