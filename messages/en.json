@@ -22,7 +22,13 @@
     "expense": "Expense",
     "transfer": "Transfer",
     "scan": "Scan slip",
-    "save": "Save"
+    "save": "Save",
+    "modeLabel": "Transaction entry method",
+    "manualMode": "Manual",
+    "slipMode": "Slip",
+    "discardWarning": "{count} slips are not saved yet — closing means you will need to pick them again",
+    "keepEditing": "Keep working",
+    "discard": "Discard and close"
   },
   "auth": {
     "email": "Email",
@@ -606,7 +612,25 @@
     "batchReviewHint": "Review each slip then save or skip",
     "batchDone": "All done — view transactions",
     "batchParseFailed": "Could not read this slip",
-    "batchParseFailedHint": "The image was unclear or is not a supported bank slip"
+    "batchParseFailedHint": "The image was unclear or is not a supported bank slip",
+    "queueHeader": "{count} slips · {read}/{count} read",
+    "queueLongWait": "This may take several minutes",
+    "queueAdd": "Add slips",
+    "queueDuplicate": "possible duplicate",
+    "queueReplace": "Pick another image",
+    "queueManual": "Enter manually",
+    "queueBack": "Slip list ({count})",
+    "queueSaveReady": "Save all ready slips ({count})",
+    "queueReviewRemaining": "Review remaining slips ({count})",
+    "queueItemA11y": "Slip {index}, {status}, {amount}, {duplicate}",
+    "queueStatus_pending": "Queued",
+    "queueStatus_parsing": "Reading",
+    "queueStatus_ready": "Ready",
+    "queueStatus_review": "Review needed",
+    "queueStatus_error": "Could not read",
+    "queueStatus_saving": "Saving",
+    "queueStatus_saved": "Saved",
+    "queueStatus_save_error": "Save failed · try again"
   },
   "pay": {
     "amountInvalid": "Invalid amount",

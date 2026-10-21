@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Seed the global quick-add sheet:
   //   • accounts list → fills the account picker
   //   • lastByCategory / globalLastAccountId → drives the per-category default
-  const [{ data: accounts }, { data: history }] = await Promise.all([
+  const [{ data: accounts }, { data: history }, { data: profile }] = await Promise.all([
     supabase.from('accounts').select('*').order('created_at'),
     supabase
       .from('transactions')
@@ -20,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .in('type', ['income', 'expense'])
       .order('datetime', { ascending: false })
       .limit(500),
+    supabase.from('users').select('display_name').eq('id', user.id).single(),
   ])
 
   return (
@@ -27,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       accounts={accounts ?? []}
       lastByCategory={buildLastAccountMap(history ?? [])}
       globalLastAccountId={history?.[0]?.account_id ?? null}
+      displayName={profile?.display_name ?? null}
     >
       {children}
     </AppShell>

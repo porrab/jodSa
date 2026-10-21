@@ -88,10 +88,10 @@ test('M2-S3 re-importing the same readable-QR slip is rejected', async ({ page }
   await importSlip(page, SLIP_A) // same ref_code as the row saved in M2-S1
   await confirmButton(page).click()
 
-  await expect(page.getByText('รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/อาจซ้ำกับ:/)).toBeVisible({ timeout: 30_000 })
 
   await page.goto('/transactions')
-  await expect(page.getByText('฿1,250.00')).toHaveCount(1) // still exactly one row
+  await expect(page.getByRole('button', { name: /SOMCHAI.*1,250\.00/ })).toHaveCount(1) // still exactly one row
 })
 
 test('M2-S4 null-ref near-duplicate triggers soft warning (cancel and proceed)', async ({ page }) => {
@@ -110,7 +110,7 @@ test('M2-S4 null-ref near-duplicate triggers soft warning (cancel and proceed)',
   await expect(page.getByText('พบรายการที่คล้ายกัน')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: 'ยกเลิก' }).click()
   await page.goto('/transactions')
-  await expect(page.getByText('฿777.25')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /777\.25/ })).toHaveCount(1)
 
   // third import: proceeding past the warning is allowed (soft, not hard block)
   await importSlip(page, SLIP_NOQR)
@@ -118,5 +118,5 @@ test('M2-S4 null-ref near-duplicate triggers soft warning (cancel and proceed)',
   await expect(page.getByText('พบรายการที่คล้ายกัน')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: 'บันทึกต่อ' }).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
-  await expect(page.getByText('฿777.25')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: /777\.25/ })).toHaveCount(2)
 })

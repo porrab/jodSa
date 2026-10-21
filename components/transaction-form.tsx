@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ArrowUpDown } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
@@ -21,10 +21,10 @@ import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import InlineCreateAccount from '@/components/inline-create-account'
 import AccountGrid from '@/components/account-grid'
-import { createClient } from '@/lib/supabase/client'
+import { useAccountBalances } from '@/lib/use-account-balances'
 import type { Database } from '@/lib/supabase/types'
 
-type Account = Database['public']['Tables']['accounts']['Row']
+type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'bank'>
 type TxType = 'income' | 'expense' | 'transfer'
 
 const TYPE_ACTIVE_CLS: Record<TxType, string> = {
@@ -41,6 +41,8 @@ export default function TransactionForm({
   globalLastAccountId = null,
   editId,
   optimistic = false,
+  stickySubmit = false,
+  idPrefix = 'transaction',
 }: {
   accounts: Account[]
   onSuccess?: () => void
@@ -74,6 +76,8 @@ export default function TransactionForm({
    * there, so that collision cannot fire.
    */
   optimistic?: boolean
+  stickySubmit?: boolean
+  idPrefix?: string
 }) {
   const t = useTranslations('transaction')
   const pendingTx = usePendingTx()
@@ -94,22 +98,7 @@ export default function TransactionForm({
   const [accountTouched, setAccountTouched] = useState(false)
   const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
   const [category, setCategory] = useState(defaultValues?.category ?? '')
-  const [balances, setBalances] = useState<Record<string, number>>({})
-  const [balancesLoading, setBalancesLoading] = useState(accounts.length > 0)
-
-  useEffect(() => {
-    if (accounts.length === 0) return
-    let active = true
-    const supabase = createClient()
-    void supabase.rpc('account_balances').then(({ data, error }) => {
-      if (!active) return
-      if (!error) {
-        setBalances(Object.fromEntries((data ?? []).map((row) => [row.account_id, row.balance_satang])))
-      }
-      setBalancesLoading(false)
-    })
-    return () => { active = false }
-  }, [accounts])
+  const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
 
   function handleAccountChange(id: string) {
     setAccountId(id)
@@ -249,11 +238,11 @@ export default function TransactionForm({
 
       {/* Amount — hero input: ฿ prefix + large tabular-nums (design 07) */}
       <div className="space-y-1">
-        <Label htmlFor="amount">{t('amount')} <RequiredMark /></Label>
+        <Label htmlFor={`${idPrefix}-amount`}>{t('amount')} <RequiredMark /></Label>
         <div className="flex items-center gap-2 rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
           <span className="select-none text-2xl font-semibold tabular-nums text-muted-foreground">฿</span>
           <Input
-            id="amount"
+            id={`${idPrefix}-amount`}
             name="amount"
             type="text"
             inputMode="decimal"
@@ -344,9 +333,9 @@ export default function TransactionForm({
       {/* Counterparty (non-transfer) */}
       {type !== 'transfer' && (
         <div className="space-y-1">
-          <Label htmlFor="counterparty">{t('counterpartyOptional')}</Label>
+          <Label htmlFor={`${idPrefix}-counterparty`}>{t('counterpartyOptional')}</Label>
           <Input
-            id="counterparty"
+            id={`${idPrefix}-counterparty`}
             name="counterparty"
             placeholder={t('counterpartyPlaceholder')}
             defaultValue={defaultValues?.counterparty}
@@ -356,9 +345,9 @@ export default function TransactionForm({
 
       {/* Datetime */}
       <div className="space-y-1">
-        <Label htmlFor="datetime">{t('date')} <RequiredMark /></Label>
+        <Label htmlFor={`${idPrefix}-datetime`}>{t('date')} <RequiredMark /></Label>
         <Input
-          id="datetime"
+          id={`${idPrefix}-datetime`}
           name="datetime"
           type="datetime-local"
           defaultValue={defaultValues?.datetime ?? localISO}
@@ -368,7 +357,7 @@ export default function TransactionForm({
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className={cn('w-full', stickySubmit && 'sticky bottom-0 z-10 shadow-lg')} disabled={isPending}>
         {isPending ? t('saving') : t('save')}
       </Button>
     </form>

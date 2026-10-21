@@ -23,6 +23,8 @@ import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
 import InlineCreateAccount from '@/components/inline-create-account'
+import AccountGrid from '@/components/account-grid'
+import { useAccountBalances } from '@/lib/use-account-balances'
 import type { ParsedSlip } from '@/lib/slip/types'
 
 interface Account {
@@ -39,6 +41,7 @@ interface Props {
   globalLastAccountId?: string | null
   onBack: () => void
   onSuccess: () => void
+  stickySubmit?: boolean
 }
 
 const LOW_CONFIDENCE = 0.7
@@ -66,6 +69,7 @@ export default function SlipConfirmForm({
   globalLastAccountId = null,
   onBack,
   onSuccess,
+  stickySubmit = false,
 }: Props) {
   const t = useTranslations('slip')
   const locale = useLocale()
@@ -108,6 +112,7 @@ export default function SlipConfirmForm({
   const [accountTouched, setAccountTouched] = useState(false)
   const accountTouchedRef = useRef(false)
   const [category, setCategory] = useState('')
+  const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
 
   // M8 top precedence tier: has this exact slip fingerprint been confirmed/corrected
   // to an account before? Runs once; only overrides the account if the user hasn't
@@ -388,18 +393,14 @@ export default function SlipConfirmForm({
             // a dead-end message with no way out.
             <InlineCreateAccount hint={t('noAccounts')} onCreated={handleAccountChange} />
           ) : (
-            <Select value={accountId} onValueChange={handleAccountChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name} ({a.bank})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AccountGrid
+              accounts={accounts}
+              value={accountId}
+              onValueChange={handleAccountChange}
+              balances={balances}
+              balancesLoading={balancesLoading}
+              label={t('account')}
+            />
           )}
         </div>
 
@@ -469,7 +470,7 @@ export default function SlipConfirmForm({
 
         <Button
           type="submit"
-          className="w-full"
+          className={stickySubmit ? 'sticky bottom-0 z-10 w-full shadow-lg' : 'w-full'}
           disabled={loading || accounts.length === 0 || !datetimeISO}
         >
           {loading ? t('saving') : t('confirmAndSave')}

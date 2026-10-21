@@ -22,7 +22,13 @@
     "expense": "จ่าย",
     "transfer": "โอน",
     "scan": "สแกนสลิป",
-    "save": "บันทึก"
+    "save": "บันทึก",
+    "modeLabel": "วิธีบันทึกรายการ",
+    "manualMode": "กรอกเอง",
+    "slipMode": "สลิป",
+    "discardWarning": "ยังมีสลิปที่ยังไม่บันทึก {count} ใบ — ปิดแล้วจะต้องเลือกรูปใหม่",
+    "keepEditing": "กลับไปบันทึก",
+    "discard": "ปิดทิ้ง"
   },
   "auth": {
     "email": "อีเมล",
@@ -606,7 +612,25 @@
     "batchReviewHint": "ตรวจสอบแต่ละสลิปแล้วบันทึกหรือข้าม",
     "batchDone": "เสร็จสิ้น — ดูรายการ",
     "batchParseFailed": "อ่านสลิปไม่ได้",
-    "batchParseFailedHint": "ภาพไม่ชัดหรือไม่ใช่สลิปธนาคารที่รองรับ"
+    "batchParseFailedHint": "ภาพไม่ชัดหรือไม่ใช่สลิปธนาคารที่รองรับ",
+    "queueHeader": "สลิป {count} ใบ · อ่านแล้ว {read}/{count}",
+    "queueLongWait": "อาจใช้เวลาหลายนาที",
+    "queueAdd": "เพิ่มสลิป",
+    "queueDuplicate": "อาจซ้ำ",
+    "queueReplace": "เลือกรูปใหม่",
+    "queueManual": "กรอกเอง",
+    "queueBack": "รายการสลิป ({count})",
+    "queueSaveReady": "บันทึกที่พร้อมแล้วทั้งหมด ({count})",
+    "queueReviewRemaining": "ตรวจสลิปที่เหลือ ({count})",
+    "queueItemA11y": "สลิป {index}, {status}, {amount}, {duplicate}",
+    "queueStatus_pending": "รอคิว",
+    "queueStatus_parsing": "กำลังอ่าน",
+    "queueStatus_ready": "พร้อม",
+    "queueStatus_review": "ตรวจก่อน",
+    "queueStatus_error": "อ่านไม่ได้",
+    "queueStatus_saving": "กำลังบันทึก",
+    "queueStatus_saved": "บันทึกแล้ว",
+    "queueStatus_save_error": "บันทึกไม่สำเร็จ · ลองอีกครั้ง"
   },
   "pay": {
     "amountInvalid": "จำนวนเงินไม่ถูกต้อง",

@@ -12,7 +12,7 @@ import { findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
  * the very first account create. The global empty-source rule is implemented by
  * `components/inline-create-account.tsx` (button label account.createInline
  * "+ สร้างบัญชี"); it replaces the Select wherever accounts.length === 0 in
- * transaction-form / slip-confirm-form / batch-slip-card / recurring-form (M9-1).
+ * transaction-form / slip-confirm-form / slip-queue / recurring-form (M9-1).
  *
  * Order-independence (heeds QA-M7-H1): every test resets user A to a known state
  * in-body before navigating, so a consolidated run is not order-flaky.

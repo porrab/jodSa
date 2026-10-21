@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/supabase/types'
 
-type Account = Database['public']['Tables']['accounts']['Row']
+type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'bank'>
 
 export default function AccountGrid({
   accounts,

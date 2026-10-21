@@ -18,7 +18,12 @@ export type TxFormValues = Partial<{
   bank_code: string
 }>
 
-export type QuickAddPrefill = TxFormValues
+export type QuickAddPrefill = TxFormValues & Partial<{
+  mode: 'manual' | 'slip'
+  files: File[]
+  date: string
+  accountId: string
+}>
 
 /** What `<input type="datetime-local">` will actually accept. */
 const DATETIME_LOCAL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/

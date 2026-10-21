@@ -9,10 +9,6 @@ import { format } from 'date-fns'
 import { th, enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog'
-import TransactionForm from '@/components/transaction-form'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { formatTHB } from '@/lib/money'
 import {
@@ -21,6 +17,7 @@ import {
 } from '@/components/transaction-type-indicator'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
+import { openQuickAdd } from '@/lib/quick-add'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -51,7 +48,6 @@ export default function TransactionsClient({
   const t = useTranslations('transaction')
   const locale = useLocale()
   const dateLocale = locale === 'th' ? th : enUS
-  const [addOpen, setAddOpen] = useState(false)
   const [detailTx, setDetailTx] = useState<Transaction | null>(null)
   // M3 "groups" left the nav in the design v3 reset (J5) — existing grouped
   // data stays reachable as a filter chip here instead of its own nav item.
@@ -96,20 +92,7 @@ export default function TransactionsClient({
 
   return (
     <div className="space-y-4">
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
-        </DialogTrigger>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
-          <TransactionForm
-            accounts={accounts}
-            lastByCategory={lastByCategory}
-            globalLastAccountId={globalLastAccountId}
-            onSuccess={() => setAddOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <Button onClick={() => openQuickAdd()}><Plus className="size-4 mr-2" />{t('add')}</Button>
 
       {groups.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

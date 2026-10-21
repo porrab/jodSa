@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -25,10 +24,17 @@ export default function QuickAddCard() {
   const t = useTranslations('quickAdd')
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<TxType>('expense')
+  const slipInputRef = useRef<HTMLInputElement>(null)
 
   function onSave() {
     openQuickAdd({ amount: amount || undefined, type })
     setAmount('')
+  }
+
+  function onSlipFiles(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    if (files.length > 0) openQuickAdd({ mode: 'slip', files })
   }
 
   return (
@@ -78,12 +84,11 @@ export default function QuickAddCard() {
         </div>
 
         <div className="flex gap-2 pt-1">
-          <Button asChild variant="outline" className="press flex-1">
-            <Link href="/import">
-              <Camera className="mr-2 size-4" />
-              {t('scan')}
-            </Link>
+          <Button type="button" variant="outline" className="press flex-1" onClick={() => slipInputRef.current?.click()}>
+            <Camera className="mr-2 size-4" />
+            {t('scan')}
           </Button>
+          <input ref={slipInputRef} type="file" accept="image/*" multiple className="sr-only" onChange={onSlipFiles} />
           <Button type="button" onClick={onSave} className="press flex-1">
             {t('save')}
           </Button>
