@@ -33,6 +33,15 @@ test.beforeAll(async () => {
   await resetAllUserData(userId)
   await resetInvestData(userId)
   const acct = await seedAccount(userId, 'เงินสด', 'KBank')
+  for (const [name, bank] of [
+    ['make', 'KBank'],
+    ['krungthai', 'KTB'],
+    ['Dime! Save', 'KKP'],
+    ['SCB', 'SCB'],
+    ['TrueMoney', 'TrueMoney'],
+  ] as const) {
+    await seedAccount(userId, name, bank)
+  }
   await seedBudget(userId, 1_000_000) // ฿10,000 overall month budget
   await seedTransaction(userId, acct, { type: 'expense', amountSatang: 50_000, category: 'food' }) // ฿500 today
   await seedInvestHolding(userId, {
@@ -111,6 +120,38 @@ test('OWNER-FB B3 transaction day header shows expense-only daily total', async 
 
   await expect(page.getByRole('heading', { name: /วันนี้/ })).toBeVisible()
   await expect(page.getByText('จ่าย ฿500.00', { exact: true })).toBeVisible()
+})
+
+test('OWNER-FB A2 AccountGrid exposes six stable balance tiles and dims the transfer source', async ({ page }) => {
+  await page.goto('/dashboard')
+  await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
+
+  const accountGrid = page.getByRole('radiogroup', { name: 'บัญชี', exact: true })
+  await expect(accountGrid).toBeVisible()
+  await expect(accountGrid.getByRole('radio')).toHaveCount(6)
+  const cashTile = accountGrid.getByRole('radio', { name: /เงินสด, KBank/ })
+  await expect(cashTile).toHaveAttribute('aria-checked', 'true')
+  await expect.poll(() => cashTile.getAttribute('aria-label')).toContain('500.00')
+  await expect(cashTile).not.toHaveAccessibleName(/กำลังโหลดยอด/)
+
+  const makeTile = accountGrid.getByRole('radio', { name: /make, KBank/ })
+  await makeTile.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(accountGrid.getByRole('radio', { name: /krungthai, KTB/ })).toBeFocused()
+
+  await page.getByRole('button', { name: 'โอนเงิน', exact: true }).click()
+  const fromGrid = page.getByRole('radiogroup', { name: 'บัญชีต้นทาง' })
+  const toGrid = page.getByRole('radiogroup', { name: 'บัญชีปลายทาง' })
+  await expect(fromGrid.getByRole('radio')).toHaveCount(6)
+  await expect(toGrid.getByRole('radio')).toHaveCount(6)
+  await expect(toGrid.getByRole('radio', { name: /เงินสด, KBank/ })).toHaveAttribute('aria-disabled', 'true')
+
+  await toGrid.getByRole('radio', { name: /make, KBank/ }).click()
+  const swap = page.getByRole('button', { name: 'สลับบัญชี' })
+  await expect(swap).toBeEnabled()
+  await swap.click()
+  await expect(fromGrid.getByRole('radio', { name: /make, KBank/ })).toHaveAttribute('aria-checked', 'true')
+  await expect(toGrid.getByRole('radio', { name: /เงินสด, KBank/ })).toHaveAttribute('aria-checked', 'true')
 })
 
 test('M9-home-2 the 6-month chart renders under งบ → ภาพรวม (lazy), not before', async ({ page }) => {

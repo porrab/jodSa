@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { ArrowUpDown } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,8 @@ import { parseInputToSatang } from '@/lib/money'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import InlineCreateAccount from '@/components/inline-create-account'
+import AccountGrid from '@/components/account-grid'
+import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
 
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -91,9 +94,33 @@ export default function TransactionForm({
   const [accountTouched, setAccountTouched] = useState(false)
   const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
   const [category, setCategory] = useState(defaultValues?.category ?? '')
+  const [balances, setBalances] = useState<Record<string, number>>({})
+  const [balancesLoading, setBalancesLoading] = useState(accounts.length > 0)
+
+  useEffect(() => {
+    if (accounts.length === 0) return
+    let active = true
+    const supabase = createClient()
+    void supabase.rpc('account_balances').then(({ data, error }) => {
+      if (!active) return
+      if (!error) {
+        setBalances(Object.fromEntries((data ?? []).map((row) => [row.account_id, row.balance_satang])))
+      }
+      setBalancesLoading(false)
+    })
+    return () => { active = false }
+  }, [accounts])
 
   function handleAccountChange(id: string) {
     setAccountId(id)
+    if (id === toAccountId) setToAccountId('')
+    setAccountTouched(true)
+  }
+
+  function swapAccounts() {
+    if (!accountId || !toAccountId) return
+    setAccountId(toAccountId)
+    setToAccountId(accountId)
     setAccountTouched(true)
   }
 
@@ -251,47 +278,50 @@ export default function TransactionForm({
             onCreated={(id) => { setAccountId(id); setAccountTouched(true) }}
           />
         ) : (
-          <Select value={accountId} onValueChange={handleAccountChange} required>
-            <SelectTrigger>
-              <SelectValue placeholder={t('selectAccount')} />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name} — {a.bank}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <AccountGrid
+            accounts={accounts}
+            value={accountId}
+            onValueChange={handleAccountChange}
+            balances={balances}
+            balancesLoading={balancesLoading}
+            label={type === 'transfer' ? t('fromAccount') : t('account')}
+          />
         )}
       </div>
 
       {/* To account (transfer only) */}
       {type === 'transfer' && (
-        <div className="space-y-1">
-          <Label>{t('toAccount')} <RequiredMark /></Label>
-          {accounts.filter((a) => a.id !== accountId).length === 0 ? (
-            <InlineCreateAccount
-              hint={t('transferNeedsSecondAccount')}
-              onCreated={(id) => setToAccountId(id)}
-            />
-          ) : (
-            <Select value={toAccountId} onValueChange={setToAccountId} required>
-              <SelectTrigger>
-                <SelectValue placeholder={t('selectToAccount')} />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts
-                  .filter((a) => a.id !== accountId)
-                  .map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name} — {a.bank}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={swapAccounts}
+            disabled={!accountId || !toAccountId}
+            className="mx-auto flex"
+          >
+            <ArrowUpDown aria-hidden="true" className="mr-2 size-4" />{t('swapAccounts')}
+          </Button>
+          <div className="space-y-1">
+            <Label>{t('toAccount')} <RequiredMark /></Label>
+            {accounts.filter((a) => a.id !== accountId).length === 0 ? (
+              <InlineCreateAccount
+                hint={t('transferNeedsSecondAccount')}
+                onCreated={(id) => setToAccountId(id)}
+              />
+            ) : (
+              <AccountGrid
+                accounts={accounts}
+                value={toAccountId}
+                onValueChange={setToAccountId}
+                balances={balances}
+                balancesLoading={balancesLoading}
+                label={t('toAccount')}
+                disabledAccountId={accountId}
+              />
+            )}
+          </div>
+        </>
       )}
 
       {/* Category (non-transfer) */}
