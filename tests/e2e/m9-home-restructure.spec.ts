@@ -37,12 +37,11 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   await expect(page.getByRole('link', { name: 'สแกนสลิป' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'บันทึก', exact: true })).toBeVisible()
 
-  // One-line budget status (plain text, links to งบ): expense ฿500, remaining ฿9,500.
-  // Glyph-robust: assert the Thai labels + the numeric substrings separately.
-  await expect(page.getByText('เดือนนี้ใช้ไป', { exact: false })).toBeVisible()
-  await expect(page.getByText('งบเหลือ', { exact: false })).toBeVisible()
-  await expect(page.locator('body')).toContainText('500.00')
-  await expect(page.locator('body')).toContainText('9,500.00')
+  // OWNER-FB B2: the old one-line budget becomes a single monthly budget strip.
+  const budgetStrip = page.getByRole('link', { name: /งบเดือนนี้/ })
+  await expect(budgetStrip).toContainText('เหลือ ฿9,500.00 จาก ฿10,000.00')
+  await expect(budgetStrip).toContainText('ใช้ได้อีกวันละ')
+  await expect(budgetStrip.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50000')
 
   // Today's transactions section present with the seeded item.
   await expect(page.getByText('รายการวันนี้', { exact: false })).toBeVisible()

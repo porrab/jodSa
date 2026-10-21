@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
@@ -8,6 +7,7 @@ import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import { formatTHB } from '@/lib/money'
 import QuickAddCard from '@/components/quick-add-card'
 import HomeTodayList from '@/components/home-today-list'
+import HomeBudgetStrip from '@/components/home-budget-strip'
 
 /**
  * Home — J1 "one glance + one action" (design v3, replaces the old
@@ -74,10 +74,20 @@ export default async function DashboardPage() {
     .filter((r) => r.type === 'expense')
     .reduce((s, r) => s + r.amount_satang, 0)
 
-  const overallBudget = ((budgets ?? []) as BudgetRow[]).find((b) => b.scope === 'overall')
-  const overallStatus = overallBudget
-    ? budgetStatus(overallBudget, (monthTx ?? []) as ExpenseRow[], now)
-    : null
+  const monthlyBudgetItems = ((budgets ?? []) as BudgetRow[])
+    .filter((budget) => budget.period === 'month')
+    .map((budget) => ({
+      budget,
+      status: budgetStatus(budget, (monthTx ?? []) as ExpenseRow[], now),
+    }))
+  const homeBudgetItem = monthlyBudgetItems.find(({ budget }) => budget.scope === 'overall')
+    ?? monthlyBudgetItems
+      .filter(({ budget }) => budget.scope === 'category')
+      .sort((a, b) => b.status.ratio - a.status.ratio)[0]
+    ?? null
+  const [year, monthNumber, day] = todayStr.split('-').map(Number)
+  const daysInMonth = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()
+  const daysRemaining = daysInMonth - day + 1
 
   const lastByCategory = buildLastAccountMap(monthTx ?? [])
   const globalLastAccountId = monthTx?.[0]?.account_id ?? null
@@ -85,19 +95,20 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Focal total balance — flat, one accent (the number itself), no
-          gradient/mascot behind it. Budget status is plain text underneath. */}
+          gradient/mascot behind it. */}
       <div className="space-y-1">
         <p className="text-sm text-muted-foreground">{t('totalBalance')}</p>
         <p className="text-focal text-4xl font-bold leading-tight tabular-nums">
           {formatTHB(totalBalance)}
         </p>
-        <Link href="/budgets" className="block text-sm text-muted-foreground hover:text-foreground">
-          {t('monthExpenseLine', { amount: formatTHB(monthExpense) })}
-          {overallStatus && (
-            <> · {t('budgetRemainingLine', { amount: formatTHB(overallStatus.remaining) })}</>
-          )}
-        </Link>
       </div>
+
+      <HomeBudgetStrip
+        budget={homeBudgetItem?.budget ?? null}
+        status={homeBudgetItem?.status ?? null}
+        monthExpense={monthExpense}
+        daysRemaining={daysRemaining}
+      />
 
       <QuickAddCard />
 
