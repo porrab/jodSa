@@ -61,12 +61,17 @@ content capped at `max-w-4xl` (896 px) centred in a 1216 px main, ~340 px idle g
 stretched (quick-add type buttons 260 px each). That is the known v5 desktop gap, not a DS-1 fix.
 
 ## [OWNER-FB-20261003] Owner usability feedback batch — 2026-10-03 · from owner (via fin-desk session)
-**Status**: UNPARKED 2026-10-20 by the owner — **design first, then build.** Product calls (layout,
-wording) belong to the owner / design-studio before build. Dev: do **not** start the Phase A items until the
-design-studio addendum in `idea-forge/ideas/jodsa/docs/07-design.md` is owner-confirmed and this line says so.
-2026-10-21: owner answered all 11 first-round decisions (recorded in the addendum's "Owner answers 2026-10-21";
-#4 and #10 were redesigned, #10 and #12 merged, ถอนจากพอร์ต confirmed). Four follow-up decisions remain open in
-the addendum's "(b) Owner decisions still open" — still **not** cleared for build.
+**Status**: OPEN — **Phase A + B CLEARED FOR BUILD 2026-10-21.** The owner confirmed the design-studio
+addendum in two rounds; the brief is `idea-forge/ideas/jodsa/docs/07-design.md` section "Revision 2026-10-20 —
+OWNER-FB batch (OWNER-CONFIRMED 2026-10-21)" (idea-forge `1b4dccd`). Build in **its "(a) Build order"**:
+B4 colour tokens → B3 daily total → B2 budget strip → B1 home headline → A2 account grid → A1 add sheet with
+multi-slip queue + bulk save → migration 0011 (`note`, `reconciled_at`) → A3 payee + display name → migration 0012
+(`invest`, `divest`, `holding_id`) → C2 ลงทุน / ถอนจากพอร์ต → C1 reconcile-by-backfill **only after Phase B #2 is fixed**.
+Key owner calls (do not re-decide): payee is kept everywhere, display name is optional; the reconcile remainder
+**counts** as expense/income under system category `ปรับยอดให้ตรงธนาคาร` (no adjust types); Home headline is
+เงินทั้งหมด with cash and investments as visible sub-lines; slips of any count stay in the same sheet.
+Migrations 0011/0012 are hand-authored and need explicit owner authorization before being applied to the live DB.
+One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C (#11) stays plan-only.
 
 Phasing (2026-10-20):
 - **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
