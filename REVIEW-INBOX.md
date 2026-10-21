@@ -64,6 +64,9 @@ stretched (quick-add type buttons 260 px each). That is the known v5 desktop gap
 **Status**: UNPARKED 2026-10-20 by the owner — **design first, then build.** Product calls (layout,
 wording) belong to the owner / design-studio before build. Dev: do **not** start the Phase A items until the
 design-studio addendum in `idea-forge/ideas/jodsa/docs/07-design.md` is owner-confirmed and this line says so.
+2026-10-21: owner answered all 11 first-round decisions (recorded in the addendum's "Owner answers 2026-10-21";
+#4 and #10 were redesigned, #10 and #12 merged, ถอนจากพอร์ต confirmed). Four follow-up decisions remain open in
+the addendum's "(b) Owner decisions still open" — still **not** cleared for build.
 
 Phasing (2026-10-20):
 - **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
