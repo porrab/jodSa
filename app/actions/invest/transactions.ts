@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { assetTransactionSchema } from '@/lib/validators/invest'
 import { toMinor, minorToApi, parseFormNumber } from '@/lib/invest/money'
+import { investDatetimeToISO } from '@/lib/invest/datetime'
 
 /** Record a buy/sell/dividend/fee against an existing holding. */
 export async function addAssetTransaction(_prev: { error: string }, formData: FormData) {
@@ -37,7 +38,7 @@ export async function addAssetTransaction(_prev: { error: string }, formData: Fo
     currency: v.currency,
     fees_minor: minorToApi(toMinor(v.fees, v.currency)),
     fx_rate: v.fxRate ? String(v.fxRate) : null,
-    datetime: new Date(v.datetime).toISOString(),
+    datetime: investDatetimeToISO(v.datetime),
     ref: v.ref ?? null,
   })
   if (error) return { error: error.message }

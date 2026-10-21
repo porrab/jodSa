@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { holdingCreateSchema, updateHoldingSchema } from '@/lib/validators/invest'
 import { toMinor, minorToApi, parseFormNumber } from '@/lib/invest/money'
+import { investDatetimeToISO } from '@/lib/invest/datetime'
 
 /**
  * Open a new holding. A holding is always created together with its opening
@@ -60,7 +61,7 @@ export async function createHolding(_prev: { error: string; id?: string }, formD
     currency: v.currency,
     fees_minor: minorToApi(toMinor(v.fees, v.currency)),
     fx_rate: v.fxRate ? String(v.fxRate) : null,
-    datetime: new Date(v.datetime).toISOString(),
+    datetime: investDatetimeToISO(v.datetime),
     ref: v.ref ?? null,
   })
   if (txError) {
