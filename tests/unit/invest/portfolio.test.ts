@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   valueHolding,
+  valueCurrentHolding,
   computeTotals,
   computeAllocation,
   aggregateByAsset,
@@ -22,6 +23,26 @@ function buyTx(qty: number, price: number, currency: string, fees = 0, fxRate: n
     datetime,
   }
 }
+
+describe('valueCurrentHolding — Home value-only read', () => {
+  it('uses THB directly and converts foreign current values with the stored FX rate', () => {
+    expect(valueCurrentHolding({
+      currentValueMinor: '123400', currentValueCurrency: 'THB', currentFxToDisplay: null,
+    })).toBe(123400n)
+    expect(valueCurrentHolding({
+      currentValueMinor: '10000', currentValueCurrency: 'USD', currentFxToDisplay: '36.5',
+    })).toBe(365000n)
+  })
+
+  it('returns null when the current value or required FX rate is missing', () => {
+    expect(valueCurrentHolding({
+      currentValueMinor: null, currentValueCurrency: 'USD', currentFxToDisplay: '36.5',
+    })).toBeNull()
+    expect(valueCurrentHolding({
+      currentValueMinor: '10000', currentValueCurrency: 'USD', currentFxToDisplay: null,
+    })).toBeNull()
+  })
+})
 
 describe('lib/invest/portfolio — hand-computed multi-currency fixture (M3 acceptance)', () => {
   // Same fixture as tests/unit/invest/money.test.ts's M1 fixture: a USD holding

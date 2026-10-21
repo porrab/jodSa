@@ -1,13 +1,13 @@
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { buildLastAccountMap } from '@/lib/last-account'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
-import { formatTHB } from '@/lib/money'
 import QuickAddCard from '@/components/quick-add-card'
 import HomeTodayList from '@/components/home-today-list'
 import HomeBudgetStrip from '@/components/home-budget-strip'
+import HomeMoneyHeader from '@/components/home-money-header'
+import { valueCurrentHolding } from '@/lib/invest/portfolio'
 
 /**
  * Home — J1 "one glance + one action" (design v3, replaces the old
@@ -18,7 +18,6 @@ import HomeBudgetStrip from '@/components/home-budget-strip'
  * itself an M9 acceptance criterion — do not import the chart components here.
  */
 export default async function DashboardPage() {
-  const t = await getTranslations('dashboard')
   const supabase = await createClient()
 
   const now = new Date()
@@ -53,11 +52,13 @@ export default async function DashboardPage() {
   }
 
   const { from: matFrom, to: matTo } = currentMonthRange(now)
-  const [[{ data: accounts }, { data: budgets }, { data: balances }], mat, first] = await Promise.all([
+  const [[{ data: accounts }, { data: budgets }, { data: balances }, holdingsResult, assetsResult], mat, first] = await Promise.all([
     Promise.all([
       supabase.from('accounts').select('*').order('created_at'),
       supabase.from('budgets').select('*'),
       supabase.rpc('account_balances'),
+      supabase.from('holdings').select('id, asset_id, broker, current_value_minor, current_value_currency, current_fx_to_display, updated_at').order('created_at'),
+      supabase.from('assets').select('id, name, symbol'),
     ]),
     materializeOccurrences(matFrom, matTo),
     fetchData(),
@@ -69,6 +70,34 @@ export default async function DashboardPage() {
     (sum, acct) => sum + (balanceByAccount.get(acct.id) ?? acct.opening_balance_satang ?? 0),
     0,
   )
+  const assetById = new Map((assetsResult.data ?? []).map((asset) => [asset.id, asset]))
+  const homeAccounts = (accounts ?? []).map((account) => ({
+    id: account.id,
+    name: account.name,
+    bank: account.bank,
+    balance: balanceByAccount.get(account.id) ?? account.opening_balance_satang ?? 0,
+  }))
+  const homeHoldings = (holdingsResult.data ?? []).map((holding) => {
+    const asset = assetById.get(holding.asset_id)
+    const value = valueCurrentHolding({
+      currentValueMinor: holding.current_value_minor,
+      currentValueCurrency: holding.current_value_currency,
+      currentFxToDisplay: holding.current_fx_to_display,
+    })
+    return {
+      id: holding.id,
+      name: asset?.name ?? '—',
+      symbol: asset?.symbol ?? null,
+      broker: holding.broker,
+      valueMinor: value?.toString() ?? null,
+      updatedAt: holding.updated_at,
+    }
+  })
+  const investmentTotal = homeHoldings.reduce(
+    (sum, holding) => sum + BigInt(holding.valueMinor ?? '0'),
+    0n,
+  )
+  const investmentsFailed = holdingsResult.error !== null || assetsResult.error !== null
 
   const monthExpense = (monthTx ?? [])
     .filter((r) => r.type === 'expense')
@@ -94,14 +123,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Focal total balance — flat, one accent (the number itself), no
-          gradient/mascot behind it. */}
-      <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">{t('totalBalance')}</p>
-        <p className="text-focal text-4xl font-bold leading-tight tabular-nums">
-          {formatTHB(totalBalance)}
-        </p>
-      </div>
+      <HomeMoneyHeader
+        cashTotal={totalBalance}
+        investmentTotal={investmentTotal.toString()}
+        accounts={homeAccounts}
+        holdings={homeHoldings}
+        investmentsFailed={investmentsFailed}
+      />
 
       <HomeBudgetStrip
         budget={homeBudgetItem?.budget ?? null}

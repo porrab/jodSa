@@ -11,7 +11,8 @@ import {
 import type { AssetClass, Sleeve } from '@/lib/validators/invest'
 import InvestTabs from './invest-tabs'
 
-export default async function InvestPage() {
+export default async function InvestPage({ searchParams }: { searchParams: Promise<{ holding?: string }> }) {
+  const { holding: initialHoldingId } = await searchParams
   const user = await getUser()
   if (!user) return null // defensive — app/(app)/layout.tsx already redirects unauthenticated
 
@@ -147,6 +148,7 @@ export default async function InvestPage() {
       dashboard={dashboard}
       snapshots={snapshotsRaw ?? []}
       plans={plansRaw ?? []}
+      initialHoldingId={initialHoldingId ?? null}
     />
   )
 }

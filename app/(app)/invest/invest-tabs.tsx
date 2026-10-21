@@ -20,12 +20,14 @@ export default function InvestTabs({
   dashboard,
   snapshots,
   plans,
+  initialHoldingId,
 }: {
   holdings: Holding[]
   assets: Asset[]
   dashboard: DashboardData
   snapshots: SnapshotRow[]
   plans: PlanRow[]
+  initialHoldingId: string | null
 }) {
   const t = useTranslations('invest')
   const [tab, setTab] = useState<'holdings' | 'overview' | 'plan'>('holdings')
@@ -49,7 +51,7 @@ export default function InvestTabs({
       </div>
 
       {tab === 'holdings' ? (
-        <InvestClient holdings={holdings} assets={assets} />
+        <InvestClient holdings={holdings} assets={assets} initialHoldingId={initialHoldingId} />
       ) : tab === 'overview' ? (
         <PortfolioDashboard dashboard={dashboard} snapshots={snapshots} />
       ) : (

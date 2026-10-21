@@ -56,6 +56,28 @@ import type { AssetClass, Sleeve } from '@/lib/validators/invest'
 
 export const DISPLAY_CURRENCY = 'THB'
 
+export type CurrentHoldingValueInput = {
+  currentValueMinor: string | number | bigint | null
+  currentValueCurrency: string | null
+  currentFxToDisplay: string | number | null
+}
+
+/** Value-only Home read: converts a manually entered current value without loading the trade ledger. */
+export function valueCurrentHolding(
+  h: CurrentHoldingValueInput,
+  displayCurrency: string = DISPLAY_CURRENCY,
+): bigint | null {
+  if (h.currentValueMinor === null || h.currentValueMinor === undefined) return null
+  const currency = h.currentValueCurrency?.toUpperCase()
+  const display = displayCurrency.toUpperCase()
+  if (!currency) return null
+  const value = parseMinor(h.currentValueMinor)
+  if (currency === display) return value
+  const fx = Number(h.currentFxToDisplay)
+  if (!Number.isFinite(fx) || fx <= 0) return null
+  return convertMinor(value, fx, currency, display)
+}
+
 export type PortfolioTransaction = CostBasisTransaction & {
   fxRate: string | number | null | undefined
 }

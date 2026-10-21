@@ -550,10 +550,12 @@ function HoldingDetailSheet({
   )
 }
 
-export default function InvestClient({ holdings, assets }: { holdings: Holding[]; assets: Asset[] }) {
+export default function InvestClient({ holdings, assets, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; initialHoldingId: string | null }) {
   const t = useTranslations('invest')
   const [addOpen, setAddOpen] = useState(false)
-  const [detailId, setDetailId] = useState<string | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(
+    holdings.some((holding) => holding.id === initialHoldingId) ? initialHoldingId : null,
+  )
   const detailHolding = holdings.find((h) => h.id === detailId) ?? null
 
   return (

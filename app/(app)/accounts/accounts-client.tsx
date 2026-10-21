@@ -297,12 +297,16 @@ function AccountDetailSheet({
 
 export default function AccountsClient({
   accounts,
+  initialAccountId,
 }: {
   accounts: Account[]
+  initialAccountId: string | null
 }) {
   const t = useTranslations('account')
   const [addOpen, setAddOpen] = useState(false)
-  const [detailId, setDetailId] = useState<string | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(
+    accounts.some((account) => account.id === initialAccountId) ? initialAccountId : null,
+  )
   const detailAccount = accounts.find((a) => a.id === detailId) ?? null
 
   return (

@@ -2,8 +2,9 @@ import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import AccountsClient from './accounts-client'
 
-export default async function AccountsPage() {
+export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
   const t = await getTranslations('account')
+  const { account: initialAccountId } = await searchParams
   const supabase = await createClient()
 
   // account_balances aggregates in Postgres (RLS applies) so this page doesn't
@@ -38,7 +39,7 @@ export default async function AccountsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
       </div>
-      <AccountsClient accounts={accountsWithBalance} />
+      <AccountsClient accounts={accountsWithBalance} initialAccountId={initialAccountId ?? null} />
     </div>
   )
 }

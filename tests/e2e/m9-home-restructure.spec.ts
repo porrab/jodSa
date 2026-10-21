@@ -32,6 +32,17 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   await page.goto('/dashboard')
   await page.waitForLoadState('networkidle')
 
+  // OWNER-FB B1: this shared fixture retains investment holdings, so Home must
+  // show the combined approximate headline plus both visible component lines.
+  const moneyHeader = page.getByRole('button', { name: /เงินทั้งหมด \(บัญชี \+ ลงทุน\).*≈/ })
+  await expect(moneyHeader).toBeVisible()
+  await expect(page.getByRole('button', { name: /เงินในบัญชี.*500\.00/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /เงินลงทุน.*ยังไม่กรอกมูลค่า 1 รายการ/ })).toBeVisible()
+  await moneyHeader.click()
+  await expect(page.getByRole('heading', { name: 'เงินทั้งหมด' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'เงินในบัญชี' })).toBeVisible()
+  await page.getByRole('button', { name: 'Close' }).click()
+
   // Focal balance + quick-add block.
   await expect(page.getByLabel('จำนวนเงิน')).toBeVisible() // quick-add amount input
   await expect(page.getByRole('link', { name: 'สแกนสลิป' })).toBeVisible()
