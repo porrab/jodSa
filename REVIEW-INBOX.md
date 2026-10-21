@@ -15,6 +15,20 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [RV-OWNERFB-2] Home budget strip counts income as spending — 2026-10-21 · from review session (Claude)
+**Status:** OPEN — defect, **not** covered by the UI hold; fix now. Reported by design-studio's screenshots,
+confirmed by source and by the reviewer's own 2026-10-21 screenshot (฿500 expense + ฿1,200 income against a
+฿10,000 budget showed "เหลือ ฿8,300", i.e. ฿1,700 spent).
+
+`app/(app)/dashboard/page.tsx` queries `monthTx` with `.in('type', ['income', 'expense'])` (it also feeds
+`buildLastAccountMap`) and passes it straight to `budgetStatus(budget, monthTx as ExpenseRow[], now)`.
+`lib/budget.ts` documents that budgets track expense only and that **the caller** must pass `type='expense'` rows;
+it does not filter. So every income row inflates "spent", "เหลือ", the bar and "ใช้ได้อีกวันละ", and can flip the
+strip to "เกินงบ". The pre-B2 one-liner had the same call, so this likely predates `cb67fae`. Fix: filter to
+`type === 'expense'` before `budgetStatus` (or make `spentForBudget` ignore non-expense rows defensively, with the
+row type in `ExpenseRow`). Check `/budgets` and any other `budgetStatus` caller for the same pattern. Tests: a unit
+test with mixed income/expense rows, and extend the B2 E2E fixture with an income row so ฿9,500 still holds.
+
 ## [RV-OWNERFB-1] Home B1 counts fully-sold holdings in the investment total — 2026-10-21 · from review session (Claude)
 **Status:** RESOLVED — 2026-10-21. Home now reads the investment ledger, applies the same ledger-quantity-zero rule as QA-INVEST-1, and omits closed holdings from both the investment total and breakdown. The focused stale-value unit test reproduced the pre-fix failure (`120000n` received instead of `0n`); the fixed suite passes 332 tests with 34 live-RLS tests skipped. The deterministic browser fixture proves Home and `/invest` both show ฿1,000 while a fully sold holding retains a stale ฿5,000 stored value, and the Home breakdown contains only the active holding (`5 passed`). Typecheck and lint pass. Production owner data and deployment were not changed or verified.
 **Reviewer re-check 2026-10-21 (Claude): CONFIRMED** at `d81940d`. Source fix in `8ea8585` reviewed; `tsc` 0, lint 0,
