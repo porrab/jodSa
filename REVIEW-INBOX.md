@@ -73,6 +73,16 @@ Key owner calls (do not re-decide): payee is kept everywhere, display name is op
 Migrations 0011/0012 are hand-authored and need explicit owner authorization before being applied to the live DB.
 One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C (#11) stays plan-only.
 
+**Build progress 2026-10-21 — READY FOR INDEPENDENT RE-CHECK (not self-certified):**
+- [x] B4 colour tokens + type icons/signs — `0f4c2e6`.
+- [x] B3 daily expense totals — `b79aff1`.
+- [x] B2 Home monthly-budget strip — `cb67fae`.
+- [x] B1 combined money headline + cash/investment sub-lines + breakdown/deep links — `4324626`.
+- [x] Phase B `/invest` date defect — fix `b3d044f`, close record `8d65be3`.
+- [x] Phase B `/budgets` all-zero observation — not reproducible on current production; non-zero E2E guard
+  `1dd8c10`. The historical 2026-10-01 run has no reconstructed root cause.
+- [ ] Next build slice: A2 `AccountGrid`, then A1 sheet modes + multi-slip queue. No migration yet.
+
 Phasing (2026-10-20):
 - **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
   "ลงทุน" cash-to-holding gap below. Brief target: a dated OWNER-FB revision section in
