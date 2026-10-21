@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-OWNERFB-1] Home B1 counts fully-sold holdings in the investment total — 2026-10-21 · from review session (Claude)
-**Status:** OPEN — blocks closing B1 (`4324626`). Found by source review of `c2e3d2f..677092d`; not reproduced in a browser.
+**Status:** OPEN — blocks closing B1 (`4324626`). **Owner order 2026-10-21: fix this BEFORE starting A2 `AccountGrid`.** Found by source review of `c2e3d2f..677092d`; not reproduced in a browser.
 
 `app/(app)/dashboard/page.tsx` sums `valueCurrentHolding()` (`lib/invest/portfolio.ts`) over **every** row of
 `holdings`, reading the stored `current_value_minor` "without loading the trade ledger". QA-INVEST-1 (`e6ff4cb`)
