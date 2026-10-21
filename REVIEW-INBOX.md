@@ -17,6 +17,12 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [RV-OWNERFB-1] Home B1 counts fully-sold holdings in the investment total — 2026-10-21 · from review session (Claude)
 **Status:** RESOLVED — 2026-10-21. Home now reads the investment ledger, applies the same ledger-quantity-zero rule as QA-INVEST-1, and omits closed holdings from both the investment total and breakdown. The focused stale-value unit test reproduced the pre-fix failure (`120000n` received instead of `0n`); the fixed suite passes 332 tests with 34 live-RLS tests skipped. The deterministic browser fixture proves Home and `/invest` both show ฿1,000 while a fully sold holding retains a stale ฿5,000 stored value, and the Home breakdown contains only the active holding (`5 passed`). Typecheck and lint pass. Production owner data and deployment were not changed or verified.
+**Reviewer re-check 2026-10-21 (Claude): CONFIRMED** at `d81940d`. Source fix in `8ea8585` reviewed; `tsc` 0, lint 0,
+vitest 332 passed / 34 skipped re-run independently. Mobile (iPhone 13) screenshots on the E2E test user: Home shows
+≈฿1,700 = ฿700 cash + ≈฿1,000 investments with the stale ฿5,000 sold holding omitted; breakdown sheet lists 6 accounts.
+A2 `4fd4291` matches brief A2 (3-col tiles with balances, ✓ selected state, dimmed-in-place transfer source, swap);
+B3 daily "จ่าย" total and B4 type icons/signs visible on `/transactions`. A one-off Next dev-overlay "1 Issue" on the
+first cold run did not reproduce on two re-runs with console capture (no errors/warnings).
 
 **Post-mortem:** `docs/postmortems/RV-OWNERFB-1-home-closed-holding.md`.
 
