@@ -86,6 +86,10 @@ content capped at `max-w-4xl` (896 px) centred in a 1216 px main, ~340 px idle g
 stretched (quick-add type buttons 260 px each). That is the known v5 desktop gap, not a DS-1 fix.
 
 ## [OWNER-FB-20261003] Owner usability feedback batch — 2026-10-03 · from owner (via fin-desk session)
+> **⏸ ON HOLD 2026-10-21 (owner): visual redesign first.** The owner finds the built UI unattractive and asked
+> for a new visual design, drafted in Figma by design-studio before more UI is built. Dev: **do not start
+> migration 0011, A3, C2 or C1** until this note is replaced by a link to the confirmed redesign. Built slices
+> (B1–B4, A1, A2) stay as they are; they will be restyled against the new brief.
 **Status**: OPEN — **Phase A + B CLEARED FOR BUILD 2026-10-21.** The owner confirmed the design-studio
 addendum in two rounds; the brief is `idea-forge/ideas/jodsa/docs/07-design.md` section "Revision 2026-10-20 —
 OWNER-FB batch (OWNER-CONFIRMED 2026-10-21)" (idea-forge `1b4dccd`). Build in **its "(a) Build order"**:
@@ -108,8 +112,7 @@ One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C 
   `1dd8c10`. The historical 2026-10-01 run has no reconstructed root cause.
 - [x] RV-OWNERFB-1 Home closed-holding parity fix — resolved before A2 as owner ordered.
 - [x] A2 `AccountGrid` — `4fd4291`; balance tiles, stable transfer grids, swap control and keyboard/a11y behavior.
-- [x] A1 unified add sheet + multi-slip queue — `6e8d136`; Home and `/transactions` share the manual/slip sheet, `/import` and share target reuse the same sequential queue, and ready slips support per-row bulk save.
-- [ ] Next build slice: migration 0011 (`transactions.note`, `accounts.reconciled_at`) then A3 payee + display name. Requires explicit owner authorization before changing/applying the data model.
+- [ ] Next build slice: A1 sheet modes + multi-slip queue. No migration yet.
 
 Phasing (2026-10-20):
 - **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
