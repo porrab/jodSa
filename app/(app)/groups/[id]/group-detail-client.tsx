@@ -18,16 +18,17 @@ import {
 import { setTransactionGroup } from '@/app/actions/groups'
 import { groupExpenseTotal, groupExpenseByCategory, UNCATEGORIZED } from '@/lib/group'
 import { formatTHB } from '@/lib/money'
+import { transactionAmountPrefix } from '@/components/transaction-type-indicator'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
 type Group = Database['public']['Tables']['groups']['Row']
 
-const TYPE_STYLE: Record<string, { textCls: string; prefix: string }> = {
-  income: { textCls: 'text-income', prefix: '+' },
-  expense: { textCls: 'text-expense', prefix: '-' },
-  transfer: { textCls: 'text-transfer', prefix: '' },
+const TYPE_STYLE: Record<string, { textCls: string }> = {
+  income: { textCls: 'text-income' },
+  expense: { textCls: 'text-expense' },
+  transfer: { textCls: 'text-transfer' },
 }
 
 function TxRow({
@@ -72,7 +73,7 @@ function TxRow({
         </p>
       </div>
       <p className={cn('shrink-0 text-sm font-semibold tabular-nums', style.textCls)}>
-        {style.prefix}{formatTHB(tx.amount_satang)}
+        {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
       </p>
       <Button variant="ghost" size="icon-sm" onClick={run} disabled={busy} className="shrink-0">
         {actionIcon}

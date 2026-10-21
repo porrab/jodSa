@@ -15,16 +15,20 @@ import {
 import TransactionForm from '@/components/transaction-form'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { formatTHB } from '@/lib/money'
+import {
+  TransactionTypeIcon,
+  transactionAmountPrefix,
+} from '@/components/transaction-type-indicator'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
 
-const TYPE_STYLE: Record<string, { key: string; badgeCls: string; textCls: string; prefix: string }> = {
-  income:   { key: 'income',   badgeCls: 'border-income/30 bg-income/10 text-income',       textCls: 'text-income',   prefix: '+' },
-  expense:  { key: 'expense',  badgeCls: 'border-expense/30 bg-expense/10 text-expense',    textCls: 'text-expense',  prefix: '-' },
-  transfer: { key: 'transfer', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer', prefix: '' },
+const TYPE_STYLE: Record<string, { key: string; badgeCls: string; textCls: string }> = {
+  income:   { key: 'income',   badgeCls: 'border-income/30 bg-income/10 text-income',       textCls: 'text-income' },
+  expense:  { key: 'expense',  badgeCls: 'border-expense/30 bg-expense/10 text-expense',    textCls: 'text-expense' },
+  transfer: { key: 'transfer', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer' },
 }
 
 type Group = { id: string; title: string }
@@ -162,6 +166,7 @@ export default function TransactionsClient({
                             'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
                             style.badgeCls,
                           )}>
+                            <TransactionTypeIcon type={tx.type} />
                             {t(style.key)}
                           </span>
                           {tx.category && (
@@ -183,7 +188,7 @@ export default function TransactionsClient({
                       </div>
                       <div className="text-right shrink-0">
                         <p className={cn('font-semibold tabular-nums text-sm', style.textCls)}>
-                          {style.prefix}{formatTHB(tx.amount_satang)}
+                          {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
                         </p>
                       </div>
                     </button>

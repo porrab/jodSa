@@ -10,6 +10,7 @@ import { formatTHB } from '@/lib/money'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { usePendingTx } from '@/components/pending-tx-provider'
 import { Mascot } from '@/components/mascot'
+import { transactionAmountPrefix } from '@/components/transaction-type-indicator'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -88,7 +89,7 @@ export default function HomeTodayList({
                 <p className="text-sm text-muted-foreground">{t('pendingSave')}</p>
               </div>
               <span className={cn('shrink-0 text-base font-semibold tabular-nums', TYPE_TEXT[p.type])}>
-                {p.type === 'income' ? '+' : p.type === 'expense' ? '-' : ''}
+                {transactionAmountPrefix(p.type)}
                 {formatTHB(p.amountSatang)}
               </span>
             </div>
@@ -97,7 +98,6 @@ export default function HomeTodayList({
           {transactions.map((tx) => {
             const acct = accountMap[tx.account_id]
             const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-            const prefix = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''
             const label =
               tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : (acct?.name ?? '—'))
 
@@ -127,7 +127,7 @@ export default function HomeTodayList({
                   </p>
                 </div>
                 <span className={cn('shrink-0 text-base font-semibold tabular-nums', TYPE_TEXT[tx.type])}>
-                  {prefix}{formatTHB(tx.amount_satang)}
+                  {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
                 </span>
               </button>
             )

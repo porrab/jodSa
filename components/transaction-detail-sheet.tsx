@@ -15,6 +15,10 @@ import TransactionForm from '@/components/transaction-form'
 import { deleteTransaction } from '@/app/actions/transactions'
 import { skipOccurrence } from '@/app/actions/recurring'
 import { formatTHB } from '@/lib/money'
+import {
+  TransactionTypeIcon,
+  transactionAmountPrefix,
+} from '@/components/transaction-type-indicator'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -87,7 +91,6 @@ export default function TransactionDetailSheet({
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
   const acct = accountMap[tx.account_id]
   const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-  const prefix = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''
 
   return (
     <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
@@ -118,8 +121,11 @@ export default function TransactionDetailSheet({
         ) : (
           <div className={cn('space-y-3 border-l-4 px-4 pb-6', TYPE_STRIPE[tx.type])}>
             <p className={cn('text-2xl font-bold tabular-nums', TYPE_TEXT[tx.type])}>
-              {prefix}{formatTHB(tx.amount_satang)}
-              <span className="ml-2 text-sm font-normal text-muted-foreground">{t(tx.type)}</span>
+              {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
+              <span className="ml-2 inline-flex items-center text-sm font-normal text-muted-foreground">
+                <TransactionTypeIcon type={tx.type} />
+                {t(tx.type)}
+              </span>
             </p>
             <p className="text-sm text-muted-foreground">
               {tx.category && <><CategoryLabel value={tx.category} /> · </>}

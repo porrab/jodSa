@@ -279,7 +279,7 @@ export default function RecurringClient({
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center justify-between text-base">
                     <span className={`tabular-nums ${rule.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                      {rule.type === 'income' ? '+' : '-'}{formatTHB(rule.amount_satang)}
+                      {rule.type === 'income' ? '+' : '−'}{formatTHB(rule.amount_satang)}
                     </span>
                     <div className="flex gap-1">
                       <Dialog open={editId === rule.id} onOpenChange={(o) => setEditId(o ? rule.id : null)}>
