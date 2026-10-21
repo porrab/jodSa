@@ -127,6 +127,12 @@ Related observation (fin-desk monthly review 2026-10-01, not owner-reported): th
 "รายรับ/รายจ่าย 6 เดือนล่าสุด" chart renders **0 for every month** although ~100 September expenses exist. Unverified
 whether it is a query or a render defect — check while in this batch.
 
+- [x] **Re-checked 2026-10-21 — not currently reproducible.** The signed-in production page renders non-zero
+  bars (one income, two expense) from the owner's live book, so no speculative app fix was made. The existing
+  M9 browser test only proved that Recharts mounted; it now also requires the seeded ฿500 current-month expense
+  to produce a positive-height expense bar. Production deployment and the historical 2026-10-01 state remain
+  distinct: this closes the current observation and regression gap, not a reconstructed root cause for that past run.
+
 ## [QA-INVEST-2] No ballast/defensive risk group — sleeve plan cannot be tracked — 2026-09-09 · from owner session
 **Status**: RESOLVED — 2026-10-20, under approved SPEC-6; QA GREEN `757ef83`, PM APPROVED `33bff60`. No owner SGOV holding was backfilled or reclassified. Original report arose while recording real VT + SGOV purchases.
 

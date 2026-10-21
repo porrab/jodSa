@@ -10,7 +10,8 @@ import { findUserByEmail, resetAllUserData, seedAccount, seedBudget, seedTransac
  *    and renders NO chart (the 6-month chart nobody read is gone from the first
  *    screen). Asserted by the ABSENCE of any Recharts DOM on /dashboard.
  *  - The 6-month chart renders under งบ → ภาพรวม (lazy). Asserted by Recharts DOM
- *    appearing only after the ภาพรวม tab is opened.
+ *    appearing only after the ภาพรวม tab is opened AND the seeded expense
+ *    producing a non-zero bar (mounting an all-zero chart is not success).
  */
 
 test.use({ storageState: STORAGE_A })
@@ -66,4 +67,18 @@ test('M9-home-2 the 6-month chart renders under งบ → ภาพรวม (l
   await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
   await expect(page.getByText('รายรับ/รายจ่าย 6 เดือนล่าสุด')).toBeVisible()
   await expect(page.locator('[class*="recharts"]').first()).toBeVisible({ timeout: 30_000 })
+
+  // OWNER-FB regression guard: the old test stopped at "the chart mounted",
+  // which cannot distinguish real monthly aggregation from six zero buckets.
+  // This fixture seeded ฿500 of expense in the current Bangkok month, so at
+  // least one expense rectangle must have a positive rendered height.
+  const expenseBars = page.locator(
+    '.recharts-bar-rectangles path.recharts-rectangle[fill="var(--expense)"]',
+  )
+  await expect.poll(async () => {
+    const heights = await expenseBars.evaluateAll((bars) =>
+      bars.map((bar) => Number(bar.getAttribute('height') ?? 0)),
+    )
+    return Math.max(0, ...heights)
+  }).toBeGreaterThan(0)
 })
