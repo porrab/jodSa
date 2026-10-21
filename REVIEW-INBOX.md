@@ -101,7 +101,8 @@ One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C 
 - [x] Phase B `/budgets` all-zero observation — not reproducible on current production; non-zero E2E guard
   `1dd8c10`. The historical 2026-10-01 run has no reconstructed root cause.
 - [x] RV-OWNERFB-1 Home closed-holding parity fix — resolved before A2 as owner ordered.
-- [ ] Next build slice: A2 `AccountGrid`, then A1 sheet modes + multi-slip queue. No migration yet.
+- [x] A2 `AccountGrid` — `4fd4291`; balance tiles, stable transfer grids, swap control and keyboard/a11y behavior.
+- [ ] Next build slice: A1 sheet modes + multi-slip queue. No migration yet.
 
 Phasing (2026-10-20):
 - **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
