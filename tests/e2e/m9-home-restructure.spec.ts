@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test'
 import { env, STORAGE_A } from './helpers/env'
-import { findUserByEmail, resetAllUserData, seedAccount, seedBudget, seedTransaction } from './helpers/admin'
+import {
+  findUserByEmail,
+  resetAllUserData,
+  resetInvestData,
+  seedAccount,
+  seedBudget,
+  seedInvestHolding,
+  seedTransaction,
+} from './helpers/admin'
 
 /**
  * QA-M9 — Home restructure (design v3 J1/J6), production build.
@@ -23,21 +31,35 @@ test.beforeAll(async () => {
   if (!u) throw new Error(`test user A missing: ${env.userA.email}`)
   userId = u.id
   await resetAllUserData(userId)
+  await resetInvestData(userId)
   const acct = await seedAccount(userId, 'เงินสด', 'KBank')
   await seedBudget(userId, 1_000_000) // ฿10,000 overall month budget
   await seedTransaction(userId, acct, { type: 'expense', amountSatang: 50_000, category: 'food' }) // ฿500 today
+  await seedInvestHolding(userId, {
+    symbol: 'PTT',
+    currentValueMinor: '100000', // active holding: ฿1,000
+    ledger: [{ type: 'buy', qty: '10', priceMinor: '10000', datetime: '2026-01-01T00:00:00Z' }],
+  })
+  await seedInvestHolding(userId, {
+    symbol: 'PTT',
+    currentValueMinor: '500000', // deliberately stale: sold holding must contribute ฿0
+    ledger: [
+      { type: 'buy', qty: '5', priceMinor: '10000', datetime: '2026-01-01T00:00:00Z' },
+      { type: 'sell', qty: '5', priceMinor: '11000', datetime: '2026-02-01T00:00:00Z' },
+    ],
+  })
 })
 
 test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO chart renders', async ({ page }) => {
   await page.goto('/dashboard')
   await page.waitForLoadState('networkidle')
 
-  // OWNER-FB B1: this shared fixture retains investment holdings, so Home must
+  // OWNER-FB B1: the deterministic fixture includes an active holding, so Home must
   // show the combined approximate headline plus both visible component lines.
   const moneyHeader = page.getByRole('button', { name: /เงินทั้งหมด \(บัญชี \+ ลงทุน\).*≈/ })
   await expect(moneyHeader).toBeVisible()
   await expect(page.getByRole('button', { name: /เงินในบัญชี.*500\.00/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /เงินลงทุน.*ยังไม่กรอกมูลค่า 1 รายการ/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /เงินลงทุน.*1,000\.00/ })).toBeVisible()
   await moneyHeader.click()
   await expect(page.getByRole('heading', { name: 'เงินทั้งหมด' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'เงินในบัญชี' })).toBeVisible()
@@ -64,6 +86,23 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   await expect(page.locator('[class*="recharts"]')).toHaveCount(0)
   await expect(page.getByText('รายรับ/รายจ่าย 6 เดือนล่าสุด')).toHaveCount(0)
   await expect(page.locator('svg.recharts-surface')).toHaveCount(0)
+})
+
+test('RV-OWNERFB-1 Home investment total matches /invest and omits a fully-sold stale holding', async ({ page }) => {
+  await page.goto('/dashboard')
+  await page.waitForLoadState('networkidle')
+
+  const homeInvestment = page.getByRole('button', { name: /เงินลงทุน/ })
+  await expect(homeInvestment).toContainText('฿1,000.00')
+  await homeInvestment.click()
+  const investmentSection = page.locator('#money-invest')
+  await expect(investmentSection).toContainText('฿1,000.00')
+  await expect(investmentSection.getByRole('link')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  await page.goto('/invest')
+  await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
+  await expect(page.getByText('฿1,000.00', { exact: true }).first()).toBeVisible()
 })
 
 test('OWNER-FB B3 transaction day header shows expense-only daily total', async ({ page }) => {

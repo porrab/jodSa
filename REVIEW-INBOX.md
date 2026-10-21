@@ -16,7 +16,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-OWNERFB-1] Home B1 counts fully-sold holdings in the investment total — 2026-10-21 · from review session (Claude)
-**Status:** OPEN — blocks closing B1 (`4324626`). **Owner order 2026-10-21: fix this BEFORE starting A2 `AccountGrid`.** Found by source review of `c2e3d2f..677092d`; not reproduced in a browser.
+**Status:** RESOLVED — 2026-10-21. Home now reads the investment ledger, applies the same ledger-quantity-zero rule as QA-INVEST-1, and omits closed holdings from both the investment total and breakdown. The focused stale-value unit test reproduced the pre-fix failure (`120000n` received instead of `0n`); the fixed suite passes 332 tests with 34 live-RLS tests skipped. The deterministic browser fixture proves Home and `/invest` both show ฿1,000 while a fully sold holding retains a stale ฿5,000 stored value, and the Home breakdown contains only the active holding (`5 passed`). Typecheck and lint pass. Production owner data and deployment were not changed or verified.
+
+**Post-mortem:** `docs/postmortems/RV-OWNERFB-1-home-closed-holding.md`.
 
 `app/(app)/dashboard/page.tsx` sums `valueCurrentHolding()` (`lib/invest/portfolio.ts`) over **every** row of
 `holdings`, reading the stored `current_value_minor` "without loading the trade ledger". QA-INVEST-1 (`e6ff4cb`)
@@ -98,6 +100,7 @@ One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C 
 - [x] Phase B `/invest` date defect — fix `b3d044f`, close record `8d65be3`.
 - [x] Phase B `/budgets` all-zero observation — not reproducible on current production; non-zero E2E guard
   `1dd8c10`. The historical 2026-10-01 run has no reconstructed root cause.
+- [x] RV-OWNERFB-1 Home closed-holding parity fix — resolved before A2 as owner ordered.
 - [ ] Next build slice: A2 `AccountGrid`, then A1 sheet modes + multi-slip queue. No migration yet.
 
 Phasing (2026-10-20):

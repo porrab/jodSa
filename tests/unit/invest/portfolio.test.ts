@@ -12,6 +12,7 @@ import {
   type HoldingInput,
 } from '@/lib/invest/portfolio'
 import { toMinor, minorToApi } from '@/lib/invest/money'
+import { computeCostBasis } from '@/lib/invest/cost-basis'
 
 function buyTx(qty: number, price: number, currency: string, fees = 0, fxRate: number | null = null, datetime = '2026-01-01T00:00:00Z') {
   return {
@@ -28,19 +29,39 @@ describe('valueCurrentHolding — Home value-only read', () => {
   it('uses THB directly and converts foreign current values with the stored FX rate', () => {
     expect(valueCurrentHolding({
       currentValueMinor: '123400', currentValueCurrency: 'THB', currentFxToDisplay: null,
-    })).toBe(123400n)
+    }, [buyTx(1, 100, 'THB')])).toEqual({ qty: 1, valueMinor: 123400n })
     expect(valueCurrentHolding({
       currentValueMinor: '10000', currentValueCurrency: 'USD', currentFxToDisplay: '36.5',
-    })).toBe(365000n)
+    }, [buyTx(1, 100, 'USD')])).toEqual({ qty: 1, valueMinor: 365000n })
   })
 
   it('returns null when the current value or required FX rate is missing', () => {
     expect(valueCurrentHolding({
       currentValueMinor: null, currentValueCurrency: 'USD', currentFxToDisplay: '36.5',
-    })).toBeNull()
+    }, [buyTx(1, 100, 'USD')])).toEqual({ qty: 1, valueMinor: null })
     expect(valueCurrentHolding({
       currentValueMinor: '10000', currentValueCurrency: 'USD', currentFxToDisplay: null,
-    })).toBeNull()
+    }, [buyTx(1, 100, 'USD')])).toEqual({ qty: 1, valueMinor: null })
+  })
+
+  it('does not surface a stale current value after the ledger quantity reaches zero', () => {
+    const ledger = [
+      buyTx(1, 1000, 'THB'),
+      {
+        type: 'sell' as const,
+        qty: '1',
+        priceMinor: minorToApi(toMinor(1100, 'THB')),
+        feesMinor: '0',
+        datetime: '2026-02-01T00:00:00Z',
+      },
+    ]
+
+    expect(computeCostBasis(ledger).qty).toBe(0)
+    expect(valueCurrentHolding({
+      currentValueMinor: minorToApi(toMinor(1200, 'THB')),
+      currentValueCurrency: 'THB',
+      currentFxToDisplay: null,
+    }, ledger)).toEqual({ qty: 0, valueMinor: 0n })
   })
 })
 

@@ -94,6 +94,53 @@ export async function resetInvestData(userId: string): Promise<void> {
   if (aErr) throw new Error(`reset custom assets failed: ${aErr.message}`)
 }
 
+/** Seed one deterministic investment position for rendered cross-route assertions. */
+export async function seedInvestHolding(
+  userId: string,
+  opts: {
+    symbol: string
+    currentValueMinor: string
+    ledger: Array<{ type: 'buy' | 'sell'; qty: string; priceMinor: string; datetime: string }>
+  },
+): Promise<string> {
+  const a = adminClient()
+  const { data: asset, error: assetError } = await a
+    .from('assets')
+    .select('id, currency')
+    .eq('is_system', true)
+    .eq('symbol', opts.symbol)
+    .single()
+  if (assetError) throw new Error(`find system asset ${opts.symbol} failed: ${assetError.message}`)
+
+  const { data: holding, error: holdingError } = await a
+    .from('holdings')
+    .insert({
+      user_id: userId,
+      asset_id: asset.id,
+      sleeve: 'core',
+      current_value_minor: opts.currentValueMinor,
+      current_value_currency: asset.currency,
+    })
+    .select('id')
+    .single()
+  if (holdingError) throw new Error(`seed holding ${opts.symbol} failed: ${holdingError.message}`)
+
+  const { error: ledgerError } = await a.from('asset_transactions').insert(
+    opts.ledger.map((transaction) => ({
+      user_id: userId,
+      holding_id: holding.id,
+      type: transaction.type,
+      qty: transaction.qty,
+      price_minor: transaction.priceMinor,
+      currency: asset.currency,
+      fees_minor: '0',
+      datetime: transaction.datetime,
+    })),
+  )
+  if (ledgerError) throw new Error(`seed ledger ${opts.symbol} failed: ${ledgerError.message}`)
+  return holding.id
+}
+
 /**
  * M5 — set a user-created custom asset's `proxy_class` directly (harness seeding).
  * The real classify journey (plan `blocked` → picker → unblocked) is the subject of

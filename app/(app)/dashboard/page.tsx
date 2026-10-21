@@ -52,13 +52,14 @@ export default async function DashboardPage() {
   }
 
   const { from: matFrom, to: matTo } = currentMonthRange(now)
-  const [[{ data: accounts }, { data: budgets }, { data: balances }, holdingsResult, assetsResult], mat, first] = await Promise.all([
+  const [[{ data: accounts }, { data: budgets }, { data: balances }, holdingsResult, assetsResult, assetTransactionsResult], mat, first] = await Promise.all([
     Promise.all([
       supabase.from('accounts').select('*').order('created_at'),
       supabase.from('budgets').select('*'),
       supabase.rpc('account_balances'),
       supabase.from('holdings').select('id, asset_id, broker, current_value_minor, current_value_currency, current_fx_to_display, updated_at').order('created_at'),
       supabase.from('assets').select('id, name, symbol'),
+      supabase.from('asset_transactions').select('holding_id, type, qty, price_minor, fees_minor, datetime').order('datetime'),
     ]),
     materializeOccurrences(matFrom, matTo),
     fetchData(),
@@ -71,33 +72,49 @@ export default async function DashboardPage() {
     0,
   )
   const assetById = new Map((assetsResult.data ?? []).map((asset) => [asset.id, asset]))
+  const transactionsByHolding = new Map<string, NonNullable<typeof assetTransactionsResult.data>>()
+  for (const transaction of assetTransactionsResult.data ?? []) {
+    const transactions = transactionsByHolding.get(transaction.holding_id) ?? []
+    transactions.push(transaction)
+    transactionsByHolding.set(transaction.holding_id, transactions)
+  }
   const homeAccounts = (accounts ?? []).map((account) => ({
     id: account.id,
     name: account.name,
     bank: account.bank,
     balance: balanceByAccount.get(account.id) ?? account.opening_balance_satang ?? 0,
   }))
-  const homeHoldings = (holdingsResult.data ?? []).map((holding) => {
+  const homeHoldings = (holdingsResult.data ?? []).flatMap((holding) => {
     const asset = assetById.get(holding.asset_id)
-    const value = valueCurrentHolding({
-      currentValueMinor: holding.current_value_minor,
-      currentValueCurrency: holding.current_value_currency,
-      currentFxToDisplay: holding.current_fx_to_display,
-    })
-    return {
+    const valuation = valueCurrentHolding(
+      {
+        currentValueMinor: holding.current_value_minor,
+        currentValueCurrency: holding.current_value_currency,
+        currentFxToDisplay: holding.current_fx_to_display,
+      },
+      (transactionsByHolding.get(holding.id) ?? []).map((transaction) => ({
+        type: transaction.type,
+        qty: transaction.qty,
+        priceMinor: transaction.price_minor,
+        feesMinor: transaction.fees_minor,
+        datetime: transaction.datetime,
+      })),
+    )
+    if (valuation.qty === 0) return []
+    return [{
       id: holding.id,
       name: asset?.name ?? '—',
       symbol: asset?.symbol ?? null,
       broker: holding.broker,
-      valueMinor: value?.toString() ?? null,
+      valueMinor: valuation.valueMinor?.toString() ?? null,
       updatedAt: holding.updated_at,
-    }
+    }]
   })
   const investmentTotal = homeHoldings.reduce(
     (sum, holding) => sum + BigInt(holding.valueMinor ?? '0'),
     0n,
   )
-  const investmentsFailed = holdingsResult.error !== null || assetsResult.error !== null
+  const investmentsFailed = holdingsResult.error !== null || assetsResult.error !== null || assetTransactionsResult.error !== null
 
   const monthExpense = (monthTx ?? [])
     .filter((r) => r.type === 'expense')

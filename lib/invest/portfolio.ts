@@ -62,20 +62,31 @@ export type CurrentHoldingValueInput = {
   currentFxToDisplay: string | number | null
 }
 
-/** Value-only Home read: converts a manually entered current value without loading the trade ledger. */
+export type CurrentHoldingValuation = {
+  qty: number
+  valueMinor: bigint | null
+}
+
+/**
+ * Lightweight Home valuation. Ledger quantity is authoritative, matching
+ * `valueHolding`: a closed position must not surface a stale stored value.
+ */
 export function valueCurrentHolding(
   h: CurrentHoldingValueInput,
+  transactions: CostBasisTransaction[],
   displayCurrency: string = DISPLAY_CURRENCY,
-): bigint | null {
-  if (h.currentValueMinor === null || h.currentValueMinor === undefined) return null
+): CurrentHoldingValuation {
+  const qty = computeCostBasis(transactions).qty
+  if (qty === 0) return { qty: 0, valueMinor: 0n }
+  if (h.currentValueMinor === null || h.currentValueMinor === undefined) return { qty, valueMinor: null }
   const currency = h.currentValueCurrency?.toUpperCase()
   const display = displayCurrency.toUpperCase()
-  if (!currency) return null
+  if (!currency) return { qty, valueMinor: null }
   const value = parseMinor(h.currentValueMinor)
-  if (currency === display) return value
+  if (currency === display) return { qty, valueMinor: value }
   const fx = Number(h.currentFxToDisplay)
-  if (!Number.isFinite(fx) || fx <= 0) return null
-  return convertMinor(value, fx, currency, display)
+  if (!Number.isFinite(fx) || fx <= 0) return { qty, valueMinor: null }
+  return { qty, valueMinor: convertMinor(value, fx, currency, display) }
 }
 
 export type PortfolioTransaction = CostBasisTransaction & {
