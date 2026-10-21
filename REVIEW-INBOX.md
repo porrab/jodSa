@@ -15,6 +15,23 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [RV-OWNERFB-1] Home B1 counts fully-sold holdings in the investment total — 2026-10-21 · from review session (Claude)
+**Status:** OPEN — blocks closing B1 (`4324626`). Found by source review of `c2e3d2f..677092d`; not reproduced in a browser.
+
+`app/(app)/dashboard/page.tsx` sums `valueCurrentHolding()` (`lib/invest/portfolio.ts`) over **every** row of
+`holdings`, reading the stored `current_value_minor` "without loading the trade ledger". QA-INVEST-1 (`e6ff4cb`)
+established that the stored current value is **stale once ledger quantity reaches 0** and made ledger quantity
+authoritative everywhere in `/invest`. Home now bypasses that rule, so a fully sold holding (the owner sold SGOV on
+2026-10-07) is still added to เงินทั้งหมด and listed in `components/balance-breakdown-sheet.tsx` — Home and `/invest`
+will disagree. Fix: derive closed status from the ledger (reuse the cost-basis / `aggregateByAsset` path, or a
+lightweight per-holding qty sum) and exclude qty === 0 holdings from both the total and the breakdown list. Add a
+unit test with a fully sold holding that has a non-null stale `current_value_minor`, and an E2E assertion that Home's
+investment sub-line equals the `/invest` total.
+
+Verified as claimed at `677092d`: `tsc` 0, lint 0, vitest 331 passed / 34 skipped. New light-theme type tokens
+measure 5.24–5.92:1 on card and page background (dark 6.21–8.31:1), meeting the B4 brief. The `/invest` date fix
+(`b3d044f`) is correct for new writes; existing shifted rows remain unrepaired, as the post-mortem states.
+
 ## [SPEC-6] Ballast sleeve: classification and reporting — 2026-10-10
 **From:** idea-forge
 **Status:** RESOLVED — 2026-10-20: implementation `8b16f02`, applied owner-authorized SQL 0010, independent QA GREEN `757ef83` and PM APPROVED `33bff60`. Acceptance covers code and targeted behavior; deployment and owner reclassification are not certified.
