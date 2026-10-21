@@ -88,6 +88,10 @@ Verbatim (Thai), with a one-line reading of each:
 2. tune วันที่ให้ตรวจถูกขึ้น → improve date detection (slip OCR / import).
    Data point 2026-10-10: `/invest` transactions entered as `2026-10-07T20:30` (and SGOV `2026-09-08 20:30`) display as
    **8/10/2569** (and 9/9/2569) in the holding dialog — looks like a timezone/off-by-one-day display bug; verify.
+   - [x] **Phase B `/invest` date defect fixed 2026-10-21** — production repro confirmed both shifted dates;
+     `b3d044f` makes both investment write paths interpret `datetime-local` as explicit Bangkok time and adds a
+     UTC-host regression test. Post-mortem: `docs/postmortems/OWNER-FB-invest-date-off-by-one.md`. Deployment and
+     repair of already-shifted owner rows remain unverified and were not performed.
 3. หน้าสรุปการเงินทั้งหมดมาจากไหน หุ้นด้วยไหม → the overall money summary must say what it sums, and whether `/invest` holdings are included.
 4. เพิ่ม note ว่ารายการนี้ใช้ทำอะไร — ช่องผู้รับ/โอน: ไม่ใส่ = ใช้ชื่อเดิม, พิมพ์ = ใช้ตามที่พิมพ์ → editable label/note overriding the payee name.
 5. แสดงใช้จ่ายรวมรายวันด้วย → daily spending total (e.g. per date header in `/transactions`).
