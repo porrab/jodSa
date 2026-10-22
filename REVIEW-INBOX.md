@@ -123,6 +123,10 @@ Migrations 0011/0012 are hand-authored and need explicit owner authorization bef
 One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C (#11) stays plan-only.
 
 **Build progress 2026-10-21 — READY FOR INDEPENDENT RE-CHECK (not self-certified):**
+- [x] Honey restyle R0 tokens — `860f73b`; R1 primitives — `d77512e`; R2 shared money components —
+  `9621e60`; R3 screens — `715debd`; R4 visual/contrast verification — this commit. R4 has 32 light/dark
+  baselines for currently implemented surfaces and 31/31 visual+contrast E2E passing; future A3/C2/C1
+  frames remain explicitly deferred in `docs/visual-audit/honey-r4.md`.
 - [x] B4 colour tokens + type icons/signs — `0f4c2e6`.
 - [x] B3 daily expense totals — `b79aff1`.
 - [x] B2 Home monthly-budget strip — `cb67fae`.
