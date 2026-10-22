@@ -15,6 +15,33 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-2] Home: remove quick-add and match the Honey Figma frame — 2026-10-23 · from review session (Claude) for owner + design-studio
+**Status:** OPEN — do this **before** migration 0011 / A3. Owner verdict on the built Honey Home (`ea97b10`): "ยังดูรกๆ".
+
+**Owner decision 2026-10-23:** remove the จดเร็ว quick-add block (`components/quick-add-card.tsx` usage on
+`/dashboard`) from Home entirely. The centre ＋ FAB is the only entry point; its sheet's สลิป mode keeps OWNER-FB #9
+satisfied. Home = Hero card → Budget band → รายการวันนี้. Spec: `idea-forge/ideas/jodsa/docs/07-design.md` v6
+section, "Home without quick-add (2026-10-23)" (idea-forge `4506100`); Figma `85YURQNppODPO2dFxD8O6W` light Home
+`26:1166`, dark `34:3525`, empty-today `42:3786`, component `Today List` `42:3719`.
+
+**Fidelity gaps found by side-by-side at 390×844 (test user A), besides the quick-add:**
+- Hero sub-lines are single rows with the update date jammed inline ("≈฿21,279.00 · อัปเดต 23 ต.ค."). Figma: two-line
+  rows (label + muted meta "6 บัญชี" / "อัปเดต …"), amount right + chevron, hairline between, coloured dot markers.
+- Budget is a bordered card with everything bold and `.00` ("เหลือ ฿8,541.00 จาก ฿10,000.00", days on the amount
+  row). Figma: flat band with hairlines, header row "งบเดือนนี้ … อีก N วัน ›", bold "เหลือ ฿8,052" + muted small
+  "จาก ฿10,000" (no satang), footer "ใช้ไป … · ใช้ได้อีกวันละ ~…".
+- Overall type/padding run larger than the frame, so the today list starts below the fold. Use the brief's
+  type scale and the frame's spacing (hero 0/324, budget 324/150, today list from 474, first 3 rows above the nav).
+
+**Acceptance:** (1) no quick-add on `/dashboard`; ＋ → sheet → สลิป works; existing quick-add E2E assertions are
+moved to the sheet, not deleted. (2) At 390×844, light + dark, the first today row is fully visible above the nav
+with 3 seeded rows. (3) Attach a **side-by-side** of each Home state (filled, empty-today, over-budget, dark) next
+to its Figma node export — the R4 baselines are self-referential (they snapshot the app, not Figma) and cannot
+prove fidelity on their own. (4) Re-baseline `honey-visual.spec.ts` Home only after (3).
+
+Reviewer note on RV-OWNERFB-2: browser-confirmed 2026-10-23 — ฿1,459 expense + ฿15,000 income against ฿10,000
+shows "เหลือ ฿8,541".
+
 ## [RV-OWNERFB-2] Home budget strip counts income as spending — 2026-10-21 · from review session (Claude)
 **Status:** RESOLVED 2026-10-22 — `spentForBudget` now rejects non-expense rows defensively; the unit regression mixes ฿500 expense with ฿1,200 income, and the B2 browser fixture proves the strip still shows ฿9,500 remaining. Focused unit tests pass 6/6, typecheck passes, and the Home E2E spec passes 6/6. A full 110-test E2E attempt was not green: 35 tests passed before unrelated cross-feature 120-second timeouts began, so the repeated timeout run was stopped. Post-mortem: `docs/postmortems/RV-OWNERFB-2-home-budget-income.md`.
 
