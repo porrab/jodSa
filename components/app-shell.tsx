@@ -97,7 +97,7 @@ export default function AppShell({
       <FirstAccountSheet hasAccounts={accounts.length > 0} />
       <div className="flex min-h-svh">
         <AppNav />
-        <main className="flex-1 overflow-auto">
+        <main className="h-[calc(100svh-4.1rem)] flex-1 overflow-auto md:h-auto">
           {/* pb-24 on mobile clears the fixed bottom nav so a page's last element stays tappable */}
           <div className="container mx-auto max-w-4xl p-4 pb-24 md:p-6 md:pb-6">{children}</div>
         </main>
