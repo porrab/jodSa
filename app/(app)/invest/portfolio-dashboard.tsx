@@ -209,14 +209,14 @@ function SnapshotDetail({ snapshot, onClose }: { snapshot: SnapshotRow; onClose:
         </SheetHeader>
         <div className="space-y-4 px-4 pb-6">
           <div className="space-y-1">
-            <p className="text-2xl font-bold tabular-nums text-focal">
+            <p className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
               {formatMoney(totals.valueMinor, totals.currency)}
             </p>
             <p className="text-sm text-muted-foreground">
               {t('costBasisLine', { amount: formatMoney(totals.costMinor, totals.currency) })}
             </p>
             <p
-              className={`text-sm font-medium tabular-nums ${BigInt(totals.pnlMinor) < 0n ? 'text-destructive' : 'text-primary'}`}
+              className={`text-sm font-medium tabular-nums ${BigInt(totals.pnlMinor) < 0n ? 'text-destructive' : 'text-income'}`}
             >
               {t('pnlLine', { amount: formatMoney(totals.pnlMinor, totals.currency) })}
             </p>
@@ -287,23 +287,23 @@ export default function PortfolioDashboard({
         <>
           <Card>
             <CardContent className="space-y-2 pt-4">
-              <p className="text-xs text-muted-foreground">{t('totalValueLabel', { currency: dashboard.displayCurrency })}</p>
-              <p className="text-2xl font-bold tabular-nums text-focal">
+              <p className="text-sm text-muted-foreground">{t('totalValueLabel', { currency: dashboard.displayCurrency })}</p>
+              <p className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
                 {formatMoney(dashboard.totals.totalValueMinor, dashboard.totals.currency)}
               </p>
               <p className="text-sm text-muted-foreground">
                 {t('costBasisLine', { amount: formatMoney(dashboard.totals.totalCostMinor, dashboard.totals.currency) })}
               </p>
-              <p className={`text-sm font-medium tabular-nums ${pnl < 0n ? 'text-destructive' : 'text-primary'}`}>
+              <p className={`text-sm font-medium tabular-nums ${pnl < 0n ? 'text-destructive' : 'text-income'}`}>
                 {t('pnlLine', { amount: formatMoney(dashboard.totals.totalPnlMinor, dashboard.totals.currency) })}
               </p>
               {dashboard.totals.unpricedCount > 0 && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {t('unpricedNote', { count: dashboard.totals.unpricedCount })}
                 </p>
               )}
               {dashboard.totals.excludedCount > 0 && (
-                <p className="flex items-center gap-1 text-xs text-destructive">
+                <p className="flex items-center gap-1 text-sm text-destructive">
                   <AlertTriangle className="size-3.5" />
                   {t('excludedFxNote', { count: dashboard.totals.excludedCount })}
                 </p>
@@ -317,7 +317,7 @@ export default function PortfolioDashboard({
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{t('concentrationTitle')}</p>
                   {dashboard.concentration.anyConcentrated && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge variant="destructive" className="text-sm">
                       <AlertTriangle className="mr-1 size-3" />
                       {t('concentratedBadge')}
                     </Badge>
@@ -378,7 +378,7 @@ export default function PortfolioDashboard({
         <Card>
           <CardContent className="space-y-2 pt-4">
             <p className="text-sm font-medium">{t('snapshotHistory')}</p>
-            <div className="divide-y rounded-lg border">
+            <div className="divide-y divide-border">
               {snapshots.map((s) => {
                 const totals = s.totals as SnapshotTotals
                 return (

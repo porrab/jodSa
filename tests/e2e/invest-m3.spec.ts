@@ -47,7 +47,7 @@ test('QA-M3-1 dashboard totals/cost/P&L, allocation and concentration match the 
   await openOverview(page)
 
   // Total value (focal) + cost + P&L. Unpriced → value == cost, P&L 0.
-  await expect(page.locator('.text-2xl').first()).toContainText('58,321.50')
+  await expect(page.locator('.text-4xl').first()).toContainText('58,321.50')
   await expect(page.getByText(/ต้นทุนรวม.*58,321\.50/)).toBeVisible()
   await expect(page.getByText(/กำไร\/ขาดทุน.*0\.00/)).toBeVisible()
   await expect(page.getByText(/2 รายการยังไม่ได้ตั้งราคาปัจจุบัน/)).toBeVisible()
@@ -67,12 +67,12 @@ test('QA-M3-2 updating a price re-computes value + P&L', async ({ page }) => {
   test.setTimeout(180_000)
   await seedFixture(page)
   await openOverview(page)
-  await expect(page.locator('.text-2xl').first()).toContainText('58,321.50') // pre-update baseline
+  await expect(page.locator('.text-4xl').first()).toContainText('58,321.50') // pre-update baseline
 
   // Price AAPL at $2,000 (FX 36.5) → value ฿73,000; PTT stays unpriced-at-cost ฿3,535.
   await updatePrice(page, { asset: 'Apple Inc.', value: '2000', fx: '36.5' })
 
-  await expect(page.locator('.text-2xl').first()).toContainText('76,535.00') // 73,000 + 3,535
+  await expect(page.locator('.text-4xl').first()).toContainText('76,535.00') // 73,000 + 3,535
   await expect(page.getByText(/ต้นทุนรวม.*58,321\.50/)).toBeVisible()          // cost unchanged
   await expect(page.getByText(/กำไร\/ขาดทุน.*18,213\.50/)).toBeVisible()       // P&L recomputed
   await expect(page.getByText(/1 รายการยังไม่ได้ตั้งราคาปัจจุบัน/)).toBeVisible() // only PTT now
@@ -83,7 +83,7 @@ test('QA-M3-3 a saved snapshot reloads from history with identical numbers (no d
   await seedFixture(page)
   await openOverview(page)
   await updatePrice(page, { asset: 'Apple Inc.', value: '2000', fx: '36.5' })
-  await expect(page.locator('.text-2xl').first()).toContainText('76,535.00')
+  await expect(page.locator('.text-4xl').first()).toContainText('76,535.00')
 
   // Save a snapshot of the current ฿76,535.00 / P&L ฿18,213.50 state.
   await page.getByRole('button', { name: 'บันทึกสแนปช็อต' }).click()
@@ -125,12 +125,12 @@ test('QA-M3-5 a blank-FX foreign holding is excluded from totals and surfaced vi
   await seedFixture(page)
   await openOverview(page)
   // Both included at cost (AAPL has an FX-at-cost rate) → no excluded banner yet.
-  await expect(page.locator('.text-2xl').first()).toContainText('58,321.50')
+  await expect(page.locator('.text-4xl').first()).toContainText('58,321.50')
   await expect(page.getByText(/ต้องระบุอัตราแลกเปลี่ยน/)).toHaveCount(0)
 
   // Update AAPL's current value but leave FX BLANK → it drops out of the total.
   await updatePrice(page, { asset: 'Apple Inc.', value: '2000' })
 
-  await expect(page.locator('.text-2xl').first()).toContainText('3,535.00') // PTT only
+  await expect(page.locator('.text-4xl').first()).toContainText('3,535.00') // PTT only
   await expect(page.getByText(/1 รายการต้องระบุอัตราแลกเปลี่ยน/)).toBeVisible() // excluded-FX banner
 })

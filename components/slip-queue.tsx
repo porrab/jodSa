@@ -280,7 +280,7 @@ export default function SlipQueue({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">{t('queueHeader', { count: items.length, read: readCount })}</p>
-          {items.length > 20 && <p className="text-sm text-amber-600">{t('queueLongWait')}</p>}
+          {items.length > 20 && <p className="text-sm text-warn">{t('queueLongWait')}</p>}
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => addInputRef.current?.click()}>
           <Plus aria-hidden="true" className="mr-1 size-4" />{t('queueAdd')}

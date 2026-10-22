@@ -34,15 +34,15 @@ export default function InvestTabs({
 
   return (
     <div className="space-y-4">
-      <div className="inline-flex rounded-lg border p-0.5">
+      <div className="flex border-b border-border">
         {(['holdings', 'overview', 'plan'] as const).map((tb) => (
           <button
             key={tb}
             type="button"
             onClick={() => setTab(tb)}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-              tab === tb ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
+              'min-h-11 border-b-[3px] px-4 py-2 text-sm transition-colors',
+              tab === tb ? 'border-honey-edge font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             {tb === 'holdings' ? t('tabHoldings') : tb === 'overview' ? t('tabOverview') : t('tabPlan')}

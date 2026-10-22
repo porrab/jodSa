@@ -75,7 +75,7 @@ export default function HomeTodayList({
           <p className="text-sm text-muted-foreground">{t('noTransactionsToday')}</p>
         </div>
       ) : (
-        <div className="rounded-lg border divide-y">
+        <div className="divide-y divide-border">
           {/* Provisional rows (design v4 F6). Subdued and NOT tappable — there is
               no saved record to open a detail sheet for yet. Deliberately no
               spinner and no motion: the brief calls for a visual pending state,

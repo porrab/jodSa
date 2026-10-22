@@ -37,7 +37,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
       </div>
       <AccountsClient accounts={accountsWithBalance} initialAccountId={initialAccountId ?? null} />
     </div>

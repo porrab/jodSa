@@ -19,7 +19,7 @@ export default function DashboardLoading() {
       {/* today's transactions */}
       <div className="space-y-2">
         <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-        <div className="rounded-lg border divide-y">
+        <div className="divide-y divide-border">
           <div className="h-14 animate-pulse bg-muted" />
           <div className="h-14 animate-pulse bg-muted" />
           <div className="h-14 animate-pulse bg-muted" />

@@ -66,9 +66,9 @@ function TxRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
           {tx.counterparty ?? acct?.name ?? '—'}
-          {tx.category && <span className="ml-1.5 text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>}
+          {tx.category && <span className="ml-1.5 text-sm text-muted-foreground"><CategoryLabel value={tx.category} /></span>}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {format(new Date(tx.datetime), 'd MMM yyyy HH:mm', { locale: locale === 'th' ? th : enUS })}
         </p>
       </div>
@@ -150,7 +150,7 @@ export default function GroupDetailClient({
                   {t('noCandidates')}
                 </p>
               ) : (
-                <div className="divide-y rounded-lg border">
+                <div className="divide-y divide-border">
                   {candidates.map((tx) => (
                     <TxRow
                       key={tx.id}
@@ -173,7 +173,7 @@ export default function GroupDetailClient({
             <p className="mt-1 text-sm">{t('noMembersHint')}</p>
           </div>
         ) : (
-          <div className="divide-y rounded-lg border">
+          <div className="divide-y divide-border">
             {members.map((tx) => (
               <TxRow
                 key={tx.id}

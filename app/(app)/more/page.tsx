@@ -21,14 +21,14 @@ export default async function MorePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t('more')}</h1>
+      <h1 className="text-[28px] font-bold leading-[1.7]">{t('more')}</h1>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {items.map(({ href, key, icon: Icon }) => (
           <Link key={href} href={href}>
-            <Card className="transition-colors hover:bg-accent">
+            <Card className="border-transparent bg-card transition-colors hover:bg-secondary">
               <CardContent className="flex flex-col items-center gap-2 py-6">
-                <Icon className="size-6 text-muted-foreground" />
-                <span className="text-sm font-medium">{t(key)}</span>
+                <span className="flex size-11 items-center justify-center rounded-full bg-secondary text-honey-text"><Icon className="size-6" /></span>
+                <span className="text-base font-medium">{t(key)}</span>
               </CardContent>
             </Card>
           </Link>

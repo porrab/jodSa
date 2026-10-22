@@ -149,7 +149,7 @@ export default function TransactionsClient({
                             <span className="text-sm text-muted-foreground"><CategoryLabel value={tx.category} /></span>
                           )}
                           {tx.recurring_rule_id && (
-                            <span className="text-xs" title={t('recurringBadge')} aria-label={t('recurringBadge')}>
+                            <span className="text-sm" title={t('recurringBadge')} aria-label={t('recurringBadge')}>
                               🔁
                             </span>
                           )}

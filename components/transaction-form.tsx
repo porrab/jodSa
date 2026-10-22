@@ -2,11 +2,12 @@
 
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
@@ -27,10 +28,10 @@ import type { Database } from '@/lib/supabase/types'
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'bank'>
 type TxType = 'income' | 'expense' | 'transfer'
 
-const TYPE_ACTIVE_CLS: Record<TxType, string> = {
-  income:   'border-income/40 bg-income/15 text-income hover:bg-income/25',
-  expense:  'border-expense/40 bg-expense/15 text-expense hover:bg-expense/25',
-  transfer: 'border-transfer/40 bg-transfer/15 text-transfer hover:bg-transfer/25',
+const TYPE_META: Record<TxType, { icon: typeof ArrowDownLeft; cls: string }> = {
+  income: { icon: ArrowDownLeft, cls: 'text-income' },
+  expense: { icon: ArrowUpRight, cls: 'text-expense' },
+  transfer: { icon: ArrowLeftRight, cls: 'text-transfer' },
 }
 
 export default function TransactionForm({
@@ -220,26 +221,27 @@ export default function TransactionForm({
       {/* Type */}
       <div className="space-y-1">
         <Label>{t('type')}</Label>
-        <div className="flex gap-2">
-          {(['income', 'expense', 'transfer'] as const).map((ty) => (
-            <Button
+        <Segmented className="grid-cols-3" aria-label={t('type')}>
+          {(['income', 'expense', 'transfer'] as const).map((ty) => {
+            const Icon = TYPE_META[ty].icon
+            return (
+            <SegmentedItem
               key={ty}
-              type="button"
-              variant="outline"
-              size="sm"
               onClick={() => setType(ty)}
-              className={cn('flex-1', type === ty && TYPE_ACTIVE_CLS[ty])}
+              active={type === ty}
+              className={cn('inline-flex items-center justify-center gap-1.5', TYPE_META[ty].cls)}
             >
+              <Icon aria-hidden="true" className="size-4" />
               {t(ty)}
-            </Button>
-          ))}
-        </div>
+            </SegmentedItem>
+          )})}
+        </Segmented>
       </div>
 
       {/* Amount — hero input: ฿ prefix + large tabular-nums (design 07) */}
       <div className="space-y-1">
         <Label htmlFor={`${idPrefix}-amount`}>{t('amount')} <RequiredMark /></Label>
-        <div className="flex items-center gap-2 rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+        <div className="flex items-center gap-2 rounded-md bg-muted px-3 focus-within:ring-2 focus-within:ring-honey-edge">
           <span className="select-none text-2xl font-semibold tabular-nums text-muted-foreground">฿</span>
           <Input
             id={`${idPrefix}-amount`}

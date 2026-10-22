@@ -7,7 +7,7 @@ export default function TransactionsLoading() {
       {/* add/filter toolbar */}
       <div className="h-10 animate-pulse rounded-lg bg-muted" />
       {/* list rows */}
-      <div className="divide-y rounded-xl border bg-card">
+      <div className="divide-y divide-border bg-card">
         {Array.from({ length: 8 }, (_, i) => (
           <div key={i} className="flex items-center justify-between p-3">
             <div className="space-y-2">

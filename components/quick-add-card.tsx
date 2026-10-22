@@ -2,17 +2,17 @@
 
 import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Camera } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { openQuickAdd, type TxType } from '@/lib/quick-add'
 
-const TYPE_ACTIVE_CLS: Record<TxType, string> = {
-  income:   'border-income/40 bg-income/15 text-income hover:bg-income/25',
-  expense:  'border-expense/40 bg-expense/15 text-expense hover:bg-expense/25',
-  transfer: 'border-transfer/40 bg-transfer/15 text-transfer hover:bg-transfer/25',
+const TYPE_META: Record<TxType, { icon: typeof ArrowDownLeft; cls: string }> = {
+  income: { icon: ArrowDownLeft, cls: 'text-income' },
+  expense: { icon: ArrowUpRight, cls: 'text-expense' },
+  transfer: { icon: ArrowLeftRight, cls: 'text-transfer' },
 }
 
 /**
@@ -38,8 +38,7 @@ export default function QuickAddCard() {
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-3 py-4">
+    <div className="space-y-3">
         {/* Affordance must match the sheet's amount field (design v4 F2): the same
             value was entered through two inputs with two different affordances —
             bordered in the sheet, nothing at all here. Naked `bg-transparent
@@ -47,7 +46,7 @@ export default function QuickAddCard() {
             drawing a box, so this field appeared in dark and vanished in light.
             Same wrapper as `transaction-form.tsx`; only the type scale differs
             (this is Home's focal input). */}
-        <div className="flex items-center gap-2 rounded-md border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+        <div className="flex items-center gap-2 rounded-md bg-muted px-3 focus-within:ring-2 focus-within:ring-honey-edge">
           <span className="select-none text-3xl font-semibold tabular-nums text-muted-foreground">฿</span>
           <Input
             type="text"
@@ -68,20 +67,21 @@ export default function QuickAddCard() {
           />
         </div>
 
-        <div className="flex gap-2">
-          {(['income', 'expense', 'transfer'] as const).map((ty) => (
-            <Button
+        <Segmented className="grid-cols-3" aria-label={t('type')}>
+          {(['income', 'expense', 'transfer'] as const).map((ty) => {
+            const Icon = TYPE_META[ty].icon
+            return (
+            <SegmentedItem
               key={ty}
-              type="button"
-              variant="outline"
-              size="sm"
               onClick={() => setType(ty)}
-              className={cn('press flex-1', type === ty && TYPE_ACTIVE_CLS[ty])}
+              active={type === ty}
+              className={cn('press inline-flex items-center justify-center gap-1.5', TYPE_META[ty].cls)}
             >
+              <Icon aria-hidden="true" className="size-4" />
               {t(ty)}
-            </Button>
-          ))}
-        </div>
+            </SegmentedItem>
+          )})}
+        </Segmented>
 
         <div className="flex gap-2 pt-1">
           <Button type="button" variant="outline" className="press flex-1" onClick={() => slipInputRef.current?.click()}>
@@ -93,7 +93,6 @@ export default function QuickAddCard() {
             {t('save')}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

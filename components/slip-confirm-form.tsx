@@ -50,7 +50,7 @@ function ConfidenceBadge({ confidence }: { confidence: number }) {
   const t = useTranslations('slip')
   if (confidence >= LOW_CONFIDENCE) return null
   return (
-    <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+    <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-warn-soft px-2 py-1 text-sm font-medium text-warn">
       <AlertTriangle className="size-2.5" />
       {t('lowConfidence')}
     </span>
@@ -283,22 +283,22 @@ export default function SlipConfirmForm({
       </div>
 
       {/* Privacy promise — visible at the scan/confirm step */}
-      <div className="flex items-center gap-2 rounded-lg bg-primary/8 px-3 py-2 text-sm text-primary">
+      <div className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm text-honey-text">
         <LockKeyhole className="size-4 shrink-0" />
         <span>{t('privacyBadge')}</span>
       </div>
 
       {/* Low-confidence notice */}
       {[slip.amount, slip.datetime, slip.counterparty].some((f) => f.confidence < LOW_CONFIDENCE) && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+        <div className="flex items-start gap-2 rounded-md bg-warn-soft p-3 text-sm text-warn">
           <Info className="mt-0.5 size-4 shrink-0" />
           <span>{t('lowConfidenceNotice')}</span>
         </div>
       )}
 
       {refDup && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2 dark:border-amber-800 dark:bg-amber-900/20">
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+        <div className="space-y-2 rounded-md bg-warn-soft p-3">
+          <p className="text-sm font-medium text-warn">
             {t('refDuplicateWarning', {
               when: new Date(refDup.datetime).toLocaleString(locale === 'th' ? 'th-TH' : 'en-GB', {
                 day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -319,8 +319,8 @@ export default function SlipConfirmForm({
       )}
 
       {dupWarning && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2 dark:border-amber-800 dark:bg-amber-900/20">
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{dupWarning}</p>
+        <div className="space-y-2 rounded-md bg-warn-soft p-3">
+          <p className="text-sm font-medium text-warn">{dupWarning}</p>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setDupWarning(null)}>
               {t('cancel')}
@@ -373,7 +373,7 @@ export default function SlipConfirmForm({
             required
             defaultValue={slip.amount.value ? (slip.amount.value / 100).toFixed(2) : ''}
             placeholder="0.00"
-            className={slip.amount.confidence < LOW_CONFIDENCE ? 'border-amber-400' : ''}
+            className={slip.amount.confidence < LOW_CONFIDENCE ? 'border-warn' : ''}
           />
         </div>
 
@@ -382,7 +382,7 @@ export default function SlipConfirmForm({
           <Label>
             {t('account')} <RequiredMark />
             {showSlipMatchHint && (
-              <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium text-primary">
+              <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-1 text-sm font-medium text-honey-text">
                 <Sparkles className="size-2.5" />
                 {t('matchedFromSlip')}
               </span>
@@ -431,7 +431,7 @@ export default function SlipConfirmForm({
             name="counterparty"
             defaultValue={slip.counterparty.value ?? ''}
             placeholder={t('counterpartyPlaceholder')}
-            className={slip.counterparty.confidence < LOW_CONFIDENCE && slip.counterparty.value ? 'border-amber-400' : ''}
+            className={slip.counterparty.confidence < LOW_CONFIDENCE && slip.counterparty.value ? 'border-warn' : ''}
           />
         </div>
 
@@ -446,7 +446,7 @@ export default function SlipConfirmForm({
             required
             value={datetimeLocal}
             onChange={(e) => setDatetimeLocal(e.target.value)}
-            className={slip.datetime.confidence < LOW_CONFIDENCE ? 'border-amber-400' : ''}
+            className={slip.datetime.confidence < LOW_CONFIDENCE ? 'border-warn' : ''}
           />
         </div>
 
@@ -454,13 +454,13 @@ export default function SlipConfirmForm({
         {slip.refCode.value && (
           <div className="space-y-1.5">
             <Label className="text-muted-foreground">{t('refFromQr')}</Label>
-            <Input value={slip.refCode.value} readOnly className="font-mono text-xs text-muted-foreground" />
+            <Input value={slip.refCode.value} readOnly className="font-mono text-sm text-muted-foreground" />
           </div>
         )}
 
         {/* Debug block (dev-only) */}
         {slip.rawTextDebug && (
-          <details className="rounded-lg border p-3 text-xs">
+          <details className="rounded-lg border p-3 text-sm">
             <summary className="cursor-pointer text-muted-foreground">OCR debug</summary>
             <pre className="mt-2 whitespace-pre-wrap text-muted-foreground">{slip.rawTextDebug}</pre>
           </details>

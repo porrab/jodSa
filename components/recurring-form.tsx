@@ -160,7 +160,7 @@ function RuleForm({
                 onClick={() => toggleWeekday(w.value)}
                 className={`size-9 rounded-md border text-sm transition-colors ${
                   weekdays.includes(w.value)
-                    ? 'border-primary bg-primary text-primary-foreground'
+                    ? 'border-2 border-honey-edge bg-primary text-primary-foreground'
                     : 'border-input bg-background hover:bg-accent'
                 }`}
               >
@@ -168,7 +168,7 @@ function RuleForm({
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">{t('weekdaysHint')}</p>
+          <p className="text-sm text-muted-foreground">{t('weekdaysHint')}</p>
         </div>
       )}
 
@@ -308,19 +308,19 @@ export default function RecurringClient({
                     {acct && <Badge variant="secondary">{acct.name}</Badge>}
                     {rule.category && <Badge variant="outline"><CategoryLabel value={rule.category} /></Badge>}
                   </div>
-                  <p className="text-xs">
+                  <p className="text-sm">
                     {t('startsOn', { date: rule.start_date })}
                     {rule.end_date ? ` · ${t('untilDate', { date: rule.end_date })}` : ''}
                   </p>
                   {/* J7 — "did it work?" in one line: last deducted / next due, or an
                       explicit error state instead of a silent no-op. */}
                   {status[rule.id]?.error ? (
-                    <p className="flex items-center gap-1 text-xs font-medium text-destructive">
+                    <p className="flex items-center gap-1 text-sm font-medium text-destructive">
                       <AlertTriangle className="size-3 shrink-0" />
                       {t('materializeError')}
                     </p>
                   ) : (
-                    <p className="text-xs">
+                    <p className="text-sm">
                       {status[rule.id]?.lastDeducted
                         ? t('lastDeducted', { date: status[rule.id]!.lastDeducted! })
                         : t('lastDeductedNone')}

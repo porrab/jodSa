@@ -99,7 +99,7 @@ function AccountForm({
               : ''
           }
         />
-        <p className="text-xs text-muted-foreground">{t('openingBalanceHint')}</p>
+        <p className="text-sm text-muted-foreground">{t('openingBalanceHint')}</p>
       </div>
       <div className="space-y-1">
         <Label htmlFor="number_hint">{t('numberHint')}</Label>
@@ -109,7 +109,7 @@ function AccountForm({
           defaultValue={defaultValues?.numberHint ?? ''}
           placeholder="4415"
         />
-        <p className="text-xs text-muted-foreground">{t('numberHintHint')}</p>
+        <p className="text-sm text-muted-foreground">{t('numberHintHint')}</p>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
@@ -252,7 +252,7 @@ function AccountDetailSheet({
           </div>
         ) : (
           <div className="space-y-3 px-4 pb-6">
-            <p className={`text-2xl font-bold tabular-nums text-focal ${account.balance < 0 ? 'text-destructive' : ''}`}>
+            <p className={`text-4xl font-bold leading-[1.7] tabular-nums text-focal ${account.balance < 0 ? 'text-destructive' : ''}`}>
               {formatTHB(account.balance)}
             </p>
             <p className="text-sm text-muted-foreground">
@@ -330,7 +330,7 @@ export default function AccountsClient({
         // Compact rows (design v3) — replaces the tall per-account cards with
         // 3 always-visible icon actions. Density budget: single line, amount
         // right/tabular; tap opens the detail sheet for edit/QR/delete.
-        <div className="divide-y rounded-lg border">
+        <div className="divide-y divide-border">
           {accounts.map((acct) => (
             <button
               key={acct.id}
@@ -340,7 +340,7 @@ export default function AccountsClient({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{acct.name}</p>
-                <Badge variant="secondary" className="mt-0.5 text-xs">{acct.bank}</Badge>
+                <Badge variant="secondary" className="mt-0.5 text-sm">{acct.bank}</Badge>
               </div>
               <p className={`shrink-0 text-sm font-semibold tabular-nums ${acct.balance < 0 ? 'text-destructive' : ''}`}>
                 {formatTHB(acct.balance)}

@@ -61,7 +61,7 @@ export default function AccountQuickCreateForm({
       <div className="space-y-1">
         <Label htmlFor="qc-number-hint">{t('numberHint')}</Label>
         <Input id="qc-number-hint" name="number_hint" placeholder="4415" />
-        <p className="text-xs text-muted-foreground">{t('numberHintHint')}</p>
+        <p className="text-sm text-muted-foreground">{t('numberHintHint')}</p>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>

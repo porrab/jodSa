@@ -74,7 +74,7 @@ export default async function RecurringPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
         <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
       <RecurringClient rules={rules ?? []} accounts={accounts ?? []} status={status} />

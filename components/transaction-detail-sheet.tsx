@@ -120,7 +120,7 @@ export default function TransactionDetailSheet({
           </div>
         ) : (
           <div className={cn('space-y-3 border-l-4 px-4 pb-6', TYPE_STRIPE[tx.type])}>
-            <p className={cn('text-2xl font-bold tabular-nums', TYPE_TEXT[tx.type])}>
+            <p className={cn('text-4xl font-bold leading-[1.7] tabular-nums', TYPE_TEXT[tx.type])}>
               {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
               <span className="ml-2 inline-flex items-center text-sm font-normal text-muted-foreground">
                 <TransactionTypeIcon type={tx.type} />
@@ -136,12 +136,12 @@ export default function TransactionDetailSheet({
               {tx.counterparty && <> · {tx.counterparty}</>}
             </p>
             {tx.ref_code && (
-              <p className="truncate font-mono text-xs text-muted-foreground">
+              <p className="truncate font-mono text-sm text-muted-foreground">
                 {t('refCode', { code: tx.ref_code })}
               </p>
             )}
             {tx.recurring_rule_id && (
-              <p className="text-xs text-muted-foreground">🔁 {t('recurringBadge')}</p>
+              <p className="text-sm text-muted-foreground">🔁 {t('recurringBadge')}</p>
             )}
 
             <Button className="w-full" onClick={() => setEditing(true)}>

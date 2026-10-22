@@ -90,13 +90,13 @@ function CreateSessionForm({
               onClick={() => setType(ty)}
               className={cn(
                 'rounded-lg border p-3 text-left transition-colors',
-                type === ty ? 'border-primary bg-primary/10' : 'hover:bg-accent',
+                type === ty ? 'border-2 border-honey-edge bg-secondary' : 'border-border bg-card hover:bg-secondary',
               )}
             >
               <span className="block text-sm font-medium">
                 {ty === 'collect' ? t('typeCollect') : t('typeTrip')}
               </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">
+              <span className="mt-0.5 block text-sm text-muted-foreground">
                 {ty === 'collect' ? t('typeCollectHint') : t('typeTripHint')}
               </span>
             </button>
@@ -212,7 +212,7 @@ export default function SessionsClient({
                     <Badge variant={s.status === 'open' ? 'secondary' : 'outline'}>
                       {s.status === 'open' ? t('statusOpen') : t('statusClosed')}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">{t('slipCount', { count: s.count })}</span>
+                    <span className="text-sm text-muted-foreground">{t('slipCount', { count: s.count })}</span>
                   </div>
                 </Link>
                 <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(s.id)}>

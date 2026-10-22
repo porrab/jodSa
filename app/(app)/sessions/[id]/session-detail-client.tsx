@@ -95,7 +95,7 @@ export default function SessionDetailClient({
           <Link href="/sessions" className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-3.5" /> {t('title')}
           </Link>
-          <h1 className="truncate text-2xl font-bold">{session.title}</h1>
+          <h1 className="truncate text-[28px] font-bold leading-[1.7]">{session.title}</h1>
           <p className="text-sm text-muted-foreground">{accountLabel}</p>
         </div>
         <Badge variant={session.status === 'open' ? 'secondary' : 'outline'}>
@@ -138,7 +138,7 @@ export default function SessionDetailClient({
                   : t('targetShortBy', { amount: formatTHB(session.target_amount_satang - confirmed) })}
               </p>
             )}
-            <p className="pt-1 text-xs text-muted-foreground">{t('notVerifiedHint')}</p>
+            <p className="pt-1 text-sm text-muted-foreground">{t('notVerifiedHint')}</p>
           </CardContent>
         </Card>
       </div>
@@ -153,7 +153,7 @@ export default function SessionDetailClient({
             {t('noSlips')}
           </div>
         ) : (
-          <div className="divide-y rounded-lg border">
+          <div className="divide-y divide-border">
             {slips.map((slip) => (
               <div key={slip.id} className="flex items-center gap-3 p-3">
                 {slip.confirmed
@@ -161,7 +161,7 @@ export default function SessionDetailClient({
                   : <Circle className="size-5 shrink-0 text-muted-foreground" />}
                 <div className="min-w-0 flex-1">
                   <p className="font-medium tabular-nums">{formatTHB(slip.amount_satang)}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-sm text-muted-foreground">
                     {formatDateTime(slip.paid_at, locale)}
                     {slip.ref_code && ` · ${t('refCode', { ref: slip.ref_code })}`}
                   </p>

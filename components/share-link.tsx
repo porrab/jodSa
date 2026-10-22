@@ -34,7 +34,7 @@ export default function ShareLink({ path, title }: { path: string; title: string
 
   return (
     <div className="space-y-3">
-      <code className="block truncate rounded bg-muted px-2 py-1.5 text-xs">{url}</code>
+      <code className="block truncate rounded bg-muted px-2 py-1.5 text-sm">{url}</code>
       <div className="flex flex-wrap gap-2">
         {canShare && (
           <Button variant="outline" size="sm" onClick={share}>

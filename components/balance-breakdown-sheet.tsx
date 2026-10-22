@@ -54,13 +54,13 @@ export default function BalanceBreakdownSheet({
       <SheetContent side="bottom" className="mx-auto max-h-[85vh] max-w-lg overflow-y-auto rounded-t-2xl">
         <SheetHeader><SheetTitle>{t('moneyTotalTitle')}</SheetTitle></SheetHeader>
         <div className="space-y-6 px-4 pb-6">
-          <p className="text-2xl font-bold tabular-nums">≈ {formatMoney(totalMinor, 'THB', locale)}</p>
+          <p className="text-4xl font-bold leading-[1.7] tabular-nums">≈ {formatMoney(totalMinor, 'THB', locale)}</p>
 
           <section id="money-cash" className="scroll-mt-4 space-y-2">
             <div className="flex items-baseline justify-between gap-3 font-semibold">
               <h3>{t('cashInAccounts')}</h3><span className="tabular-nums">{formatTHB(cashTotal)}</span>
             </div>
-            <div className="divide-y rounded-lg border">
+            <div className="divide-y divide-border">
               {accounts.map((account) => (
                 <Link key={account.id} href={`/accounts?account=${account.id}`} className="flex min-h-12 items-center gap-2 px-3 py-2 hover:bg-accent/40">
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{account.name}</p><p className="text-sm text-muted-foreground">{account.bank}</p></div>
@@ -76,7 +76,7 @@ export default function BalanceBreakdownSheet({
               <div className="flex items-baseline justify-between gap-3 font-semibold">
                 <h3>📈 {t('investmentsManual')}</h3><span className="tabular-nums">≈ {formatMoney(investMinor, 'THB', locale)}</span>
               </div>
-              <div className="divide-y rounded-lg border">
+              <div className="divide-y divide-border">
                 {holdings.map((holding) => (
                   <Link key={holding.id} href={`/invest?holding=${holding.id}`} className="flex min-h-12 items-center gap-2 px-3 py-2 hover:bg-accent/40">
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{holding.symbol ?? holding.name}</p><p className="text-sm text-muted-foreground">{holding.broker ?? '—'}</p></div>

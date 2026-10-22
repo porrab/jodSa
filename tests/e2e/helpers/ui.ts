@@ -39,18 +39,25 @@ export async function addTransaction(page: Page, tx: NewTransaction): Promise<vo
   await dialog.getByRole('button', { name: TYPE_LABEL[tx.type], exact: true }).click()
   await dialog.getByLabel('จำนวนเงิน (บาท)').fill(tx.amount)
 
-  // Comboboxes in DOM order: source account first, then destination (transfer) or category
-  await dialog.getByRole('combobox').first().click()
-  await page.getByRole('option', { name: new RegExp(escapeRegex(tx.account)) }).click()
+  const sourceGroup = dialog.getByRole('radiogroup', {
+    name: tx.type === 'transfer' ? 'บัญชีต้นทาง' : 'บัญชี',
+  })
+  await sourceGroup.getByRole('radio', { name: new RegExp(`^${escapeRegex(tx.account)},`) }).click()
 
   if (tx.type === 'transfer') {
     if (!tx.toAccount) throw new Error('transfer needs toAccount')
-    await dialog.getByRole('combobox').nth(1).click()
-    await page.getByRole('option', { name: new RegExp(escapeRegex(tx.toAccount)) }).click()
+    await dialog
+      .getByRole('radiogroup', { name: 'บัญชีปลายทาง' })
+      .getByRole('radio', { name: new RegExp(`^${escapeRegex(tx.toAccount)},`) })
+      .click()
   }
 
   await dialog.getByRole('button', { name: 'บันทึกรายการ' }).click()
   await expect(dialog).toBeHidden({ timeout: 20_000 })
+  // The create path is intentionally optimistic: the dialog closes before the
+  // detached Server Action settles. Do not let callers navigate away while that
+  // request is still in flight, or the next route can read stale totals.
+  await page.waitForLoadState('networkidle')
 }
 
 function escapeRegex(s: string): string {

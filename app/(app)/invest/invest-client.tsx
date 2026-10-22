@@ -211,7 +211,7 @@ function AddHoldingDialog({ assets, onClose }: { assets: Asset[]; onClose: () =>
           </SelectContent>
         </Select>
         {/* Empty-source rule (design v3, J4): always an inline "+ create" exit, never a dead-end picker. */}
-        <button type="button" onClick={() => setShowCustom((s) => !s)} className="text-xs text-primary hover:underline">
+        <button type="button" onClick={() => setShowCustom((s) => !s)} className="text-sm text-honey-text hover:underline">
           {t('customAsset.notFound')}
         </button>
       </div>
@@ -231,12 +231,12 @@ function AddHoldingDialog({ assets, onClose }: { assets: Asset[]; onClose: () =>
               </SelectContent>
             </Select>
             {sleeve === 'risk_capital' && (
-              <p className="flex items-center gap-1 text-xs text-destructive">
+              <p className="flex items-center gap-1 text-sm text-destructive">
                 <AlertTriangle className="size-3.5" />{t('riskCapitalWarning')}
               </p>
             )}
             {sleeve === 'ballast' && (
-              <p className="text-xs text-muted-foreground">{t('ballastHelper')}</p>
+              <p className="text-sm text-muted-foreground">{t('ballastHelper')}</p>
             )}
           </div>
           <div className="space-y-1">
@@ -267,7 +267,7 @@ function AddHoldingDialog({ assets, onClose }: { assets: Asset[]; onClose: () =>
             <div className="space-y-1">
               <Label htmlFor="h-fx">{t('fxRateLabel', { currency: selectedAsset.currency })}</Label>
               <Input id="h-fx" name="fx_rate" type="text" inputMode="decimal" placeholder="36.50" className="tabular-nums" />
-              <p className="text-xs text-muted-foreground">{t('fxRateHint')}</p>
+              <p className="text-sm text-muted-foreground">{t('fxRateHint')}</p>
             </div>
           )}
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
@@ -383,12 +383,12 @@ function HoldingEditForm({ holding, onDone }: { holding: Holding; onDone: () => 
           </SelectContent>
         </Select>
         {sleeve === 'risk_capital' && (
-          <p className="flex items-center gap-1 text-xs text-destructive">
+          <p className="flex items-center gap-1 text-sm text-destructive">
             <AlertTriangle className="size-3.5" />{t('riskCapitalWarning')}
           </p>
         )}
         {sleeve === 'ballast' && (
-          <p className="text-xs text-muted-foreground">{t('ballastHelper')}</p>
+          <p className="text-sm text-muted-foreground">{t('ballastHelper')}</p>
         )}
       </div>
       <div className="space-y-1">
@@ -406,7 +406,7 @@ function HoldingEditForm({ holding, onDone }: { holding: Holding; onDone: () => 
           defaultValue={moneyInputDefault(holding.current_value_minor, currency)}
           placeholder="0.00"
         />
-        <p className="text-xs text-muted-foreground">{t('currentValueHint')}</p>
+        <p className="text-sm text-muted-foreground">{t('currentValueHint')}</p>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
@@ -480,14 +480,14 @@ function HoldingDetailSheet({
               </div>
 
               {holding.sleeve === 'risk_capital' && (
-                <p className="flex items-center gap-1.5 rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+                <p className="flex items-center gap-1.5 rounded-md bg-destructive/10 p-2 text-sm text-destructive">
                   <AlertTriangle className="size-4 shrink-0" />
                   {t('riskCapitalWarning')}
                 </p>
               )}
 
               <div className="space-y-1">
-                <p className="text-2xl font-bold tabular-nums text-focal">
+                <p className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
                   {display.valueMinor
                     ? formatMoney(display.valueMinor, holding.current_value_currency ?? currency)
                     : t('noCurrentValue')}
@@ -496,7 +496,7 @@ function HoldingDetailSheet({
                   {t('qtyHeld', { qty: cb.qty })} · {t('costBasisLine', { amount: formatMoney(display.costMinor, currency) })}
                 </p>
                 {display.pnlMinor !== null && (
-                  <p className={`text-sm font-medium tabular-nums ${display.pnlMinor < 0n ? 'text-destructive' : 'text-primary'}`}>
+                  <p className={`text-sm font-medium tabular-nums ${display.pnlMinor < 0n ? 'text-destructive' : 'text-income'}`}>
                     {t('pnlLine', { amount: formatMoney(display.pnlMinor, currency) })}
                   </p>
                 )}
@@ -507,16 +507,16 @@ function HoldingDetailSheet({
                 {holding.transactions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('noTransactions')}</p>
                 ) : (
-                  <div className="divide-y rounded-lg border">
+                  <div className="divide-y divide-border">
                     {holding.transactions.slice().reverse().map((tx) => (
                       <div key={tx.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                         <div className="min-w-0">
                           <p className="font-medium">{t(`txType.${tx.type}`)}{tx.qty ? ` · ${tx.qty}` : ''}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(tx.datetime).toLocaleDateString('th-TH')}</p>
+                          <p className="text-sm text-muted-foreground">{new Date(tx.datetime).toLocaleDateString('th-TH')}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <p className="tabular-nums">{formatMoney(tx.price_minor, tx.currency)}</p>
-                          <button type="button" onClick={() => handleDeleteTx(tx.id)} className="text-xs text-destructive hover:underline">
+                          <button type="button" onClick={() => handleDeleteTx(tx.id)} className="text-sm text-destructive hover:underline">
                             {t('deleteAction')}
                           </button>
                         </div>
@@ -561,7 +561,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -580,7 +580,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
           <p className="mt-1 text-sm">{t('noHoldingsHint')}</p>
         </div>
       ) : (
-        <div className="divide-y rounded-lg border">
+        <div className="divide-y divide-border">
           {holdings.map((h) => {
             const rowCurrency = h.asset?.currency ?? 'THB'
             const rowDisplay = getHoldingDisplay(h, rowCurrency)
@@ -594,8 +594,8 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{h.asset?.name ?? t('unknownAsset')}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1">
-                    <Badge variant="secondary" className="text-xs">{t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)}</Badge>
-                    <Badge variant={sleeveVariant(h.sleeve)} className="text-xs">{t(`sleeve.${h.sleeve}`)}</Badge>
+                    <Badge variant="secondary" className="text-sm">{t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)}</Badge>
+                    <Badge variant={sleeveVariant(h.sleeve)} className="text-sm">{t(`sleeve.${h.sleeve}`)}</Badge>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
@@ -604,7 +604,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                       ? formatMoney(rowDisplay.valueMinor, h.current_value_currency ?? rowCurrency)
                       : formatMoney(rowDisplay.costMinor, rowCurrency)}
                   </p>
-                  <p className="text-xs text-muted-foreground">{t('qtyHeld', { qty: h.costBasis.qty })}</p>
+                  <p className="text-sm text-muted-foreground">{t('qtyHeld', { qty: h.costBasis.qty })}</p>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </button>

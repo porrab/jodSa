@@ -26,7 +26,7 @@ export default function BudgetBar({
       <div className="flex items-baseline justify-between text-sm">
         <span className="font-medium">
           {label}
-          <span className="ml-1.5 text-xs text-muted-foreground">
+          <span className="ml-1.5 text-sm text-muted-foreground">
             {budget.period === 'month' ? t('periodMonth') : t('periodDay')}
           </span>
         </span>

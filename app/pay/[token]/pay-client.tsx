@@ -143,7 +143,7 @@ export default function PayClient({
     <main className="mx-auto max-w-md space-y-5 p-4 pb-10">
       <header className="space-y-1 pt-4 text-center">
         <p className="text-sm text-muted-foreground">{t('brand')}</p>
-        <h1 className="text-2xl font-bold">{session.title}</h1>
+        <h1 className="text-[28px] font-bold leading-[1.7]">{session.title}</h1>
         {session.targetAmountSatang !== null && (
           <p className="text-sm text-muted-foreground">
             {t('target', { amount: formatTHB(session.targetAmountSatang) })}
@@ -152,7 +152,7 @@ export default function PayClient({
       </header>
 
       {/* Trust note — always visible: recorded not bank-verified */}
-      <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+      <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
         <Info className="mt-0.5 size-3.5 shrink-0" />
         <span>{t('trustNote')}</span>
       </div>
@@ -171,7 +171,7 @@ export default function PayClient({
           <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50">
             <FileImage className="size-7 text-muted-foreground" />
             <span className="text-sm font-medium">{t('pickSlip')}</span>
-            <span className="text-xs text-muted-foreground">{t('privacyShort')}</span>
+            <span className="text-sm text-muted-foreground">{t('privacyShort')}</span>
             <input
               type="file"
               accept="image/*"
@@ -208,7 +208,7 @@ export default function PayClient({
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">{ts('privacyNote')}</p>
+          <p className="text-sm text-muted-foreground">{ts('privacyNote')}</p>
         </section>
       )}
 
@@ -223,10 +223,10 @@ export default function PayClient({
               inputMode="decimal"
               value={amountInput}
               onChange={(e) => setAmountInput(e.target.value)}
-              className={slip.amount.confidence < 0.5 ? 'border-amber-500' : ''}
+              className={slip.amount.confidence < 0.5 ? 'border-warn' : ''}
             />
             {slip.amount.confidence < 0.5 && (
-              <p className="text-xs text-amber-600">{t('unclearRead')}</p>
+              <p className="text-sm text-warn">{t('unclearRead')}</p>
             )}
           </div>
           <div className="space-y-1.5">
@@ -239,7 +239,7 @@ export default function PayClient({
             />
           </div>
           {slip.refCode.value && (
-            <p className="text-xs text-muted-foreground">{t('refLabel', { ref: slip.refCode.value })}</p>
+            <p className="text-sm text-muted-foreground">{t('refLabel', { ref: slip.refCode.value })}</p>
           )}
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => { setSlip(null); setStage('idle') }}>
@@ -297,14 +297,14 @@ export default function PayClient({
       {submitted.length > 0 && (
         <section className="space-y-2">
           <p className="text-sm font-medium">{t('yourSlips')}</p>
-          <div className="divide-y rounded-lg border">
+          <div className="divide-y divide-border">
             {submitted.map((s, i) => (
               <div key={i} className="flex items-center gap-3 p-3">
                 <CheckCircle2 className="size-4 shrink-0 text-income" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium tabular-nums">{formatTHB(s.amount_satang)}</p>
                   {s.ref_code && (
-                    <p className="truncate text-xs text-muted-foreground">{t('refShort', { ref: s.ref_code })}</p>
+                    <p className="truncate text-sm text-muted-foreground">{t('refShort', { ref: s.ref_code })}</p>
                   )}
                 </div>
               </div>
@@ -313,7 +313,7 @@ export default function PayClient({
         </section>
       )}
 
-      <footer className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+      <footer className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
         <Upload className="mt-0.5 size-3.5 shrink-0" />
         <span>
           {t.rich('recordedNote', { strong: (chunks) => <strong>{chunks}</strong> })}

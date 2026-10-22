@@ -26,15 +26,15 @@ export default function BudgetsOverviewTabs({
 
   return (
     <div className="space-y-4">
-      <div className="inline-flex rounded-lg border p-0.5">
+      <div className="flex border-b border-border">
         {(['budgets', 'overview'] as const).map((tb) => (
           <button
             key={tb}
             type="button"
             onClick={() => setTab(tb)}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-              tab === tb ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
+              'min-h-11 border-b-[3px] px-4 py-2 text-sm transition-colors',
+              tab === tb ? 'border-honey-edge font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             {tb === 'budgets' ? t('tabBudgets') : t('tabOverview')}

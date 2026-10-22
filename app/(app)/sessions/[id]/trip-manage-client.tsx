@@ -81,7 +81,7 @@ export default function TripManageClient({
           <Link href="/sessions" className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-3.5" /> {t('title')}
           </Link>
-          <h1 className="truncate text-2xl font-bold">{session.title}</h1>
+          <h1 className="truncate text-[28px] font-bold leading-[1.7]">{session.title}</h1>
           <p className="text-sm text-muted-foreground">{tt('members', { count: ledger.participants.length })}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">

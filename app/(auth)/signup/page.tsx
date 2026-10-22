@@ -13,13 +13,15 @@ export default async function SignupPage() {
   return (
     <div className="w-full max-w-sm space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">JodSa</h1>
+        <span aria-hidden="true" className="mx-auto mb-3 flex size-14 items-center justify-center rounded-md border-2 border-honey-edge bg-primary text-2xl font-bold text-primary-foreground">฿</span>
+        <h1 className="text-[28px] font-bold leading-[1.7]">JodSa</h1>
         <p className="text-muted-foreground mt-1 text-sm">{t('signupTitle')}</p>
       </div>
+      <p className="rounded-md bg-secondary px-4 py-3 text-center text-sm text-muted-foreground">{t('privacyLine')}</p>
       <SignupForm />
       <p className="text-center text-sm text-muted-foreground">
         {t('alreadyHaveAccount')}{' '}
-        <Link href="/login" className="text-foreground underline underline-offset-4">
+        <Link href="/login" className="text-honey-text underline underline-offset-4">
           {t('login')}
         </Link>
       </p>

@@ -107,10 +107,10 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
                     <span className="truncate">{g.title}</span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   </div>
-                  {g.note && <p className="truncate text-xs text-muted-foreground">{g.note}</p>}
+                  {g.note && <p className="truncate text-sm text-muted-foreground">{g.note}</p>}
                   <p className="mt-1 text-sm tabular-nums text-expense">
                     {formatTHB(g.spent)}
-                    <span className="ml-1.5 text-xs text-muted-foreground">{t('itemCount', { count: g.count })}</span>
+                    <span className="ml-1.5 text-sm text-muted-foreground">{t('itemCount', { count: g.count })}</span>
                   </p>
                 </Link>
                 <div className="flex flex-col gap-1">

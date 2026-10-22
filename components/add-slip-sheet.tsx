@@ -127,7 +127,7 @@ export default function AddSlipSheet({ sessionId }: { sessionId: string }) {
               variant="outline"
               size="sm"
               onClick={() => { setMode(m); if (m === 'manual') setRefCode(null) }}
-              className={cn('flex-1', mode === m && 'border-primary bg-primary/10 text-primary')}
+              className={cn('flex-1', mode === m && 'border-honey-edge bg-secondary text-foreground')}
             >
               {m === 'upload' ? t('modeUpload') : t('modeManual')}
             </Button>
@@ -140,7 +140,7 @@ export default function AddSlipSheet({ sessionId }: { sessionId: string }) {
             <div className="flex flex-col items-center gap-3 rounded-xl border p-6">
               <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               <div className="w-full space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{ts(`stage_${progress.stage}`)}</span>
                   <span>{progress.percent}%</span>
                 </div>
@@ -148,13 +148,13 @@ export default function AddSlipSheet({ sessionId }: { sessionId: string }) {
                   <div className="h-full w-full origin-left rounded-full bg-primary transition-transform motion-reduce:transition-none" style={{ transform: `scaleX(${progress.percent / 100})` }} />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">{ts('privacyNote')}</p>
+              <p className="text-sm text-muted-foreground">{ts('privacyNote')}</p>
             </div>
           ) : (
-            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50">
+            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-muted-foreground transition-colors hover:border-honey-edge">
               <FileImage className="size-6 text-muted-foreground" />
               <span className="text-sm font-medium">{ts('pickSlip')}</span>
-              <span className="text-xs text-muted-foreground">{ts('privacyNote')}</span>
+              <span className="text-sm text-muted-foreground">{ts('privacyNote')}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -193,7 +193,7 @@ export default function AddSlipSheet({ sessionId }: { sessionId: string }) {
               />
             </div>
             {mode === 'upload' && refCode && (
-              <p className="text-xs text-muted-foreground">{t('refCode', { ref: refCode })}</p>
+              <p className="text-sm text-muted-foreground">{t('refCode', { ref: refCode })}</p>
             )}
             <Button className="w-full" onClick={submit} disabled={submitting}>
               {submitting ? ts('saving') : t('saveSlip')}

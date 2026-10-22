@@ -148,7 +148,7 @@
     /* Density budget (design v3): base body 16px, line-height >= 1.5 so tall
        Thai vowels/tone marks never clip. */
     font-size: 1rem;
-    line-height: 1.6;
+    line-height: 1.7;
   }
 }
 

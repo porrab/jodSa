@@ -85,7 +85,7 @@ export default function SettingsClient({ email }: { email: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">{email}</p>
-          <div className="rounded-lg border border-destructive/40 p-4 space-y-2">
+          <div className="space-y-2 rounded-md bg-blush p-4">
             <p className="text-sm font-medium text-destructive">{t('dangerZone')}</p>
             <p className="text-sm text-muted-foreground">{t('deleteAccountDesc')}</p>
             <Button

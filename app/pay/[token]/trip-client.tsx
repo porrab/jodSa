@@ -205,7 +205,7 @@ function AddExpenseSheet({
         </div>
         <div className="space-y-1.5">
           <Label>{t('qrLabel')}</Label>
-          <p className="text-xs text-muted-foreground">{t('qrHint')}</p>
+          <p className="text-sm text-muted-foreground">{t('qrHint')}</p>
 
           {/* Owner with saved-QR accounts → choose between reusing one or uploading */}
           {hasSaved && (
@@ -217,7 +217,7 @@ function AddExpenseSheet({
                   variant="outline"
                   size="sm"
                   onClick={() => setQrSource(src)}
-                  className={cn('flex-1', qrSource === src && 'border-primary bg-primary/10 text-primary')}
+                  className={cn('flex-1', qrSource === src && 'border-honey-edge bg-secondary text-foreground')}
                 >
                   {src === 'saved' ? t('qrSourceSaved') : t('qrSourceUpload')}
                 </Button>
@@ -237,7 +237,7 @@ function AddExpenseSheet({
           ) : (
             <label className="mt-1 flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50">
               <FileImage className="size-5 text-muted-foreground" />
-              <span className="text-xs font-medium">{file ? file.name : t('qrPick')}</span>
+              <span className="text-sm font-medium">{file ? file.name : t('qrPick')}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -352,7 +352,7 @@ function SendSlipSheet({
               variant="outline"
               size="sm"
               onClick={() => setMode(m)}
-              className={cn('flex-1', mode === m && 'border-primary bg-primary/10 text-primary')}
+              className={cn('flex-1', mode === m && 'border-honey-edge bg-secondary text-foreground')}
             >
               {m === 'upload' ? t('readSlip') : t('typeAmount')}
             </Button>
@@ -364,7 +364,7 @@ function SendSlipSheet({
             <div className="flex flex-col items-center gap-3 rounded-xl border p-6">
               <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               <div className="w-full space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{ts(`stage_${progress.stage}`)}</span><span>{progress.percent}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -375,7 +375,7 @@ function SendSlipSheet({
           ) : (
             <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50">
               <FileImage className="size-5 text-muted-foreground" />
-              <span className="text-xs font-medium">{ts('pickSlip')}</span>
+              <span className="text-sm font-medium">{ts('pickSlip')}</span>
               <input type="file" accept="image/*" className="sr-only"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = '' }} />
             </label>
@@ -468,12 +468,12 @@ export default function TripClient({
       {!embedded && (
         <header className="space-y-1 pt-4 text-center">
           <p className="text-sm text-muted-foreground">{t('brand')}</p>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-xs text-muted-foreground">{t('members', { count: participants.length })}</p>
+          <h1 className="text-[28px] font-bold leading-[1.7]">{title}</h1>
+          <p className="text-sm text-muted-foreground">{t('members', { count: participants.length })}</p>
         </header>
       )}
 
-      <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+      <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
         <Info className="mt-0.5 size-3.5 shrink-0" />
         <span>{t('trustNote')}</span>
       </div>
@@ -533,7 +533,7 @@ export default function TripClient({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium">{e.title}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             {t('paidBy', { name: isPayer ? t('you') : nicknameOf(e.payer_participant_id) })}
                             {' · '}{t('perHead', { amount: formatTHB(share) })}
                           </p>
@@ -544,13 +544,13 @@ export default function TripClient({
                       {isPayer ? (
                         // Payer view: slips received + confirm toggles
                         <div className="space-y-1.5">
-                          <p className="text-xs font-medium text-muted-foreground">
+                          <p className="text-sm font-medium text-muted-foreground">
                             {t('slipsReceived', { count: expenseSlips.length })}
                           </p>
                           {expenseSlips.length === 0 ? (
-                            <p className="text-xs text-muted-foreground">{t('noSlipsYet')}</p>
+                            <p className="text-sm text-muted-foreground">{t('noSlipsYet')}</p>
                           ) : (
-                            <div className="divide-y rounded-lg border">
+                            <div className="divide-y divide-border">
                               {expenseSlips.map((s) => (
                                 <div key={s.id} className="flex items-center gap-2 p-2.5">
                                   {s.confirmed
@@ -558,7 +558,7 @@ export default function TripClient({
                                     : <Circle className="size-4 shrink-0 text-muted-foreground" />}
                                   <div className="min-w-0 flex-1">
                                     <p className="text-sm tabular-nums">{formatTHB(s.amount_satang)}</p>
-                                    <p className="truncate text-xs text-muted-foreground">{nicknameOf(s.payer_participant_id)}</p>
+                                    <p className="truncate text-sm text-muted-foreground">{nicknameOf(s.payer_participant_id)}</p>
                                   </div>
                                   <Switch
                                     checked={s.confirmed}

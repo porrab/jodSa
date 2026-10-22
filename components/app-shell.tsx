@@ -13,6 +13,7 @@ import AppNav from '@/components/app-nav'
 import TransactionForm from '@/components/transaction-form'
 import SlipQueue from '@/components/slip-queue'
 import { Button } from '@/components/ui/button'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import FirstAccountSheet from '@/components/first-account-sheet'
 import PendingTxProvider from '@/components/pending-tx-provider'
 import type { LastAccountMap } from '@/lib/last-account'
@@ -110,15 +111,15 @@ export default function AppShell({
             <SheetDescription className="sr-only">{t('description')}</SheetDescription>
           </SheetHeader>
           <div className="space-y-4 px-4 pb-8">
-            <div className="grid grid-cols-2 rounded-lg bg-muted p-1" role="tablist" aria-label={t('modeLabel')}>
-              <button type="button" role="tab" aria-selected={mode === 'manual'} className={`min-h-11 rounded-md px-3 text-sm font-medium ${mode === 'manual' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`} onClick={() => setMode('manual')}>
+            <Segmented className="grid-cols-2 bg-transparent p-0" role="tablist" aria-label={t('modeLabel')}>
+              <SegmentedItem role="tab" aria-selected={mode === 'manual'} active={mode === 'manual'} className={mode === 'manual' ? 'border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'bg-transparent'} onClick={() => setMode('manual')}>
                 {t('manualMode')}
-              </button>
-              <button type="button" role="tab" aria-selected={mode === 'slip'} className={`min-h-11 rounded-md px-3 text-sm font-medium ${mode === 'slip' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`} onClick={() => slipFiles.length > 0 ? setMode('slip') : slipInputRef.current?.click()}>
+              </SegmentedItem>
+              <SegmentedItem role="tab" aria-selected={mode === 'slip'} active={mode === 'slip'} className={mode === 'slip' ? 'border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'bg-transparent'} onClick={() => slipFiles.length > 0 ? setMode('slip') : slipInputRef.current?.click()}>
                 {t('slipMode')}
-              </button>
+              </SegmentedItem>
               <input ref={slipInputRef} type="file" accept="image/*" multiple className="sr-only" onChange={pickSlips} />
-            </div>
+            </Segmented>
 
             {confirmClose && (
               <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">

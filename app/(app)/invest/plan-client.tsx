@@ -75,7 +75,7 @@ function TagBadges({ tags }: { tags: EpistemicTag[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map((tag) => (
-        <Badge key={tag} variant="outline" className="text-[10px]" title={t(`tag.${tag}`)}>
+        <Badge key={tag} variant="outline" title={t(`tag.${tag}`)}>
           {tag}
         </Badge>
       ))}
@@ -103,7 +103,7 @@ function SuggestionCard({ s }: { s: Suggestion }) {
   const actionLabel = s.action === 'buy' ? t('actionBuy') : s.action === 'sell' ? t('actionSell') : t('actionHold')
   const badgeClass =
     s.action === 'buy'
-      ? 'bg-primary/15 text-primary'
+      ? 'bg-success-soft text-income'
       : s.action === 'sell'
         ? 'bg-destructive/15 text-destructive'
         : 'bg-muted text-muted-foreground'
@@ -139,7 +139,7 @@ function ConcentrationList({ rows, title, hint }: { rows: ConcentrationRow[]; ti
   return (
     <div className="space-y-1.5">
       <p className="text-sm font-medium">{title}</p>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
       <div className="space-y-1">
         {rows.map((r) => (
           <div key={r.key} className="flex items-center justify-between text-sm">
@@ -175,12 +175,12 @@ function PlanResult({ plan }: { plan: PlanRow }) {
             </Badge>
           </div>
           <p className="text-sm font-medium">{headline}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {t('totalValueLabel', { currency: plan.display_currency })}:{' '}
             {formatMoney(o.totalValueMinor, plan.display_currency)}
           </p>
           {o.riskCapitalPct > 0 && (
-            <p className="flex items-center gap-1 text-xs text-destructive">
+            <p className="flex items-center gap-1 text-sm text-destructive">
               <ShieldAlert className="size-3.5" />
               {t('riskCapitalNote', { pct: o.riskCapitalPct.toFixed(1) })}
             </p>
@@ -199,7 +199,7 @@ function PlanResult({ plan }: { plan: PlanRow }) {
                   {row.currentPct.toFixed(1)}% / {row.targetPct.toFixed(1)}%
                 </span>
                 <span
-                  className={`tabular-nums font-medium ${Math.abs(row.driftPct) >= 5 ? (row.driftPct > 0 ? 'text-destructive' : 'text-primary') : ''}`}
+                  className={`tabular-nums font-medium ${Math.abs(row.driftPct) >= 5 ? (row.driftPct > 0 ? 'text-destructive' : 'text-transfer') : ''}`}
                 >
                   {row.driftPct > 0 ? '+' : ''}
                   {row.driftPct.toFixed(1)}
@@ -222,10 +222,10 @@ function PlanResult({ plan }: { plan: PlanRow }) {
             <TagBadges tags={['CALC', 'JUDG-PROXY', 'APPROX']} />
             {o.concentration.opaqueVehicles.length > 0 && (
               <div className="space-y-1 rounded-md bg-muted/50 p-2">
-                <p className="text-xs font-medium">{t('opaqueVehiclesTitle')}</p>
-                <p className="text-xs text-muted-foreground">{t('opaqueVehiclesHint')}</p>
+                <p className="text-sm font-medium">{t('opaqueVehiclesTitle')}</p>
+                <p className="text-sm text-muted-foreground">{t('opaqueVehiclesHint')}</p>
                 {o.concentration.opaqueVehicles.map((v) => (
-                  <div key={v.assetId} className="flex items-center justify-between text-xs">
+                  <div key={v.assetId} className="flex items-center justify-between text-sm">
                     <span>{v.name}</span>
                     <span className="tabular-nums">{v.pct.toFixed(1)}%</span>
                   </div>
@@ -293,7 +293,7 @@ function ClassifyRow({ holdingName, assetId, isCustomAsset }: { holdingName: str
     return (
       <div className="rounded-md border border-dashed p-2 text-sm">
         <p className="font-medium">{holdingName}</p>
-        <p className="text-xs text-muted-foreground">{t('systemAssetUnclassified')}</p>
+        <p className="text-sm text-muted-foreground">{t('systemAssetUnclassified')}</p>
       </div>
     )
   }
@@ -318,7 +318,7 @@ function ClassifyRow({ holdingName, assetId, isCustomAsset }: { holdingName: str
       <Button type="submit" size="sm" disabled={isPending || !proxyClass}>
         {t('classifySave')}
       </Button>
-      {state.error && <p className="text-xs text-destructive">{state.error}</p>}
+      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
     </form>
   )
 }
@@ -363,11 +363,11 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
       <Card>
         <CardContent className="space-y-3 pt-4">
           <p className="text-sm font-medium">{t('targetAllocationTitle')}</p>
-          <p className="text-xs text-muted-foreground">{t('targetAllocationHint')}</p>
+          <p className="text-sm text-muted-foreground">{t('targetAllocationHint')}</p>
           <div className="grid grid-cols-2 gap-2">
             {ASSET_CLASSES.map((c) => (
               <div key={c} className="space-y-1">
-                <Label htmlFor={`target-${c}`} className="text-xs">
+                <Label htmlFor={`target-${c}`} className="text-sm">
                   {tInvest(`assetClass.${c}`)}
                 </Label>
                 <div className="flex items-center gap-1">
@@ -382,13 +382,13 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
                       setTarget((t) => ({ ...t, [c]: Number.isFinite(v) ? v : 0 }))
                     }}
                   />
-                  <span className="text-xs text-muted-foreground">%</span>
+                  <span className="text-sm text-muted-foreground">%</span>
                 </div>
               </div>
             ))}
           </div>
           {Math.abs(sum - 100) > 0.5 && (
-            <p className="flex items-center gap-1 text-xs text-destructive">
+            <p className="flex items-center gap-1 text-sm text-destructive">
               <AlertTriangle className="size-3.5" />
               {t('sumWarning', { sum })}
             </p>
@@ -442,7 +442,7 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
               <AlertTriangle className="size-4" />
               {t('unclassifiedTitle')}
             </div>
-            <p className="text-xs text-muted-foreground">{t('unclassifiedHint')}</p>
+            <p className="text-sm text-muted-foreground">{t('unclassifiedHint')}</p>
             <div className="space-y-2">
               {state.unclassified.map((u) => (
                 <ClassifyRow
@@ -463,7 +463,7 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
         <Card>
           <CardContent className="space-y-2 pt-4">
             <p className="text-sm font-medium">{t('planHistory')}</p>
-            <div className="divide-y rounded-lg border">
+            <div className="divide-y divide-border">
               {plans.map((p) => {
                 const verdict = (p.outputs as PlanOutputs).verdict
                 return (
@@ -474,7 +474,7 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
                     className="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-accent/50"
                   >
                     <span>{new Date(p.created_at).toLocaleString('th-TH')}</span>
-                    <Badge variant={verdict === 'no_trade' ? 'secondary' : 'default'} className="text-xs">
+                    <Badge variant={verdict === 'no_trade' ? 'secondary' : 'default'} className="text-sm">
                       {verdict === 'no_trade' ? t('verdictNoTradeBadge') : t('verdictActionBadge')}
                     </Badge>
                   </button>
