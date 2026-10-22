@@ -63,14 +63,14 @@ export default function AppNav() {
 
   const navItemCls = (active: boolean) =>
     cn(
-      'flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors',
-      active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+      'flex flex-1 flex-col items-center gap-1 py-2 text-sm transition-colors',
+      active ? 'font-semibold text-foreground [&>svg]:rounded-full [&>svg]:bg-primary [&>svg]:p-1 [&>svg]:size-8' : 'text-muted-foreground hover:text-foreground',
     )
 
   return (
     <>
       {/* Mobile bottom nav: 4 daily dests + center (＋) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-background/85 shadow-[var(--shadow-nav)] backdrop-blur-lg md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-card shadow-[var(--shadow-nav)] md:hidden">
         {mobileLeft.map(({ href, key, icon: Icon }) => (
           <Link key={href} href={href} className={navItemCls(pathname === href)}>
             <Icon className="size-5" />
@@ -85,7 +85,7 @@ export default function AppNav() {
           aria-label={t('add')}
           className="flex flex-1 items-center justify-center"
         >
-          <span className="press -mt-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-float ring-4 ring-background transition-colors hover:bg-primary/90 active:bg-primary/85">
+          <span className="press -mt-6 inline-flex size-14 items-center justify-center rounded-full border-2 border-honey-edge bg-primary text-primary-foreground shadow-float ring-4 ring-card transition-colors hover:bg-primary/90 active:bg-primary/85">
             <Plus className="size-6" />
           </span>
         </button>
@@ -111,8 +111,8 @@ export default function AppNav() {
               className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                 pathname === href
-                  ? 'bg-accent text-accent-foreground font-medium'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  ? 'bg-secondary text-foreground font-semibold'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
               )}
             >
               <Icon className="size-4" />

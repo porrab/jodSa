@@ -11,10 +11,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { formatTHB } from '@/lib/money'
-import {
-  TransactionTypeIcon,
-  transactionAmountPrefix,
-} from '@/components/transaction-type-indicator'
+import { TransactionTypeBadge, TRANSACTION_TYPE_STYLE, transactionAmountPrefix } from '@/components/transaction-type-indicator'
+import { Chip } from '@/components/ui/chip'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 import { openQuickAdd } from '@/lib/quick-add'
@@ -22,11 +20,7 @@ import { openQuickAdd } from '@/lib/quick-add'
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
 
-const TYPE_STYLE: Record<string, { key: string; badgeCls: string; textCls: string }> = {
-  income:   { key: 'income',   badgeCls: 'border-income/30 bg-income/10 text-income',       textCls: 'text-income' },
-  expense:  { key: 'expense',  badgeCls: 'border-expense/30 bg-expense/10 text-expense',    textCls: 'text-expense' },
-  transfer: { key: 'transfer', badgeCls: 'border-transfer/30 bg-transfer/10 text-transfer', textCls: 'text-transfer' },
-}
+const TYPE_KEY: Record<string, string> = { income: 'income', expense: 'expense', transfer: 'transfer' }
 
 type Group = { id: string; title: string }
 
@@ -96,28 +90,17 @@ export default function TransactionsClient({
 
       {groups.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveGroup(null)}
-            className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              activeGroup === null ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
+          <Chip pressed={activeGroup === null} onClick={() => setActiveGroup(null)}>
             {t('filterAll')}
-          </button>
+          </Chip>
           {groups.map((g) => (
-            <button
+            <Chip
               key={g.id}
-              type="button"
               onClick={() => setActiveGroup(g.id)}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                activeGroup === g.id ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
-              )}
+              pressed={activeGroup === g.id}
             >
               {g.title}
-            </button>
+            </Chip>
           ))}
         </div>
       )}
@@ -142,11 +125,12 @@ export default function TransactionsClient({
                   </p>
                 )}
               </div>
-              <div className="rounded-lg border divide-y">
+              <div className="divide-y divide-border">
                 {group.items.map((tx) => {
                   const acct = accountMap[tx.account_id]
                   const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-                  const style = TYPE_STYLE[tx.type] ?? TYPE_STYLE.expense
+                  const style = TRANSACTION_TYPE_STYLE[tx.type] ?? TRANSACTION_TYPE_STYLE.expense
+                  const typeKey = TYPE_KEY[tx.type] ?? 'expense'
 
                   return (
                     // J3: row tap opens the detail sheet — no inline destructive icon
@@ -158,17 +142,11 @@ export default function TransactionsClient({
                       onClick={() => setDetailTx(tx)}
                       className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent/50"
                     >
+                      <TransactionTypeBadge type={tx.type} label={t(typeKey)} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={cn(
-                            'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
-                            style.badgeCls,
-                          )}>
-                            <TransactionTypeIcon type={tx.type} />
-                            {t(style.key)}
-                          </span>
                           {tx.category && (
-                            <span className="text-xs text-muted-foreground"><CategoryLabel value={tx.category} /></span>
+                            <span className="text-sm text-muted-foreground"><CategoryLabel value={tx.category} /></span>
                           )}
                           {tx.recurring_rule_id && (
                             <span className="text-xs" title={t('recurringBadge')} aria-label={t('recurringBadge')}>
@@ -176,16 +154,16 @@ export default function TransactionsClient({
                             </span>
                           )}
                         </div>
-                        <p className="text-sm mt-0.5 truncate">
+                        <p className="mt-0.5 truncate text-base">
                           {tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : acct?.name ?? '—')}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
                           {acct && <> · {acct.name}</>}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className={cn('font-semibold tabular-nums text-sm', style.textCls)}>
+                        <p className={cn('text-base font-semibold tabular-nums', style.text)}>
                           {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
                         </p>
                       </div>

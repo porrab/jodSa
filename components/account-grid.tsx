@@ -83,19 +83,23 @@ export default function AccountGrid({
             onKeyDown={(event) => moveFocus(event, index)}
             onClick={() => { if (!dimmed) onValueChange(account.id) }}
             className={cn(
-              'relative min-h-14 rounded-lg border px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              selected ? 'border-2 border-primary bg-primary/5' : 'hover:bg-accent/50',
+              'relative h-[72px] min-w-0 rounded-md border bg-card px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey-edge',
+              selected
+                ? 'border-2 border-honey-edge bg-primary text-primary-foreground'
+                : balance === 0
+                  ? 'border-transparent bg-background text-muted-foreground hover:bg-secondary'
+                  : 'border-border hover:bg-secondary',
               dimmed && 'opacity-40',
             )}
           >
             <span className="flex items-start justify-between gap-1">
               <span className="truncate text-sm font-semibold">{account.name}</span>
-              {selected && <Check aria-hidden="true" className="size-4 shrink-0 text-primary" />}
+              {selected && <Check aria-hidden="true" className="size-4 shrink-0 text-primary-foreground" />}
             </span>
             {balancesLoading ? (
               <span aria-hidden="true" className="mt-1 block h-4 w-14 animate-pulse rounded bg-muted" />
             ) : (
-              <span className="mt-1 block truncate text-sm tabular-nums text-muted-foreground">
+              <span className={cn('mt-1 block truncate text-sm tabular-nums', selected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
                 {balance === undefined ? '—' : tileMoney.format(balance / 100)}
               </span>
             )}
@@ -107,7 +111,7 @@ export default function AccountGrid({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="flex min-h-14 items-center justify-center gap-1 rounded-lg border px-2 py-2 text-sm font-semibold hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-[72px] items-center justify-center gap-1 rounded-md border border-dashed border-muted-foreground bg-card px-2 py-2 text-sm font-semibold hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey-edge"
         >
           {t('showAllAccounts', { count: accounts.length })}<ChevronDown aria-hidden="true" className="size-4" />
         </button>

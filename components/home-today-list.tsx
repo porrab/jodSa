@@ -10,7 +10,7 @@ import { formatTHB } from '@/lib/money'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { usePendingTx } from '@/components/pending-tx-provider'
 import { Mascot } from '@/components/mascot'
-import { transactionAmountPrefix } from '@/components/transaction-type-indicator'
+import { TransactionTypeBadge, transactionAmountPrefix } from '@/components/transaction-type-indicator'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -85,6 +85,7 @@ export default function HomeTodayList({
               key={p.tempId}
               className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left opacity-60"
             >
+              <TransactionTypeBadge type={p.type} label={p.type} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base">
                   {p.label}
@@ -116,6 +117,7 @@ export default function HomeTodayList({
                 onClick={() => setDetailTx(tx)}
                 className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
               >
+                <TransactionTypeBadge type={tx.type} label={tx.type} />
                 <div className="min-w-0 flex-1">
                   {/* Primary row content sits at the 16px base tier (design v4
                       F3); the category chip and timestamp are the secondary

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, FileImage, Loader2, Plus, RotateCcw } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import SlipConfirmForm from '@/components/slip-confirm-form'
 import TransactionForm from '@/components/transaction-form'
 import { parseSlipImage, type ParseStage } from '@/lib/slip/parse-image'
@@ -246,6 +247,13 @@ export default function SlipQueue({
   const reviewCount = items.filter((item) => item.status === 'review' || item.status === 'save_error').length
   const readCount = items.filter((item) => !['pending', 'parsing'].includes(item.status)).length
   const statusLabel = (item: QueueItem) => t(`queueStatus_${item.status}`)
+  const statusTone = (status: QueueStatus): 'success' | 'warning' | 'destructive' | 'info' | 'neutral' => {
+    if (status === 'ready' || status === 'saved') return 'success'
+    if (status === 'review') return 'warning'
+    if (status === 'error' || status === 'save_error') return 'destructive'
+    if (status === 'parsing' || status === 'saving') return 'info'
+    return 'neutral'
+  }
   const amountLabel = (item: QueueItem) => item.parsed?.amount.value
     ? new Intl.NumberFormat(locale === 'th' ? 'th-TH' : 'en-US', { style: 'currency', currency: 'THB' }).format(item.parsed.amount.value / 100)
     : ''
@@ -282,7 +290,7 @@ export default function SlipQueue({
       <p className="text-sm text-muted-foreground">{t('privacyNote')}</p>
       <p className="sr-only" aria-live="polite">{t('queueHeader', { count: items.length, read: readCount })}</p>
 
-      <div role="list" className="divide-y rounded-xl border">
+      <div role="list" className="divide-y divide-border">
         {items.map((item, index) => (
           <div role="listitem" key={item.id} className="p-3">
             <button
@@ -298,16 +306,21 @@ export default function SlipQueue({
               })}
               className="flex w-full items-center gap-3 text-left disabled:cursor-default"
             >
-              {item.status === 'parsing' || item.status === 'saving'
-                ? <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin text-primary" />
-                : item.status === 'ready' || item.status === 'saved'
-                  ? <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-income" />
-                  : item.status === 'review' || item.status === 'error' || item.status === 'save_error'
-                    ? <AlertTriangle aria-hidden="true" className="size-4 shrink-0 text-amber-500" />
-                    : <span aria-hidden="true" className="size-4 shrink-0 rounded-full border" />}
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">{statusLabel(item)} {amountLabel(item)}{item.parsed?.counterparty.value ? ` · ${item.parsed.counterparty.value}` : ''}</span>
-                <span className="block truncate text-xs text-muted-foreground">{item.error ?? item.filename}</span>
+                <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                  <Badge variant={statusTone(item.status)}>
+                    {item.status === 'parsing' || item.status === 'saving'
+                      ? <Loader2 aria-hidden="true" className="animate-spin" />
+                      : item.status === 'ready' || item.status === 'saved'
+                        ? <CheckCircle2 aria-hidden="true" />
+                        : item.status === 'review' || item.status === 'error' || item.status === 'save_error'
+                          ? <AlertTriangle aria-hidden="true" />
+                          : null}
+                    {statusLabel(item)}
+                  </Badge>
+                  <span>{amountLabel(item)}{item.parsed?.counterparty.value ? ` · ${item.parsed.counterparty.value}` : ''}</span>
+                </span>
+                <span className="block truncate text-sm text-muted-foreground">{item.error ?? item.filename}</span>
                 {item.status === 'parsing' && (
                   <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-muted">
                     <span className="block h-full w-full origin-left bg-primary transition-transform" style={{ transform: `scaleX(${item.progress.percent / 100})` }} />

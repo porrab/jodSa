@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { AlertTriangle, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
 import { formatTHB } from '@/lib/money'
@@ -22,8 +22,9 @@ export default function HomeBudgetStrip({
 
   if (!budget || !status) {
     return (
-      <Link href="/budgets" className="block text-sm text-muted-foreground hover:text-foreground">
-        {t('noBudgetLine', { amount: formatTHB(monthExpense) })}
+      <Link href="/budgets" className="flex min-h-14 items-center justify-between gap-3 rounded-md bg-secondary px-4 py-3 text-sm text-foreground">
+        <span>{t('noBudgetLine', { amount: formatTHB(monthExpense) })}</span>
+        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-honey-text" />
       </Link>
     )
   }
@@ -40,7 +41,7 @@ export default function HomeBudgetStrip({
   return (
     <Link
       href="/budgets"
-      className="block space-y-2 rounded-lg border bg-card p-4 shadow-xs transition-colors hover:bg-accent/30"
+      className={`block space-y-2 rounded-md border p-4 transition-colors ${status.over ? 'border-destructive/30 bg-blush' : 'border-border bg-card hover:bg-secondary/40'}`}
     >
       <div className="flex items-center justify-between gap-3 text-sm font-semibold">
         <span>{title}</span>
@@ -50,7 +51,7 @@ export default function HomeBudgetStrip({
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p className={`text-base font-semibold tabular-nums ${status.over ? 'text-expense' : 'text-foreground'}`}>
           {status.over
-            ? t('homeBudgetOver', { amount: formatTHB(-status.remaining) })
+            ? <span className="inline-flex items-center gap-1.5"><AlertTriangle aria-hidden="true" className="size-4" />{t('homeBudgetOver', { amount: formatTHB(-status.remaining) })}</span>
             : t('homeBudgetRemaining', {
                 remaining: formatTHB(status.remaining),
                 amount: formatTHB(budget.amount_satang),
@@ -72,7 +73,7 @@ export default function HomeBudgetStrip({
       >
         <div
           className={`h-full w-full origin-left rounded-full transition-transform motion-reduce:transition-none ${
-            status.over ? 'bg-expense' : 'bg-muted-foreground'
+            status.over ? 'bg-destructive' : 'border-[1.5px] border-honey-edge bg-primary'
           }`}
           style={{ transform: `scaleX(${status.ratio})` }}
         />

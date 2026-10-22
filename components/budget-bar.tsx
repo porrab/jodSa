@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl'
 import { formatTHB } from '@/lib/money'
-import { Mascot } from '@/components/mascot'
+import { AlertTriangle } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
 import type { BudgetRow, BudgetStatus } from '@/lib/budget'
 
@@ -22,7 +22,7 @@ export default function BudgetBar({
     )
 
   return (
-    <div className="space-y-1.5">
+    <div className={`space-y-2 rounded-md p-3 ${status.over ? 'bg-blush' : 'bg-card'}`}>
       <div className="flex items-baseline justify-between text-sm">
         <span className="font-medium">
           {label}
@@ -38,17 +38,16 @@ export default function BudgetBar({
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
           className={`h-full w-full origin-left rounded-full transition-transform motion-reduce:transition-none ${
-            status.over ? 'bg-expense' : 'bg-primary'
+            status.over ? 'bg-destructive' : 'border-[1.5px] border-honey-edge bg-primary'
           }`}
           style={{ transform: `scaleX(${Math.min(status.ratio, 1)})` }}
         />
       </div>
 
-      <p className={`flex items-center gap-1.5 text-xs tabular-nums ${status.over ? 'text-expense' : 'text-muted-foreground'}`}>
+      <p className={`flex items-center gap-1.5 text-sm tabular-nums ${status.over ? 'text-destructive' : 'text-muted-foreground'}`}>
         {status.over ? (
           <>
-            {/* Surprised mascot = the brief's no-panic over-budget cue (never alarm-red) */}
-            <Mascot expr="surprised" className="h-4 w-4 shrink-0" />
+            <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />
             {t('overBy', { amount: formatTHB(-status.remaining) })}
           </>
         ) : (
