@@ -1,150 +1,124 @@
-import { test, expect, type Locator, type Page } from '@playwright/test'
-import { env, STORAGE_A } from './helpers/env'
-import { findUserByEmail, resetAllUserData, seedAccount, seedBudget, seedTransaction } from './helpers/admin'
+import { test, expect, type Page } from '@playwright/test'
 
 /**
- * QA-M9 — Contrast audit (design v3 floor + ceiling), production build.
+ * Visual language v6 R0 — browser-computed Honey token contrast.
  *
- * The rendered-pixel gate pm-desk routed here (deviation (a): no per-screen
- * contrast audit at code+unit). Samples key text surfaces in BOTH themes and
- * checks the v3 rules on the ACTUAL painted colors:
- *   - floor: body & muted text ≥ 4.5:1 (WCAG AA) on their real surface.
- *   - ceiling (dark): body text ≤ ~13:1 — NOT the near-pure-white glare that
- *     caused the reported eye strain; near-white (~0.97 L) is reserved for the
- *     single focal number via `.text-focal`.
- *   - no backdrop-blur behind content text (the txn day-header).
- *
- * Method: colors are resolved to sRGB by painting the computed color string onto
- * a 1x1 canvas (so oklch() tokens resolve exactly as rendered), then WCAG
- * relative-luminance contrast is computed against the nearest opaque ancestor
- * background. No extra dev-dependency added.
- *
- * Coverage (honest): 2 screens (Home, Transactions) × 2 themes × text roles
- * {focal number, body text on card, muted-on-card}. Not every screen is sampled;
- * the tokens are systemic (all cards/text derive from the same CSS variables), so
- * these representative surfaces exercise the token values that every screen uses.
+ * Values are resolved by Chromium from the shipped CSS custom properties, painted
+ * to sRGB, then measured with the WCAG 2.x relative-luminance formula. This catches
+ * invalid mappings and browser conversion drift instead of trusting the design hex.
  */
 
-test.use({ storageState: STORAGE_A })
-
-// WCAG contrast saturates near white (0.89 L body and 0.97 L focal both land
-// ~13–15:1 on the 0.17 L dark background), so a ratio ceiling alone can't tell
-// "toned-down body" from "reserved near-white focal". DARK_CEIL catches a
-// pure-white (#fff) body regression (~16:1 on this bg); BODY_LUM_MAX is the real
-// v3 ceiling discriminator — body must be perceptibly below the near-white the
-// focal number reserves.
-const DARK_CEIL = 16.0
-const BODY_LUM_MAX = 0.80
-const AA = 4.5
-
-let userId: string
-
-test.beforeAll(async () => {
-  const u = await findUserByEmail(env.userA.email)
-  if (!u) throw new Error(`test user A missing: ${env.userA.email}`)
-  userId = u.id
-  await resetAllUserData(userId)
-  const acct = await seedAccount(userId, 'เงินสด', 'KBank')
-  await seedBudget(userId, 1_000_000)
-  await seedTransaction(userId, acct, { type: 'expense', amountSatang: 12_345, category: 'food', counterparty: 'ร้านตัวอย่าง คอนทราสต์' })
-})
-
-type Sample = { ratio: number; fg: string; bg: string; fgLum: number }
-
-// Resolve painted sRGB via canvas (handles oklch/rgb/hsl), compute WCAG contrast
-// against the nearest opaque ancestor background.
-async function contrastOf(el: Locator): Promise<Sample> {
-  return el.first().evaluate((node) => {
-    const paint = (color: string): [number, number, number, number] => {
-      const c = document.createElement('canvas'); c.width = c.height = 1
-      const g = c.getContext('2d')!
-      g.clearRect(0, 0, 1, 1)
-      g.fillStyle = 'rgba(0,0,0,0)'; g.fillStyle = color
-      g.fillRect(0, 0, 1, 1)
-      const d = g.getImageData(0, 0, 1, 1).data
-      return [d[0], d[1], d[2], d[3]]
-    }
-    const rel = ([r, gg, b]: number[]) => {
-      const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
-      return 0.2126 * f(r) + 0.7152 * f(gg) + 0.0722 * f(b)
-    }
-    const fg = paint(getComputedStyle(node as Element).color)
-    // Walk ancestors to the first opaque background color.
-    let bg: number[] = [255, 255, 255, 255]
-    let cur: Element | null = node as Element
-    while (cur) {
-      const p = paint(getComputedStyle(cur).backgroundColor)
-      if (p[3] === 255) { bg = p; break }
-      cur = cur.parentElement
-    }
-    const L1 = rel(fg), L2 = rel(bg)
-    const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)
-    const hex = (a: number[]) => '#' + a.slice(0, 3).map((n) => n.toString(16).padStart(2, '0')).join('')
-    return { ratio: Math.round(ratio * 100) / 100, fg: hex(fg), bg: hex(bg), fgLum: Math.round(rel(fg) * 1000) / 1000 }
-  })
+type Pair = {
+  name: string
+  foreground: string
+  background: string
+  minimum: number
+  maximum?: number
 }
 
+const TEXT_PAIRS: Pair[] = [
+  { name: 'ink on page', foreground: '--foreground', background: '--background', minimum: 4.5, maximum: 13.1 },
+  { name: 'ink on surface', foreground: '--foreground', background: '--card', minimum: 4.5, maximum: 13.6 },
+  { name: 'muted on page', foreground: '--muted-foreground', background: '--background', minimum: 4.5 },
+  { name: 'muted on surface', foreground: '--muted-foreground', background: '--card', minimum: 4.5 },
+  { name: 'muted on track', foreground: '--muted-foreground', background: '--muted', minimum: 4.5 },
+  { name: 'muted on honey-soft', foreground: '--muted-foreground', background: '--secondary', minimum: 4.5 },
+  { name: 'on-honey', foreground: '--primary-foreground', background: '--primary', minimum: 4.5 },
+  { name: 'honey link on page', foreground: '--honey-text', background: '--background', minimum: 4.5 },
+  { name: 'honey link on surface', foreground: '--honey-text', background: '--card', minimum: 4.5 },
+  { name: 'honey link on honey-soft', foreground: '--honey-text', background: '--secondary', minimum: 4.5 },
+  { name: 'hero figure on hero', foreground: '--hero-figure', background: '--hero', minimum: 4.5 },
+  { name: 'on-hero', foreground: '--hero-foreground', background: '--hero', minimum: 4.5 },
+  { name: 'hero muted on hero', foreground: '--hero-muted', background: '--hero', minimum: 4.5 },
+  { name: 'hero muted on inset', foreground: '--hero-muted', background: '--hero-inset', minimum: 4.5 },
+  { name: 'income on page', foreground: '--income', background: '--background', minimum: 4.5 },
+  { name: 'income on surface', foreground: '--income', background: '--card', minimum: 4.5 },
+  { name: 'income on success-soft', foreground: '--income', background: '--success-soft', minimum: 4.5 },
+  { name: 'expense on page', foreground: '--expense', background: '--background', minimum: 4.5 },
+  { name: 'expense on surface', foreground: '--expense', background: '--card', minimum: 4.5 },
+  { name: 'expense on blush', foreground: '--expense', background: '--blush', minimum: 4.5 },
+  { name: 'transfer on page', foreground: '--transfer', background: '--background', minimum: 4.5 },
+  { name: 'transfer on surface', foreground: '--transfer', background: '--card', minimum: 4.5 },
+  { name: 'transfer on info-soft', foreground: '--transfer', background: '--info-soft', minimum: 4.5 },
+  { name: 'over on blush', foreground: '--destructive', background: '--blush', minimum: 4.5 },
+  { name: 'over on page', foreground: '--destructive', background: '--background', minimum: 4.5 },
+  { name: 'warn on warn-soft', foreground: '--warn', background: '--warn-soft', minimum: 4.5 },
+  { name: 'warn on surface', foreground: '--warn', background: '--card', minimum: 4.5 },
+]
+
+const NON_TEXT_PAIRS: Pair[] = [
+  { name: 'honey outline on page', foreground: '--honey-edge', background: '--background', minimum: 3 },
+  { name: 'honey outline on track', foreground: '--honey-edge', background: '--muted', minimum: 3 },
+  { name: 'input boundary on surface', foreground: '--input', background: '--card', minimum: 3 },
+  { name: 'input boundary on page', foreground: '--input', background: '--background', minimum: 3 },
+  { name: 'investment split on hero', foreground: '--invest-bar', background: '--hero', minimum: 3 },
+]
+
 async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
-  await page.evaluate((t) => localStorage.setItem('theme', t), theme)
+  await page.goto('/login')
+  await page.evaluate((nextTheme) => localStorage.setItem('theme', nextTheme), theme)
   await page.reload()
-  await page.waitForLoadState('networkidle')
-  const isDark = await page.evaluate(() => document.documentElement.classList.contains('dark'))
-  expect(isDark, `theme ${theme} applied`).toBe(theme === 'dark')
+  await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+    .toBe(theme === 'dark')
+}
+
+async function contrastTable(page: Page, pairs: Pair[]): Promise<Array<Pair & { ratio: number; fg: string; bg: string }>> {
+  return page.evaluate((requestedPairs) => {
+    const rootStyle = getComputedStyle(document.documentElement)
+    const paint = (color: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 1
+      const context = canvas.getContext('2d')!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const [r, g, b] = context.getImageData(0, 0, 1, 1).data
+      return [r, g, b]
+    }
+    const luminance = ([r, g, b]: number[]) => {
+      const channel = (value: number) => {
+        const normalized = value / 255
+        return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4
+      }
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+    }
+    const hex = (rgb: number[]) => `#${rgb.map((value) => value.toString(16).padStart(2, '0')).join('')}`
+
+    return requestedPairs.map((pair) => {
+      const foreground = paint(rootStyle.getPropertyValue(pair.foreground).trim())
+      const background = paint(rootStyle.getPropertyValue(pair.background).trim())
+      const foregroundLuminance = luminance(foreground)
+      const backgroundLuminance = luminance(background)
+      const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05)
+        / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+      return { ...pair, ratio: Math.round(ratio * 100) / 100, fg: hex(foreground), bg: hex(background) }
+    })
+  }, pairs)
 }
 
 for (const theme of ['light', 'dark'] as const) {
-  test(`M9-contrast Home (${theme}): focal, muted-on-card meet floor${theme === 'dark' ? ' + ceiling' : ''}`, async ({ page }) => {
-    await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+  test(`R0 Honey contrast table (${theme})`, async ({ page }) => {
     await setTheme(page, theme)
+    const results = await contrastTable(page, [...TEXT_PAIRS, ...NON_TEXT_PAIRS])
 
-    // Muted label ("ยอดรวมทุกบัญชี") — muted-foreground floor.
-    const muted = await contrastOf(page.getByText('ยอดรวมทุกบัญชี', { exact: true }))
-    console.log(`[contrast] Home muted (${theme}) ratio=${muted.ratio} fg=${muted.fg} bg=${muted.bg}`)
-    expect(muted.ratio, `Home muted (${theme}) fg=${muted.fg} bg=${muted.bg}`).toBeGreaterThanOrEqual(AA)
-
-    // Focal balance (.text-focal) — the reserved near-white; floor only (allowed
-    // to exceed the body ceiling by design). Logged to show it IS brighter than body.
-    const focal = await contrastOf(page.locator('.text-focal').first())
-    console.log(`[contrast] Home focal (${theme}) ratio=${focal.ratio} fg=${focal.fg} bg=${focal.bg} lum=${focal.fgLum}`)
-    expect(focal.ratio, `Home focal (${theme}) fg=${focal.fg} bg=${focal.bg}`).toBeGreaterThanOrEqual(AA)
-
-    // The one-line budget status is muted body text — floor + (dark) ceiling.
-    const budgetLine = await contrastOf(page.getByText('เดือนนี้ใช้ไป', { exact: false }))
-    expect(budgetLine.ratio, `Home budget-line (${theme}) fg=${budgetLine.fg}`).toBeGreaterThanOrEqual(AA)
-    if (theme === 'dark') {
-      expect(budgetLine.ratio, `Home budget-line ceiling (dark) fg=${budgetLine.fg}`).toBeLessThanOrEqual(DARK_CEIL)
-    }
-  })
-
-  test(`M9-contrast Transactions (${theme}): body + muted-on-card meet floor${theme === 'dark' ? ' + body ceiling' : ''}, no blur under day-header`, async ({ page }) => {
-    await page.goto('/transactions')
-    await page.waitForLoadState('networkidle')
-    await setTheme(page, theme)
-
-    // Body text (the counterparty line) — floor + (dark) ceiling: body must be
-    // toned down, not the near-white glare reserved for the focal number.
-    const body = await contrastOf(page.getByText('ร้านตัวอย่าง คอนทราสต์'))
-    console.log(`[contrast] Txn body   (${theme}) ratio=${body.ratio} fg=${body.fg} bg=${body.bg} lum=${body.fgLum}`)
-    expect(body.ratio, `Txn body (${theme}) fg=${body.fg} bg=${body.bg}`).toBeGreaterThanOrEqual(AA)
-    if (theme === 'dark') {
-      expect(body.ratio, `Txn body ceiling (dark) fg=${body.fg} lum=${body.fgLum}`).toBeLessThanOrEqual(DARK_CEIL)
-      expect(body.fgLum, `Txn body not near-white (dark) fg=${body.fg}`).toBeLessThan(BODY_LUM_MAX)
-      expect(body.fg, 'dark body not #fff').not.toBe('#ffffff')
+    for (const result of results) {
+      expect(result.ratio, `${theme} ${result.name}: ${result.fg} on ${result.bg}`)
+        .toBeGreaterThanOrEqual(result.minimum)
+      if (result.maximum !== undefined) {
+        expect(result.ratio, `${theme} ${result.name} ceiling: ${result.fg} on ${result.bg}`)
+          .toBeLessThanOrEqual(result.maximum)
+      }
     }
 
-    // Muted meta (time · account) — muted-foreground floor on the card surface.
-    const meta = page.locator('.text-muted-foreground').filter({ hasText: 'เงินสด' }).first()
-    const mutedMeta = await contrastOf(meta)
-    console.log(`[contrast] Txn muted  (${theme}) ratio=${mutedMeta.ratio} fg=${mutedMeta.fg} bg=${mutedMeta.bg}`)
-    expect(mutedMeta.ratio, `Txn muted (${theme}) fg=${mutedMeta.fg} bg=${mutedMeta.bg}`).toBeGreaterThanOrEqual(AA)
-
-    // No backdrop-blur behind the sticky day-header text (v3 anti-pattern).
-    const dayHeader = page.locator('h2', { hasText: 'วันนี้' }).first()
-    const backdrop = await dayHeader.evaluate((el) => {
-      const s = getComputedStyle(el.parentElement ?? el)
-      return (s.backdropFilter || (s as unknown as { webkitBackdropFilter?: string }).webkitBackdropFilter || 'none')
-    })
-    expect(backdrop === 'none' || backdrop === '', `day-header backdrop-filter=${backdrop}`).toBeTruthy()
+    const honeyFill = await contrastTable(page, [
+      { name: 'honey fill on page', foreground: '--primary', background: '--background', minimum: 0 },
+      { name: 'honey fill on track', foreground: '--primary', background: '--muted', minimum: 0 },
+    ])
+    if (theme === 'light') {
+      expect(honeyFill[0].ratio, 'light honey fill requires its brown outline').toBeLessThan(3)
+      expect(honeyFill[1].ratio, 'light budget fill requires its brown outline').toBeLessThan(3)
+    } else {
+      expect(honeyFill[0].ratio, 'dark honey fill clears non-text contrast').toBeGreaterThanOrEqual(3)
+      expect(honeyFill[1].ratio, 'dark budget fill clears non-text contrast').toBeGreaterThanOrEqual(3)
+    }
   })
 }

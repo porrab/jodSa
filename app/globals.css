@@ -30,99 +30,113 @@
   --color-income: var(--income);
   --color-expense: var(--expense);
   --color-transfer: var(--transfer);
+  --color-honey-edge: var(--honey-edge);
+  --color-honey-text: var(--honey-text);
+  --color-hero: var(--hero);
+  --color-hero-inset: var(--hero-inset);
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-figure: var(--hero-figure);
+  --color-invest-bar: var(--invest-bar);
+  --color-blush: var(--blush);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-success-soft: var(--success-soft);
+  --color-info-soft: var(--info-soft);
   --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  /* Consistent elevation scale (calm, emerald-tinted) — soft lift, never harsh */
-  --shadow-soft: 0 1px 2px -1px rgb(16 60 48 / 0.08), 0 8px 22px -12px rgb(16 60 48 / 0.18);
-  --shadow-float: 0 4px 12px -6px rgb(16 60 48 / 0.16), 0 20px 38px -16px rgb(16 60 48 / 0.32);
-  --shadow-nav: 0 -8px 28px -14px rgb(16 60 48 / 0.28);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 8px);
+  --radius-xl: calc(var(--radius) + 12px);
+  /* Warm chocolate elevation: soft lift, never harsh. */
+  --shadow-soft: 0 1px 2px -1px rgb(58 42 26 / 0.08), 0 8px 22px -12px rgb(58 42 26 / 0.18);
+  --shadow-float: 0 4px 12px -6px rgb(58 42 26 / 0.16), 0 20px 38px -16px rgb(58 42 26 / 0.32);
+  --shadow-nav: 0 -8px 28px -14px rgb(58 42 26 / 0.28);
 }
 
-/* jodsa — emerald brand / transaction-type semantic palette */
+/* JodSa v6 — Honey brand and semantic money palette. */
 :root {
-  /* Surface layering (design v4 F1). v3 specced dark's ladder (0.17 → 0.21 → 0.24)
-     and never gave light one: card sat 0.54 lab L from background, so cards did not
-     read as cards. Light's ramp is ordered `muted < background < card` (in light the
-     most-tinted surface is the darkest; in dark it is the lightest — the direction
-     flips, the intent does not), and these three mirror dark's MEASURED distances.
-     Numbers below are lab L gaps read from the SHIPPED tokens via the browser's
-     own computed values (not predicted, and not hand-derived — an oklch→Lab
-     calculation lands ~0.01 off, which is how the previous stale figures here
-     survived review):
-       dark  card↔bg 3.90 · card↔muted 6.94
-       light card↔bg 3.89 · card↔muted 7.78
-     `card` is pinned to pure white, so the room for this ladder has to come from
-     below — moving `background` alone cannot work (only 4.53 lab existed between
-     card and muted, and the ladder needs ~7). `muted` moves too, which drags
-     `--muted-foreground` with it to hold AA (see its note below).
-     Hue stays 160: a warm off-white fights the emerald brand. */
-  --background: oklch(0.966 0.004 160);
-  --foreground: oklch(0.20 0.03 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.03 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.03 260);
-  --primary: oklch(0.55 0.11 162);
-  --primary-foreground: oklch(0.99 0.005 160);
-  --secondary: oklch(0.95 0.015 160);
-  --secondary-foreground: oklch(0.30 0.07 162);
-  /* Most-tinted surface — the bottom of light's ladder (see --background note). */
-  --muted: oklch(0.932 0.008 160);
-  /* Muted text floor (v3): >= 4.5:1 on its ACTUAL surface, not just on card.
-     At 0.55 this measured 4.34:1 on --muted — already failing before v4 moved
-     anything; darkening --muted would have pushed it to ~4.06. 0.52 clears AA on
-     all three surfaces it lands on (card / background / muted). */
-  --muted-foreground: oklch(0.52 0.02 260);
-  --accent: oklch(0.95 0.015 160);
-  --accent-foreground: oklch(0.30 0.07 162);
-  --destructive: oklch(0.577 0.245 27);
-  --border: oklch(0.92 0.01 160);
-  --input: oklch(0.92 0.01 160);
-  --ring: oklch(0.55 0.11 162);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.600 0.118 184.704);
-  --chart-3: oklch(0.398 0.070 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.080);
-  --income: oklch(0.49 0.12 152);
-  --expense: oklch(0.52 0.15 38);
-  --transfer: oklch(0.51 0.12 255);
+  --background: oklch(0.974 0.017 88);
+  --foreground: oklch(0.299 0.036 66);
+  --card: oklch(0.994 0.008 91);
+  --card-foreground: oklch(0.299 0.036 66);
+  --popover: oklch(0.994 0.008 91);
+  --popover-foreground: oklch(0.299 0.036 66);
+  --primary: oklch(0.802 0.161 82);
+  --primary-foreground: oklch(0.299 0.036 66);
+  --secondary: oklch(0.943 0.059 89);
+  --secondary-foreground: oklch(0.299 0.036 66);
+  --muted: oklch(0.921 0.034 86);
+  --muted-foreground: oklch(0.468 0.043 68);
+  --accent: oklch(0.943 0.059 89);
+  --accent-foreground: oklch(0.299 0.036 66);
+  --destructive: oklch(0.437 0.138 33);
+  --border: oklch(0.898 0.035 85);
+  --input: oklch(0.592 0.048 75);
+  --ring: oklch(0.299 0.036 66);
+  --chart-1: oklch(0.802 0.161 82);
+  --chart-2: oklch(0.776 0.088 258);
+  --chart-3: oklch(0.362 0.051 66);
+  --chart-4: oklch(0.501 0.124 144);
+  --chart-5: oklch(0.527 0.150 38);
+  --income: oklch(0.501 0.124 144);
+  --expense: oklch(0.527 0.150 38);
+  --transfer: oklch(0.501 0.120 255);
+  --honey-edge: oklch(0.299 0.036 66);
+  --honey-text: oklch(0.508 0.108 73);
+  --hero: oklch(0.293 0.041 61);
+  --hero-inset: oklch(0.362 0.051 66);
+  --hero-foreground: oklch(0.974 0.030 88);
+  --hero-muted: oklch(0.836 0.054 80);
+  --hero-figure: oklch(0.818 0.157 82);
+  --invest-bar: oklch(0.776 0.088 258);
+  --blush: oklch(0.935 0.028 40);
+  --warn: oklch(0.501 0.128 53);
+  --warn-soft: oklch(0.939 0.036 67);
+  --success-soft: oklch(0.943 0.026 142);
+  --info-soft: oklch(0.939 0.019 253);
   --radius: 0.75rem;
 }
 
 .dark {
-  /* Contrast CEILING (design v3): body text reads as glare above ~13:1 on this
-     background — dropped from a near-white 0.97 to 0.89 L. Reserve pure-white
-     for the single focal number per screen via `.text-focal` below. Surface
-     layering: background 0.17 → card 0.21 → raised sheet/popover 0.24. */
-  --background: oklch(0.17 0.02 260);
-  --foreground: oklch(0.89 0.006 250);
-  --card: oklch(0.21 0.02 260);
-  --card-foreground: oklch(0.89 0.006 250);
-  --popover: oklch(0.24 0.02 260);
-  --popover-foreground: oklch(0.89 0.006 250);
-  --primary: oklch(0.70 0.12 162);
-  --primary-foreground: oklch(0.15 0.03 162);
-  --secondary: oklch(0.27 0.025 260);
-  --secondary-foreground: oklch(0.89 0.006 250);
-  --muted: oklch(0.27 0.025 260);
-  --muted-foreground: oklch(0.72 0.03 256);
-  --accent: oklch(0.27 0.025 260);
-  --accent-foreground: oklch(0.89 0.006 250);
-  --destructive: oklch(0.70 0.19 22);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.70 0.12 162);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.170 162.480);
-  --chart-3: oklch(0.769 0.188 70.080);
-  --chart-4: oklch(0.627 0.265 303.900);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --income: oklch(0.72 0.14 155);
-  --expense: oklch(0.70 0.16 35);
-  --transfer: oklch(0.74 0.10 255);
+  --background: oklch(0.199 0.019 63);
+  --foreground: oklch(0.878 0.037 82);
+  --card: oklch(0.233 0.024 61);
+  --card-foreground: oklch(0.878 0.037 82);
+  --popover: oklch(0.233 0.024 61);
+  --popover-foreground: oklch(0.878 0.037 82);
+  --primary: oklch(0.821 0.157 83);
+  --primary-foreground: oklch(0.240 0.032 63);
+  --secondary: oklch(0.353 0.057 82);
+  --secondary-foreground: oklch(0.878 0.037 82);
+  --muted: oklch(0.309 0.030 64);
+  --muted-foreground: oklch(0.762 0.049 76);
+  --accent: oklch(0.353 0.057 82);
+  --accent-foreground: oklch(0.878 0.037 82);
+  --destructive: oklch(0.766 0.140 32);
+  --border: oklch(0.309 0.030 64);
+  --input: oklch(0.575 0.050 71);
+  --ring: oklch(0.821 0.157 83);
+  --chart-1: oklch(0.821 0.157 83);
+  --chart-2: oklch(0.776 0.088 258);
+  --chart-3: oklch(0.364 0.046 65);
+  --chart-4: oklch(0.788 0.127 147);
+  --chart-5: oklch(0.765 0.120 38);
+  --income: oklch(0.788 0.127 147);
+  --expense: oklch(0.765 0.120 38);
+  --transfer: oklch(0.776 0.088 258);
+  --honey-edge: oklch(0.821 0.157 83);
+  --honey-text: oklch(0.821 0.157 83);
+  --hero: oklch(0.305 0.040 65);
+  --hero-inset: oklch(0.364 0.046 65);
+  --hero-foreground: oklch(0.974 0.030 88);
+  --hero-muted: oklch(0.823 0.054 80);
+  --hero-figure: oklch(0.839 0.145 84);
+  --invest-bar: oklch(0.776 0.088 258);
+  --blush: oklch(0.287 0.035 31);
+  --warn: oklch(0.825 0.125 63);
+  --warn-soft: oklch(0.297 0.045 63);
+  --success-soft: oklch(0.297 0.043 147);
+  --info-soft: oklch(0.282 0.040 256);
 }
 
 @layer base {
@@ -143,7 +157,7 @@
      hero that used this read as glare/haze on dark). Kept only so any
      stray reference doesn't 404 on the class; do not use on new surfaces. */
   .bg-hero {
-    background-image: linear-gradient(135deg, oklch(0.53 0.12 166) 0%, oklch(0.51 0.095 202) 100%);
+    background-image: linear-gradient(135deg, var(--hero) 0%, var(--hero-inset) 100%);
   }
   /* Reserve near-white for the ONE focal number per screen (design v3 ceiling
      rule) — everything else uses the toned-down --foreground/--card-foreground. */
