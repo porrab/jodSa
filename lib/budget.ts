@@ -1,6 +1,7 @@
 // [M3] Budget vs. actual. Budgets track expense ONLY — transfers and income are
-// excluded (the caller passes type='expense' rows). Period is the current Bangkok
-// day or month; scope is overall (all expense) or a single category.
+// excluded defensively here even when a caller needs mixed transaction rows for
+// another purpose. Period is the current Bangkok day or month; scope is overall
+// (all expense) or a single category.
 
 export type BudgetRow = {
   id: string
@@ -11,6 +12,7 @@ export type BudgetRow = {
 }
 
 export type ExpenseRow = {
+  type: 'income' | 'expense' | 'transfer'
   amount_satang: number
   category: string | null
   datetime: string // ISO timestamptz
@@ -30,6 +32,7 @@ export function spentForBudget(
   const month = today.slice(0, 7) // YYYY-MM
   let sum = 0
   for (const e of expenses) {
+    if (e.type !== 'expense') continue
     if (budget.scope === 'category' && e.category !== budget.category) continue
     const d = bangkokDate(e.datetime)
     const inPeriod = budget.period === 'day' ? d === today : d.slice(0, 7) === month

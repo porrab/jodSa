@@ -16,7 +16,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-OWNERFB-2] Home budget strip counts income as spending — 2026-10-21 · from review session (Claude)
-**Status:** OPEN — defect, **not** covered by the UI hold; fix now. Reported by design-studio's screenshots,
+**Status:** RESOLVED 2026-10-22 — `spentForBudget` now rejects non-expense rows defensively; the unit regression mixes ฿500 expense with ฿1,200 income, and the B2 browser fixture proves the strip still shows ฿9,500 remaining. Focused unit tests pass 6/6, typecheck passes, and the Home E2E spec passes 6/6. A full 110-test E2E attempt was not green: 35 tests passed before unrelated cross-feature 120-second timeouts began, so the repeated timeout run was stopped. Post-mortem: `docs/postmortems/RV-OWNERFB-2-home-budget-income.md`.
+
+Reported by design-studio's screenshots,
 confirmed by source and by the reviewer's own 2026-10-21 screenshot (฿500 expense + ฿1,200 income against a
 ฿10,000 budget showed "เหลือ ฿8,300", i.e. ฿1,700 spent).
 

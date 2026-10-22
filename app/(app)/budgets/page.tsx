@@ -25,7 +25,7 @@ export default async function BudgetsPage() {
     supabase.from('budgets').select('*'),
     supabase
       .from('transactions')
-      .select('amount_satang, category, datetime')
+      .select('type, amount_satang, category, datetime')
       .eq('type', 'expense')
       .gte('datetime', monthStart),
     supabase

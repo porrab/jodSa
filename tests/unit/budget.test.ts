@@ -7,14 +7,22 @@ const monthOverall: BudgetRow = {
   id: 'b1', period: 'month', scope: 'overall', category: null, amount_satang: 1_000_000, // 10,000 THB
 }
 
+function transaction(
+  type: ExpenseRow['type'],
+  baht: number,
+  datetime: string,
+  category: string | null = null,
+): ExpenseRow {
+  return { type, amount_satang: baht * 100, category, datetime }
+}
+
 function expense(baht: number, datetime: string, category: string | null = null): ExpenseRow {
-  return { amount_satang: baht * 100, category, datetime }
+  return transaction('expense', baht, datetime, category)
 }
 
 describe('budget vs actual (expense only)', () => {
   it('acceptance: budget 10,000 with 7,000 expense → 3,000 remaining', () => {
-    // 5,000 "transfer" is excluded upstream (query filters type='expense'), so it
-    // simply never appears in the expenses array passed here.
+    // Income and transfers are excluded by the budget helper.
     const expenses = [
       expense(3000, '2026-06-03T10:00:00+07:00'),
       expense(4000, '2026-06-10T10:00:00+07:00'),
@@ -23,6 +31,18 @@ describe('budget vs actual (expense only)', () => {
     expect(status.spent).toBe(700_000)
     expect(status.remaining).toBe(300_000)
     expect(status.over).toBe(false)
+  })
+
+  it('ignores income when income and expense rows are mixed', () => {
+    const rows = [
+      transaction('expense', 500, '2026-06-03T10:00:00+07:00', 'food'),
+      transaction('income', 1200, '2026-06-04T10:00:00+07:00', 'salary'),
+    ]
+
+    const status = budgetStatus(monthOverall, rows, NOW)
+
+    expect(status.spent).toBe(50_000)
+    expect(status.remaining).toBe(950_000)
   })
 
   it('counts only the current Bangkok month', () => {

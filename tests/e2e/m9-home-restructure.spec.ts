@@ -44,6 +44,7 @@ test.beforeAll(async () => {
   }
   await seedBudget(userId, 1_000_000) // ฿10,000 overall month budget
   await seedTransaction(userId, acct, { type: 'expense', amountSatang: 50_000, category: 'food' }) // ฿500 today
+  await seedTransaction(userId, acct, { type: 'income', amountSatang: 120_000, category: 'salary' }) // ฿1,200 today; must not count toward B2
   await seedInvestHolding(userId, {
     symbol: 'PTT',
     currentValueMinor: '100000', // active holding: ฿1,000
@@ -67,7 +68,7 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   // show the combined approximate headline plus both visible component lines.
   const moneyHeader = page.getByRole('button', { name: /เงินทั้งหมด \(บัญชี \+ ลงทุน\).*≈/ })
   await expect(moneyHeader).toBeVisible()
-  await expect(page.getByRole('button', { name: /เงินในบัญชี.*500\.00/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /เงินในบัญชี.*700\.00/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /เงินลงทุน.*1,000\.00/ })).toBeVisible()
   await moneyHeader.click()
   await expect(page.getByRole('heading', { name: 'เงินทั้งหมด' })).toBeVisible()
@@ -76,7 +77,7 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
 
   // Focal balance + quick-add block.
   await expect(page.getByLabel('จำนวนเงิน')).toBeVisible() // quick-add amount input
-  await expect(page.getByRole('link', { name: 'สแกนสลิป' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'สแกนสลิป' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'บันทึก', exact: true })).toBeVisible()
 
   // OWNER-FB B2: the old one-line budget becomes a single monthly budget strip.
@@ -88,7 +89,7 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   // Today's transactions section present with the seeded item.
   await expect(page.getByText('รายการวันนี้', { exact: false })).toBeVisible()
   await expect(page.locator('body')).toContainText('500.00')
-  await expect(page.getByRole('heading', { name: /รายการวันนี้ \(1\).*จ่าย.*500\.00/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /รายการวันนี้ \(2\).*จ่าย.*500\.00/ })).toBeVisible()
 
   // NO chart on Home — this is the acceptance criterion. No Recharts DOM at all,
   // and the 6-month chart heading is absent from /dashboard.
@@ -131,7 +132,7 @@ test('OWNER-FB A2 AccountGrid exposes six stable balance tiles and dims the tran
   await expect(accountGrid.getByRole('radio')).toHaveCount(6)
   const cashTile = accountGrid.getByRole('radio', { name: /เงินสด, KBank/ })
   await expect(cashTile).toHaveAttribute('aria-checked', 'true')
-  await expect.poll(() => cashTile.getAttribute('aria-label')).toContain('500.00')
+  await expect.poll(() => cashTile.getAttribute('aria-label')).toContain('700.00')
   await expect(cashTile).not.toHaveAccessibleName(/กำลังโหลดยอด/)
 
   const makeTile = accountGrid.getByRole('radio', { name: /make, KBank/ })
