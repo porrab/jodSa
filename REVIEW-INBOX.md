@@ -100,10 +100,14 @@ content capped at `max-w-4xl` (896 px) centred in a 1216 px main, ~340 px idle g
 stretched (quick-add type buttons 260 px each). That is the known v5 desktop gap, not a DS-1 fix.
 
 ## [OWNER-FB-20261003] Owner usability feedback batch — 2026-10-03 · from owner (via fin-desk session)
-> **⏸ ON HOLD 2026-10-21 (owner): visual redesign first.** The owner finds the built UI unattractive and asked
-> for a new visual design, drafted in Figma by design-studio before more UI is built. Dev: **do not start
-> migration 0011, A3, C2 or C1** until this note is replaced by a link to the confirmed redesign. Built slices
-> (B1–B4, A1, A2) stay as they are; they will be restyled against the new brief.
+> **▶ RESUMED 2026-10-22 — restyle in Honey first.** The owner chose design-studio's Direction D "Honey".
+> Brief: `idea-forge/ideas/jodsa/docs/07-design.md` section "Visual language v6 — Honey (OWNER-CONFIRMED
+> 2026-10-22)" (idea-forge `bc7197a`); Figma file `85YURQNppODPO2dFxD8O6W`, page "D — Honey · All screens"
+> (node ids per screen in the brief). Order: **fix [RV-OWNERFB-2] first**, then the brief's "Restyle build
+> order" **R0 tokens → R1 primitives → R2 shared money components → R3 screens → R4 verify**, then continue
+> **migration 0011 → A3 → migration 0012 → C2 → C1 built directly in Honey**. Visual-only steps: no schema or
+> behaviour change; one step per commit; re-run E2E each step. 0011/0012 still need explicit owner
+> authorization before being applied to the live DB.
 **Status**: OPEN — **Phase A + B CLEARED FOR BUILD 2026-10-21.** The owner confirmed the design-studio
 addendum in two rounds; the brief is `idea-forge/ideas/jodsa/docs/07-design.md` section "Revision 2026-10-20 —
 OWNER-FB batch (OWNER-CONFIRMED 2026-10-21)" (idea-forge `1b4dccd`). Build in **its "(a) Build order"**:
