@@ -15,8 +15,21 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-4] Add sheet + /transactions header still differ from the Honey frames — 2026-10-23 · from review session (Claude)
+**Status:** OPEN — R3 residue, not DS-3 scope. Found in the reviewer's own 390×844 shots (test user A) vs Figma `27:1357` and the
+transactions frame in section `29:1936`. R4 baselines snapshot the app, so they could not catch these.
+- **Category is a `Select` dropdown**; Figma uses a wrapping row of category **chips** (selected = honey fill + ✓ + brown outline).
+- **Amount is a left-aligned input well under a "จำนวนเงิน (บาท) *" label**; Figma centres a small muted "จำนวนเงิน" over a large
+  focal figure, hairline below. The extra "ประเภท" label above the type segmented control is not in the frame.
+- **Mode tabs** lack the pencil/camera icons and the underline style of the frame.
+- **`/transactions` header** has a large full-width-style "+ เพิ่มรายการ" button that duplicates the FAB; Figma: title + search icon +
+  small "+ เพิ่ม" honey pill on one row.
+**Acceptance:** side-by-side vs the Figma nodes for manual expense, transfer and `/transactions`; DS-3 E2E stays green (category
+chips must keep the same `handleCategoryChange` path and the `เลือกตามหมวด` hint).
+
 ## [DS-3] Add sheet: หมวดหมู่ before บัญชี · Tx Row title rule — 2026-10-23 · from review session (Claude) for owner + design-studio
 **Status:** RESOLVED 2026-10-23 — manual and slip-confirm now render category before account without changing the `accountTouched` guard; the right label distinguishes category defaults, slip matches, and manual selection. Home, `/transactions`, and detail share one Tx Row title/meta implementation. DS-3 E2E passes the category-default/manual-touch cases plus payee-less/payee rows on all three surfaces; Figma/app pairs are in `project/jodsa/tests/e2e/evidence/ds-3/side-by-side-*.png`. Migration 0011 was not started.
+**Reviewer re-check 2026-10-23 (Claude): CONFIRMED** at `247acf3` — `tsc` 0, vitest 333/34 skipped; own shots: category sits above the account grid, payee-less rows title = category with meta "time · account" on `/transactions`. Visual gaps outside DS-3 scope filed as [DS-4].
 **Disk sync:** implementation, E2E, and Figma comparison evidence landed in `5fdeb78`.
 
 **1. Owner decision 2026-10-23: category before account.** `components/transaction-form.tsx` `handleCategoryChange`
