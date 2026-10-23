@@ -7,14 +7,14 @@ import { findUserByEmail, resetAllUserData, seedAccount, seedTransaction } from 
  * (SPEC-5-review.md "What was NOT verified: no browser run"). Everything here is
  * measured on painted pixels in a real browser, both themes, incl. the mobile
  * viewport the v4 brief itself flagged as unchecked:
- *   F1  light surface ladder (card↔bg L* ≥ 3.0)
- *   F2  amount-field affordance visible in BOTH themes, amount large on desktop
+ *   F1  light surface ladder (hero↔bg L* ≥ 3.0)
+ *   F2  sheet amount-field affordance visible in BOTH themes at 390×844
  *   F3  Home type ladder 36 → 16 → 14 with distinct colours (focal untouched)
- *   F4  mascot in the empty state, visible & inverted (not washed out) in dark
+ *   F4  Home empty prompt points to the sole add entry and remains mascot-free
  *   SPEC5-4  no 12px text left on Home
  */
 
-test.use({ storageState: STORAGE_A })
+test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
 let userId: string
 
@@ -67,7 +67,7 @@ async function bgLabL(el: Locator): Promise<number> {
   })
 }
 
-test('F1 — light theme has a real surface ladder: card sits ≥ 3.0 L* off the page background', async ({
+test('F1 — light theme has a real surface ladder: hero sits ≥ 3.0 L* off the page background', async ({
   page,
 }) => {
   await seedAccount(userId, 'เงินสด', 'KBank')
@@ -75,9 +75,9 @@ test('F1 — light theme has a real surface ladder: card sits ≥ 3.0 L* off the
   await page.waitForLoadState('networkidle')
   await setTheme(page, 'light')
 
-  const card = page.locator('.bg-card').first() // QuickAddCard's Card root
-  await expect(card).toBeVisible()
-  const cardL = await bgLabL(card)
+  const hero = page.getByTestId('home-hero').locator('.bg-hero')
+  await expect(hero).toBeVisible()
+  const heroL = await bgLabL(hero)
 
   // Page background: the <main>/<body> backdrop the cards float on.
   const pageL = await page.locator('body').evaluate((node) => {
@@ -109,13 +109,13 @@ test('F1 — light theme has a real surface ladder: card sits ≥ 3.0 L* off the
     return 116 * f(Y) - 16
   })
 
-  const gap = Math.abs(cardL - pageL)
-  console.log(`[F1] light card L*=${cardL.toFixed(2)} page L*=${pageL.toFixed(2)} gap=${gap.toFixed(2)}`)
-  expect(gap, `light card↔bg L* gap ${gap.toFixed(2)} (target ≥ 3.0)`).toBeGreaterThanOrEqual(3.0)
+  const gap = Math.abs(heroL - pageL)
+  console.log(`[F1] light hero L*=${heroL.toFixed(2)} page L*=${pageL.toFixed(2)} gap=${gap.toFixed(2)}`)
+  expect(gap, `light hero↔bg L* gap ${gap.toFixed(2)} (target ≥ 3.0)`).toBeGreaterThanOrEqual(3.0)
 })
 
 for (const theme of ['light', 'dark'] as const) {
-  test(`F2 — amount field has a visible affordance in ${theme}, and the amount is large on desktop`, async ({
+  test(`F2 — sheet amount field has a visible affordance and focal size in ${theme}`, async ({
     page,
   }) => {
     await seedAccount(userId, 'เงินสด', 'KBank')
@@ -123,18 +123,20 @@ for (const theme of ['light', 'dark'] as const) {
     await page.waitForLoadState('networkidle')
     await setTheme(page, theme)
 
-    const amount = page.getByLabel('จำนวนเงิน', { exact: true }) // card amount input
-    // The wrapper is the affordance (border + bg), drawn in BOTH themes.
-    const wrapper = page.locator('div.rounded-md.border').filter({ has: amount })
+    await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+    const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
+    const amount = sheet.getByLabel('จำนวนเงิน (บาท)')
+    // The muted well is the amount affordance in v6; the hairline belongs below
+    // the Amount Input component, not around it.
+    const wrapper = amount.locator('xpath=..')
     await expect(wrapper).toBeVisible()
-    const border = await wrapper.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth))
-    expect(border, `amount wrapper border in ${theme}`).toBeGreaterThanOrEqual(1)
+    const background = await wrapper.evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(background, `amount well background in ${theme}`).not.toBe('rgba(0, 0, 0, 0)')
 
-    // Desktop (default 1280 viewport ≥ md): amount must be the big focal number,
-    // not the 14px the base `md:text-sm` collision produced pre-F2.
+    // The sheet amount remains the focal number at the target mobile viewport.
     const size = await amount.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))
-    console.log(`[F2] ${theme} amount font-size=${size}px border=${border}px`)
-    expect(size, `desktop amount font-size in ${theme}`).toBeGreaterThanOrEqual(30)
+    console.log(`[F2] ${theme} amount font-size=${size}px background=${background}`)
+    expect(size, `sheet amount font-size in ${theme}`).toBeGreaterThanOrEqual(30)
   })
 }
 
@@ -157,7 +159,7 @@ test('F3 + SPEC5-4 — Home type ladder is 36 → 16 → 14 with distinct colour
   const color = (l: Locator) => l.first().evaluate((el) => getComputedStyle(el).color)
 
   // Focal balance — untouched at 36px/700 (the brief forbade touching it).
-  const focal = page.locator('.text-focal').first()
+  const focal = page.getByTestId('home-hero').locator('.text-4xl').first()
   expect(await px(focal), 'focal 36px').toBeCloseTo(36, 0)
   expect(await weight(focal), 'focal 700').toBe('700')
 
@@ -194,32 +196,22 @@ test('F3 + SPEC5-4 — Home type ladder is 36 → 16 → 14 with distinct colour
 })
 
 for (const theme of ['light', 'dark'] as const) {
-  test(`F4 — mascot shows in the empty state and is visible${theme === 'dark' ? ' & inverted (not washed out)' : ''} in ${theme}`, async ({
+  test(`F4 — empty prompt is mascot-free and points to the FAB in ${theme}`, async ({
     page,
   }) => {
-    // No account, no transactions → Home renders the empty-state mascot.
+    // No account, no transactions → Home renders the v6 FAB prompt.
     await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
     await setTheme(page, theme)
     await expect(page.getByText('ยังไม่มีรายการวันนี้')).toBeVisible()
 
-    const mascot = page.locator('img[src*="/mascot/mascot-shrug.svg"]')
-    await expect(mascot).toBeVisible()
-    const box = await mascot.boundingBox()
-    expect(box && box.width > 0 && box.height > 0, 'mascot has rendered size').toBeTruthy()
-
-    const filter = await mascot.evaluate((el) => getComputedStyle(el).filter)
-    console.log(`[F4] ${theme} mascot filter=${filter}`)
-    if (theme === 'dark') {
-      // dark:invert must be active so the #141414 linework isn't lost on ~#0a0d12.
-      expect(filter, 'dark mascot inverted').toContain('invert')
-    } else {
-      expect(filter === 'none' || filter === '', 'light mascot not inverted').toBeTruthy()
-    }
+    await expect(page.getByTestId('home-today').locator('img[src*="/mascot/"]')).toHaveCount(0)
+    await expect(page.getByText(/กด ＋ ด้านล่างเพื่อจดรายการ/)).toBeVisible()
+    await expect(page.getByTestId('empty-today-arrow')).toBeVisible()
   })
 }
 
-test('SPEC5-mobile — mobile viewport (390×844): FAB opens quick-add, amount affordance + empty-state mascot render, no 12px on Home', async ({
+test('SPEC5-mobile — mobile viewport (390×844): FAB opens the only add sheet, amount affordance + empty prompt render, no 12px on Home', async ({
   page,
 }) => {
   // A user who reaches the ＋ FAB already has an account — with zero accounts the
@@ -231,19 +223,17 @@ test('SPEC5-mobile — mobile viewport (390×844): FAB opens quick-add, amount a
   await page.goto('/dashboard')
   await page.waitForLoadState('networkidle')
 
-  // Empty-state mascot renders at mobile density.
+  // Empty-state prompt renders at mobile density without a mascot.
   await expect(page.getByText('ยังไม่มีรายการวันนี้')).toBeVisible()
-  await expect(page.locator('img[src*="/mascot/mascot-shrug.svg"]')).toBeVisible()
-
-  // Amount affordance (card) is present with its border at mobile too.
-  const amount = page.getByLabel('จำนวนเงิน', { exact: true })
-  const wrapper = page.locator('div.rounded-md.border').filter({ has: amount })
-  const border = await wrapper.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth))
-  expect(border, 'mobile amount wrapper border').toBeGreaterThanOrEqual(1)
+  await expect(page.getByTestId('home-today').locator('img[src*="/mascot/"]')).toHaveCount(0)
 
   // Center FAB opens the in-place quick-add sheet (no route change).
   await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click() // nav.add
   await expect(page.getByRole('heading', { name: 'บันทึกรายการ' })).toBeVisible()
+  const amount = page.getByRole('dialog').getByLabel('จำนวนเงิน (บาท)')
+  const wrapper = amount.locator('xpath=..')
+  const background = await wrapper.evaluate((el) => getComputedStyle(el).backgroundColor)
+  expect(background, 'mobile sheet amount well background').not.toBe('rgba(0, 0, 0, 0)')
 
   // No 12px text on the Home shell at mobile.
   const anyTwelve = await page.locator('main').evaluate((root) => {

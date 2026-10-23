@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-2] Home: remove quick-add and match the Honey Figma frame — 2026-10-23 · from review session (Claude) for owner + design-studio
-**Status:** OPEN — do this **before** migration 0011 / A3. Owner verdict on the built Honey Home (`ea97b10`): "ยังดูรกๆ".
+**Status:** RESOLVED 2026-10-23 — `/dashboard` now follows the Honey Home composition (hero → budget band → today list) with the centre ＋ FAB as its sole add entry. Quick-add coverage now opens the global sheet, the 390×844 evidence pairs for filled / empty-today / over-budget / dark live in `tests/e2e/evidence/ds-2/side-by-side-*.png`, and only the Home light/dark baselines were refreshed after those comparisons. Migration 0011 was not started.
 
 **Owner decision 2026-10-23:** remove the จดเร็ว quick-add block (`components/quick-add-card.tsx` usage on
 `/dashboard`) from Home entirely. The centre ＋ FAB is the only entry point; its sheet's สลิป mode keeps OWNER-FB #9

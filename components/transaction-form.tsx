@@ -251,7 +251,7 @@ export default function TransactionForm({
             placeholder="0.00"
             defaultValue={defaultValues?.amount}
             required
-            // See quick-add-card.tsx: the Input base's `md:text-sm` outranks the
+            // The Input base's `md:text-sm` outranks the
             // unprefixed size at >= md, so the hero amount needs its own md: rule.
             className="h-14 border-0 bg-transparent px-0 text-3xl font-semibold tabular-nums shadow-none focus-visible:ring-0 md:text-3xl"
           />

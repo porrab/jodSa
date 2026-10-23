@@ -14,7 +14,8 @@ import {
  * QA-M9 — Home restructure (design v3 J1/J6), production build.
  *
  * Behavioral proof of two acceptance criteria:
- *  - Home (/dashboard) shows quick-add + today's transactions + a one-line budget,
+ *  - Home (/dashboard) shows hero + budget + today's transactions, while the
+ *    centre FAB is the only entry to the global add sheet,
  *    and renders NO chart (the 6-month chart nobody read is gone from the first
  *    screen). Asserted by the ABSENCE of any Recharts DOM on /dashboard.
  *  - The 6-month chart renders under งบ → ภาพรวม (lazy). Asserted by Recharts DOM
@@ -22,7 +23,7 @@ import {
  *    producing a non-zero bar (mounting an all-zero chart is not success).
  */
 
-test.use({ storageState: STORAGE_A })
+test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
 let userId: string
 
@@ -45,6 +46,7 @@ test.beforeAll(async () => {
   await seedBudget(userId, 1_000_000) // ฿10,000 overall month budget
   await seedTransaction(userId, acct, { type: 'expense', amountSatang: 50_000, category: 'food' }) // ฿500 today
   await seedTransaction(userId, acct, { type: 'income', amountSatang: 120_000, category: 'salary' }) // ฿1,200 today; must not count toward B2
+  await seedTransaction(userId, acct, { type: 'income', amountSatang: 10_000, category: 'salary' }) // third visible row; still excluded from B2
   await seedInvestHolding(userId, {
     symbol: 'PTT',
     currentValueMinor: '100000', // active holding: ฿1,000
@@ -60,7 +62,7 @@ test.beforeAll(async () => {
   })
 })
 
-test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO chart renders', async ({ page }) => {
+test('M9-home-1 Home has no embedded quick-add; FAB sheet + today list + budget work, and NO chart renders', async ({ page }) => {
   await page.goto('/dashboard')
   await page.waitForLoadState('networkidle')
 
@@ -68,28 +70,40 @@ test('M9-home-1 Home shows quick-add + today list + one-line budget, and NO char
   // show the combined approximate headline plus both visible component lines.
   const moneyHeader = page.getByRole('button', { name: /เงินทั้งหมด \(บัญชี \+ ลงทุน\).*≈/ })
   await expect(moneyHeader).toBeVisible()
-  await expect(page.getByRole('button', { name: /เงินในบัญชี.*700\.00/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /เงินในบัญชี.*800\.00/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /เงินลงทุน.*1,000\.00/ })).toBeVisible()
   await moneyHeader.click()
   await expect(page.getByRole('heading', { name: 'เงินทั้งหมด' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'เงินในบัญชี' })).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  // Focal balance + quick-add block.
-  await expect(page.getByLabel('จำนวนเงิน')).toBeVisible() // quick-add amount input
-  await expect(page.getByRole('button', { name: 'สแกนสลิป' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'บันทึก', exact: true })).toBeVisible()
+  // No embedded quick-add remains on Home. The centre FAB is the single entry,
+  // and the same manual/slip assertions now live on the global sheet.
+  await expect(page.getByLabel('จำนวนเงิน', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'สแกนสลิป' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+  const addSheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
+  await expect(addSheet.getByLabel('จำนวนเงิน (บาท)')).toBeVisible()
+  await expect(addSheet.getByRole('tab', { name: 'กรอกเอง' })).toHaveAttribute('aria-selected', 'true')
+  await expect(addSheet.getByRole('tab', { name: 'สลิป' })).toBeVisible()
+  await addSheet.getByRole('button', { name: 'Close' }).click()
 
   // OWNER-FB B2: the old one-line budget becomes a single monthly budget strip.
   const budgetStrip = page.getByRole('link', { name: /งบเดือนนี้/ })
-  await expect(budgetStrip).toContainText('เหลือ ฿9,500.00 จาก ฿10,000.00')
+  await expect(budgetStrip).toContainText('เหลือ ฿9,500')
+  await expect(budgetStrip).toContainText('จาก ฿10,000')
   await expect(budgetStrip).toContainText('ใช้ได้อีกวันละ')
   await expect(budgetStrip.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50000')
 
   // Today's transactions section present with the seeded item.
   await expect(page.getByText('รายการวันนี้', { exact: false })).toBeVisible()
   await expect(page.locator('body')).toContainText('500.00')
-  await expect(page.getByRole('heading', { name: /รายการวันนี้ \(2\).*จ่าย.*500\.00/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /รายการวันนี้ \(3\).*จ่าย.*500\.00/ })).toBeVisible()
+  const todayRows = page.getByTestId('home-today').locator('.divide-y > button')
+  await expect(todayRows).toHaveCount(3)
+  const thirdRow = await todayRows.nth(2).boundingBox()
+  const mobileNav = await page.locator('nav.fixed').boundingBox()
+  expect(thirdRow && mobileNav && thirdRow.y + thirdRow.height <= mobileNav.y).toBeTruthy()
 
   // NO chart on Home — this is the acceptance criterion. No Recharts DOM at all,
   // and the 6-month chart heading is absent from /dashboard.
@@ -125,7 +139,7 @@ test('OWNER-FB B3 transaction day header shows expense-only daily total', async 
 
 test('OWNER-FB A2 AccountGrid exposes six stable balance tiles and dims the transfer source', async ({ page }) => {
   await page.goto('/dashboard')
-  await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
 
   const accountGrid = page.getByRole('radiogroup', { name: 'บัญชี', exact: true })
   await expect(accountGrid).toBeVisible()

@@ -7,6 +7,10 @@ import { CategoryLabel } from '@/lib/categories'
 import { formatTHB } from '@/lib/money'
 import type { BudgetRow, BudgetStatus } from '@/lib/budget'
 
+function formatWholeTHB(satang: number): string {
+  return `฿${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(satang / 100))}`
+}
+
 export default function HomeBudgetStrip({
   budget,
   status,
@@ -22,7 +26,7 @@ export default function HomeBudgetStrip({
 
   if (!budget || !status) {
     return (
-      <Link href="/budgets" className="flex min-h-14 items-center justify-between gap-3 rounded-md bg-secondary px-4 py-3 text-sm text-foreground">
+      <Link href="/budgets" className="flex h-full min-h-14 items-center justify-between gap-3 bg-secondary px-4 py-3 text-sm text-foreground">
         <span>{t('noBudgetLine', { amount: formatTHB(monthExpense) })}</span>
         <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-honey-text" />
       </Link>
@@ -41,23 +45,23 @@ export default function HomeBudgetStrip({
   return (
     <Link
       href="/budgets"
-      className={`block space-y-2 rounded-md border p-4 transition-colors ${status.over ? 'border-destructive/30 bg-blush' : 'border-border bg-card hover:bg-secondary/40'}`}
+      className={`block h-full space-y-2 transition-colors ${status.over ? '-mx-5 -my-4 bg-blush px-5 py-4' : ''}`}
     >
       <div className="flex items-center justify-between gap-3 text-sm font-semibold">
         <span>{title}</span>
-        <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+        <span className="inline-flex items-center gap-1 font-normal text-muted-foreground">
+          {t('daysRemaining', { days: daysRemaining })}
+          <ChevronRight aria-hidden="true" className="size-4" />
+        </span>
       </div>
 
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <div className="flex items-baseline gap-2">
         <p className={`text-base font-semibold tabular-nums ${status.over ? 'text-expense' : 'text-foreground'}`}>
           {status.over
-            ? <span className="inline-flex items-center gap-1.5"><AlertTriangle aria-hidden="true" className="size-4" />{t('homeBudgetOver', { amount: formatTHB(-status.remaining) })}</span>
-            : t('homeBudgetRemaining', {
-                remaining: formatTHB(status.remaining),
-                amount: formatTHB(budget.amount_satang),
-              })}
+            ? <span className="inline-flex items-center gap-1.5"><AlertTriangle aria-hidden="true" className="size-4" />{t('homeBudgetOver', { amount: formatWholeTHB(-status.remaining) })}</span>
+            : t('homeBudgetRemainingShort', { remaining: formatWholeTHB(status.remaining) })}
         </p>
-        <p className="text-sm text-muted-foreground">{t('daysRemaining', { days: daysRemaining })}</p>
+        <p className="text-sm text-muted-foreground">{t('fromBudget', { amount: formatWholeTHB(budget.amount_satang) })}</p>
       </div>
 
       <div
@@ -79,11 +83,11 @@ export default function HomeBudgetStrip({
         />
       </div>
 
-      {!status.over && dailyAllowance > 0 && (
-        <p className="text-sm text-muted-foreground">
-          {t('dailyAllowance', { amount: formatTHB(dailyAllowance) })}
-        </p>
-      )}
+      <p className="text-sm text-muted-foreground">
+        {t('spentThisMonth', { amount: formatWholeTHB(status.spent) })}
+        {!status.over && dailyAllowance > 0 && <> · {t('dailyAllowance', { amount: formatWholeTHB(dailyAllowance) })}</>}
+        {status.over && <> · {t('daysRemaining', { days: daysRemaining })}</>}
+      </p>
     </Link>
   )
 }

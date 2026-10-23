@@ -27,7 +27,7 @@ const SAVING_BTN = 'กำลังบันทึก...' // transaction.saving 
 const QUICK_ADD_TITLE = 'บันทึกรายการ' // quickAdd.title (the global create sheet)
 const EDIT_TITLE = 'รายการ' // transaction.title (the J3 detail/edit sheet)
 
-test.use({ storageState: STORAGE_A })
+test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
 let userId: string
 
@@ -66,12 +66,12 @@ async function routeServerAction(
   await page.route((u) => u.pathname === '/dashboard', handler)
 }
 
-/** Open the quick-add sheet from Home's quick-add card, prefilled with an amount. */
+/** Open the quick-add sheet from Home's sole add entry and fill an amount. */
 async function openQuickAddWithAmount(page: Page, amount: string): Promise<void> {
-  await page.getByLabel('จำนวนเงิน', { exact: true }).fill(amount) // card aria-label = quickAdd.amountLabel
-  await page.getByRole('button', { name: 'บันทึก', exact: true }).click() // quickAdd.save
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   await expect(page.getByRole('heading', { name: QUICK_ADD_TITLE })).toBeVisible()
-  await expect(page.getByLabel('จำนวนเงิน (บาท)')).toHaveValue(amount) // sheet amount = transaction.amount
+  await page.getByLabel('จำนวนเงิน (บาท)').fill(amount)
+  await expect(page.getByLabel('จำนวนเงิน (บาท)')).toHaveValue(amount)
 }
 
 test('SPEC5-F6 — optimistic save: provisional row paints subdued & not tappable, balance frozen, then resolves', async ({
@@ -80,7 +80,7 @@ test('SPEC5-F6 — optimistic save: provisional row paints subdued & not tappabl
   await page.goto('/dashboard')
   await page.waitForLoadState('networkidle')
 
-  const focal = page.locator('.text-focal').first()
+  const focal = page.getByTestId('home-hero').locator('.text-4xl').first()
   const balanceBefore = (await focal.textContent())?.trim() ?? ''
 
   await routeServerAction(page, { delayMs: 3500 })
@@ -123,7 +123,7 @@ test('SPEC5-1 — forced failure: row rolls back, error toast fires, sheet reope
   await page.goto('/dashboard')
   await page.waitForLoadState('networkidle')
 
-  const focal = page.locator('.text-focal').first()
+  const focal = page.getByTestId('home-hero').locator('.text-4xl').first()
   const balanceBefore = (await focal.textContent())?.trim() ?? ''
 
   await openQuickAddWithAmount(page, '42')

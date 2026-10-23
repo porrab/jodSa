@@ -54,6 +54,7 @@ export default function AppNav() {
   const t = useTranslations('nav')
   const pathname = usePathname()
   const router = useRouter()
+  const isDashboard = pathname === '/dashboard'
 
   async function handleLogout() {
     const supabase = createClient()
@@ -63,14 +64,18 @@ export default function AppNav() {
 
   const navItemCls = (active: boolean) =>
     cn(
-      'flex flex-1 flex-col items-center gap-1 py-2 text-sm transition-colors',
+      'flex flex-1 flex-col items-center gap-1 text-sm transition-colors',
+      isDashboard ? 'justify-start' : 'py-2',
       active ? 'font-semibold text-foreground [&>svg]:rounded-full [&>svg]:bg-primary [&>svg]:p-1 [&>svg]:size-8' : 'text-muted-foreground hover:text-foreground',
     )
 
   return (
     <>
       {/* Mobile bottom nav: 4 daily dests + center (＋) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-card shadow-[var(--shadow-nav)] md:hidden">
+      <nav className={cn(
+        'fixed bottom-0 left-0 right-0 z-50 flex border-t bg-card shadow-[var(--shadow-nav)] md:hidden',
+        isDashboard && 'h-[89px] px-3 pb-6 pt-2',
+      )}>
         {mobileLeft.map(({ href, key, icon: Icon }) => (
           <Link key={href} href={href} className={navItemCls(pathname === href)}>
             <Icon className="size-5" />
@@ -85,7 +90,10 @@ export default function AppNav() {
           aria-label={t('add')}
           className="flex flex-1 items-center justify-center"
         >
-          <span className="press -mt-6 inline-flex size-14 items-center justify-center rounded-full border-2 border-honey-edge bg-primary text-primary-foreground shadow-float ring-4 ring-card transition-colors hover:bg-primary/90 active:bg-primary/85">
+          <span className={cn(
+            'press inline-flex size-14 items-center justify-center rounded-full border-2 border-honey-edge bg-primary text-primary-foreground shadow-float transition-colors hover:bg-primary/90 active:bg-primary/85',
+            !isDashboard && '-mt-6 ring-4 ring-card',
+          )}>
             <Plus className="size-6" />
           </span>
         </button>

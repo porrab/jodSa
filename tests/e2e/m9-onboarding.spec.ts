@@ -18,7 +18,7 @@ import { findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
  * in-body before navigating, so a consolidated run is not order-flaky.
  */
 
-test.use({ storageState: STORAGE_A })
+test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
 const CREATE = '+ สร้างบัญชี' // account.createInline
 let userId: string
@@ -32,10 +32,11 @@ test.beforeAll(async () => {
 // Dismiss the auto-opening first-run sheet so the underlying empty picker is
 // what's under test. It's guidance (dismissable), not a hard block.
 async function dismissFirstAccountSheet(page: Page): Promise<void> {
-  const title = page.getByText('สร้างบัญชีแรกของคุณ', { exact: true })
-  if (await title.isVisible().catch(() => false)) {
-    await page.keyboard.press('Escape')
-    await expect(title).toBeHidden()
+  const dialog = page.getByRole('dialog', { name: 'สร้างบัญชีแรกของคุณ' })
+  const opened = await dialog.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
+  if (opened) {
+    await dialog.getByRole('button', { name: 'Close' }).click()
+    await expect(dialog).toBeHidden()
   }
 }
 
@@ -74,9 +75,9 @@ test('M9-onboard-1 fresh user: FirstAccountSheet guides the first account, then 
   await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
   await expect(page.getByText('สร้างบัญชีแรกของคุณ', { exact: true })).toBeHidden({ timeout: 15_000 })
 
-  // Log the first item via Home quick-add → global sheet. Account is no longer
+  // Log the first item via the Home FAB → global sheet. Account is no longer
   // an empty picker: it resolves to the just-created account, so the log saves.
-  await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   const sheet = page.getByRole('dialog')
   await expect(sheet).toBeVisible()
   await sheet.getByLabel('จำนวนเงิน (บาท)').fill('120')
@@ -89,14 +90,14 @@ test('M9-onboard-1 fresh user: FirstAccountSheet guides the first account, then 
   await expect(page.locator('body')).toContainText('120.00')
 })
 
-test('M9-onboard-2 Home quick-add with zero accounts → inline "+ สร้างบัญชี" (expense picker AND transfer to-account), never a disabled dead end', async ({ page }) => {
+test('M9-onboard-2 Home FAB sheet with zero accounts → inline "+ สร้างบัญชี" (expense picker AND transfer to-account), never a disabled dead end', async ({ page }) => {
   test.setTimeout(120_000)
   await resetAllUserData(userId)
   await page.goto('/dashboard')
   await dismissFirstAccountSheet(page)
 
-  // Open the Home quick-add → global TransactionForm sheet (accounts = []).
-  await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
+  // Open the global TransactionForm sheet from Home's sole add entry.
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   const sheet = page.getByRole('dialog')
   await expect(sheet).toBeVisible()
 
@@ -106,7 +107,7 @@ test('M9-onboard-2 Home quick-add with zero accounts → inline "+ สร้า�
   await expect(sheet.getByRole('button', { name: CREATE })).toBeVisible()
   await expect(sheet.getByText('ยังไม่มีบัญชี — สร้างบัญชีก่อนเริ่มบันทึกรายการ')).toBeVisible()
   await expect(sheet.getByText('เลือกบัญชี')).toHaveCount(0)
-  await expect(sheet.locator('button[disabled]')).toHaveCount(0)
+  await expect(sheet.getByRole('button', { name: CREATE })).toBeEnabled()
 
   // Switch to โอน (transfer): the to-account picker also has zero candidates →
   // its own inline create with the transfer hint. Two inline exits now, no
@@ -114,7 +115,9 @@ test('M9-onboard-2 Home quick-add with zero accounts → inline "+ สร้า�
   await sheet.getByRole('button', { name: 'โอนเงิน', exact: true }).click()
   await expect(sheet.getByText('ต้องมีอย่างน้อย 2 บัญชีเพื่อโอนเงินระหว่างกัน')).toBeVisible()
   await expect(sheet.getByRole('button', { name: CREATE })).toHaveCount(2)
-  await expect(sheet.locator('button[disabled]')).toHaveCount(0)
+  for (const create of await sheet.getByRole('button', { name: CREATE }).all()) {
+    await expect(create).toBeEnabled()
+  }
 })
 
 test('M9-onboard-3 recurring-form with zero accounts → inline "+ สร้างบัญชี", NOT a disabled add button (M9-1 fix)', async ({ page }) => {

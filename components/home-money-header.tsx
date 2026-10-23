@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Banknote, ChevronRight, TrendingUp } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { formatTHB } from '@/lib/money'
 import { formatMoney } from '@/lib/invest/money'
@@ -42,11 +42,11 @@ export default function HomeMoneyHeader({
   function show(next: 'top' | 'cash' | 'invest') { setTarget(next); setOpen(true) }
 
   return (
-    <div className="rounded-lg bg-hero p-5 text-hero-foreground shadow-soft">
-      <button type="button" onClick={() => show('top')} className="flex min-h-11 w-full items-center justify-between gap-3 text-left">
+    <div className="flex h-full flex-col rounded-[20px] bg-hero p-5 text-hero-foreground shadow-soft">
+      <button type="button" onClick={() => show('top')} className="flex min-h-[76px] w-full items-center justify-between gap-3 text-left">
         <span>
           <span className="block text-sm text-hero-muted">{includesInvestments ? t('moneyTotalLabel') : t('cashTotalLabel')}</span>
-          <span className="block text-4xl font-bold leading-[1.7] text-hero-figure tabular-nums">
+          <span className="block text-4xl font-bold leading-tight text-hero-figure tabular-nums">
             {includesInvestments && '≈ '}{formatMoney(totalMinor, 'THB', locale)}
           </span>
         </span>
@@ -54,19 +54,31 @@ export default function HomeMoneyHeader({
       </button>
 
       {holdings.length > 0 || investmentsFailed ? (
-        <div className="space-y-0.5 pt-2">
-          <div aria-hidden="true" className="mb-2 flex h-2 overflow-hidden rounded-full bg-hero-inset">
+        <div className="flex flex-1 flex-col pt-2">
+          <div aria-hidden="true" className="mb-1 flex h-2 shrink-0 overflow-hidden rounded-full bg-hero-inset">
             <span className="h-full border-r border-hero bg-primary" style={{ width: `${cashShare}%` }} />
             <span className="h-full flex-1 bg-invest-bar" />
           </div>
-          <button type="button" onClick={() => show('cash')} className="flex min-h-11 w-full items-center gap-2 text-left text-base">
-            <Banknote aria-hidden="true" className="size-4 shrink-0 text-hero-figure" /><span className="flex-1">{t('cashInAccounts')}</span><span className="tabular-nums">{formatTHB(cashTotal)}</span>
-          </button>
-          <button type="button" onClick={() => show('invest')} className="flex min-h-11 w-full items-center gap-2 text-left text-base">
-            <TrendingUp aria-hidden="true" className="size-4 shrink-0 text-invest-bar" /><span className="flex-1">{t('investments')}</span>
-            <span className="text-right tabular-nums">
-              {investmentsFailed ? t('investmentsLoadFailed') : valued.length === 0 ? t('valueMissing') : <>≈ {formatMoney(investMinor, 'THB', locale)}{latestLabel && <> · {t('updated', { date: latestLabel })}</>}{stale && <> · {t('staleValue')}</>}{missing > 0 && <> · {t('missingValues', { count: missing })}</>}</>}
+          <button type="button" onClick={() => show('cash')} className="flex min-h-14 w-full flex-1 items-center gap-3 border-b border-hero-inset text-left text-base">
+            <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-hero-figure" />
+            <span className="min-w-0 flex-1">
+              <span className="block">{t('cashInAccounts')}</span>
+              <span className="block text-sm text-hero-muted">{t('accountsCount', { count: accounts.length })}</span>
             </span>
+            <span className="shrink-0 tabular-nums">{formatTHB(cashTotal)}</span>
+            <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-hero-muted" />
+          </button>
+          <button type="button" onClick={() => show('invest')} className="flex min-h-14 w-full flex-1 items-center gap-3 text-left text-base">
+            <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-invest-bar" />
+            <span className="min-w-0 flex-1">
+              <span className="block">{t('investments')}</span>
+              <span className="block truncate text-sm text-hero-muted">
+                {investmentsFailed ? t('investmentsLoadFailed') : latestLabel ? t('updated', { date: latestLabel }) : valued.length === 0 ? t('valueMissing') : null}
+                {stale && <> · {t('staleValue')}</>}{missing > 0 && <> · {t('missingValues', { count: missing })}</>}
+              </span>
+            </span>
+            <span className="shrink-0 text-right tabular-nums">{valued.length === 0 ? '—' : <>≈ {formatMoney(investMinor, 'THB', locale)}</>}</span>
+            <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-hero-muted" />
           </button>
         </div>
       ) : null}

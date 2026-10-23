@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { usePathname } from 'next/navigation'
 import {
   Sheet,
   SheetContent,
@@ -19,6 +20,7 @@ import PendingTxProvider from '@/components/pending-tx-provider'
 import type { LastAccountMap } from '@/lib/last-account'
 import { QUICK_ADD_EVENT, type QuickAddPrefill } from '@/lib/quick-add'
 import type { Database } from '@/lib/supabase/types'
+import { cn } from '@/lib/utils'
 
 type Account = Database['public']['Tables']['accounts']['Row']
 
@@ -36,6 +38,7 @@ export default function AppShell({
   children: React.ReactNode
 }) {
   const t = useTranslations('quickAdd')
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [prefill, setPrefill] = useState<QuickAddPrefill>({})
   const [mode, setMode] = useState<'manual' | 'slip'>('manual')
@@ -98,9 +101,15 @@ export default function AppShell({
       <FirstAccountSheet hasAccounts={accounts.length > 0} />
       <div className="flex min-h-svh">
         <AppNav />
-        <main className="h-[calc(100svh-4.1rem)] flex-1 overflow-auto md:h-auto">
+        <main className={cn(
+          'flex-1 overflow-auto md:h-auto',
+          pathname === '/dashboard' ? 'h-[calc(100svh-5.5625rem)]' : 'h-[calc(100svh-4.1rem)]',
+        )}>
           {/* pb-24 on mobile clears the fixed bottom nav so a page's last element stays tappable */}
-          <div className="container mx-auto max-w-4xl p-4 pb-24 md:p-6 md:pb-6">{children}</div>
+          <div className={cn(
+            'container mx-auto max-w-4xl md:p-6 md:pb-6',
+            pathname === '/dashboard' ? 'p-0' : 'p-4 pb-24',
+          )}>{children}</div>
         </main>
       </div>
 

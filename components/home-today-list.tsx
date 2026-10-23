@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { formatTHB } from '@/lib/money'
 import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { usePendingTx } from '@/components/pending-tx-provider'
-import { Mascot } from '@/components/mascot'
+import { ArrowDown, Plus } from 'lucide-react'
 import { TransactionTypeBadge, transactionAmountPrefix } from '@/components/transaction-type-indicator'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
@@ -50,29 +50,28 @@ export default function HomeTodayList({
     .reduce((sum, tx) => sum + tx.amount_satang, 0)
 
   return (
-    <div className="space-y-2">
+    <div>
       {/* Section heading, not a caption (design v4 F3): Home's ladder ran
           36px → 14px with nothing between, and four different ranks all shared
           `muted-foreground`. A heading is `foreground` at the 16px base tier;
           `muted-foreground` + 14px is reserved for genuinely secondary text. */}
-      <h2 className="flex flex-wrap items-baseline gap-x-1.5 text-base font-semibold">
-        <span>{t('todayTransactions', { count: transactions.length + pending.length })}</span>
+      <h2 className="flex min-h-8 flex-wrap items-baseline justify-between gap-x-1.5 py-1 text-base font-semibold">
+        <span>{transactions.length + pending.length === 0
+          ? t('todayTransactionsEmpty')
+          : t('todayTransactions', { count: transactions.length + pending.length })}</span>
         {todayExpense > 0 && (
-          <span className="text-sm font-normal text-muted-foreground">
-            · {t('todaySpent', { amount: formatTHB(todayExpense) })}
+          <span className="text-sm font-semibold">
+            {t('todaySpent', { amount: formatTHB(todayExpense) })}
           </span>
         )}
       </h2>
 
       {transactions.length === 0 && pending.length === 0 ? (
-        /* Empty state carries the mascot (design v4 F4). v3 bans the mascot from
-           Home's hero because Home is J1 and J1 is speed — but an empty list is
-           the one place on this screen with nothing to be fast about, so it is
-           where warmth costs the user nothing. `shrug`, never a celebratory
-           expression: the brand rule is that the mascot never applauds. */
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center">
-          <Mascot expr="shrug" className="size-16 opacity-80" />
-          <p className="text-sm text-muted-foreground">{t('noTransactionsToday')}</p>
+        <div className="mt-2 flex min-h-[216px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border px-6 py-5 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-secondary text-foreground"><Plus aria-hidden="true" className="size-6" /></span>
+          <p className="text-base font-semibold">{t('noTransactionsToday')}</p>
+          <p className="max-w-[290px] text-sm text-muted-foreground">{t('noTransactionsTodayHint')}</p>
+          <ArrowDown data-testid="empty-today-arrow" aria-hidden="true" className="mt-1 size-5 text-muted-foreground" />
         </div>
       ) : (
         <div className="divide-y divide-border">
@@ -83,7 +82,7 @@ export default function HomeTodayList({
           {pending.map((p) => (
             <div
               key={p.tempId}
-              className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left opacity-60"
+              className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left opacity-60"
             >
               <TransactionTypeBadge type={p.type} label={p.type} />
               <div className="min-w-0 flex-1">
@@ -115,7 +114,7 @@ export default function HomeTodayList({
                 key={tx.id}
                 type="button"
                 onClick={() => setDetailTx(tx)}
-                className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left transition-colors hover:bg-accent/50"
               >
                 <TransactionTypeBadge type={tx.type} label={tx.type} />
                 <div className="min-w-0 flex-1">

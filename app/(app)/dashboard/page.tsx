@@ -3,7 +3,6 @@ import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { buildLastAccountMap } from '@/lib/last-account'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
-import QuickAddCard from '@/components/quick-add-card'
 import HomeTodayList from '@/components/home-today-list'
 import HomeBudgetStrip from '@/components/home-budget-strip'
 import HomeMoneyHeader from '@/components/home-money-header'
@@ -139,30 +138,34 @@ export default async function DashboardPage() {
   const globalLastAccountId = monthTx?.[0]?.account_id ?? null
 
   return (
-    <div className="space-y-6">
-      <HomeMoneyHeader
-        cashTotal={totalBalance}
-        investmentTotal={investmentTotal.toString()}
-        accounts={homeAccounts}
-        holdings={homeHoldings}
-        investmentsFailed={investmentsFailed}
-      />
+    <div data-testid="home-layout" className="flex min-h-[755px] flex-col md:min-h-0 md:gap-6">
+      <section data-testid="home-hero" className="h-[324px] shrink-0 px-5 pb-2 pt-4 md:h-auto md:p-0">
+        <HomeMoneyHeader
+          cashTotal={totalBalance}
+          investmentTotal={investmentTotal.toString()}
+          accounts={homeAccounts}
+          holdings={homeHoldings}
+          investmentsFailed={investmentsFailed}
+        />
+      </section>
 
-      <HomeBudgetStrip
-        budget={homeBudgetItem?.budget ?? null}
-        status={homeBudgetItem?.status ?? null}
-        monthExpense={monthExpense}
-        daysRemaining={daysRemaining}
-      />
+      <section data-testid="home-budget" className="h-[150px] shrink-0 border-y border-border px-5 py-4 md:h-auto md:border-0 md:p-0">
+        <HomeBudgetStrip
+          budget={homeBudgetItem?.budget ?? null}
+          status={homeBudgetItem?.status ?? null}
+          monthExpense={monthExpense}
+          daysRemaining={daysRemaining}
+        />
+      </section>
 
-      <QuickAddCard />
-
-      <HomeTodayList
-        transactions={todayTx ?? []}
-        accounts={accounts ?? []}
-        lastByCategory={lastByCategory}
-        globalLastAccountId={globalLastAccountId}
-      />
+      <section data-testid="home-today" className="min-h-[281px] flex-1 px-5 pb-6 pt-4 md:p-0">
+        <HomeTodayList
+          transactions={todayTx ?? []}
+          accounts={accounts ?? []}
+          lastByCategory={lastByCategory}
+          globalLastAccountId={globalLastAccountId}
+        />
+      </section>
     </div>
   )
 }

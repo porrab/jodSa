@@ -6,7 +6,7 @@ import { findUserByEmail, resetUserData, seedAccount } from './helpers/admin'
 const SLIP_A = path.join(GENERATED_DIR, 'slip-qr-a.png')
 const SLIP_B = path.join(GENERATED_DIR, 'slip-qr-b.png')
 
-test.use({ storageState: STORAGE_B })
+test.use({ storageState: STORAGE_B, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
 
 let userId: string
@@ -26,12 +26,13 @@ test('OWNER-FB A1 Home opens two slips in the global sheet and bulk-saves ready 
   test.setTimeout(600_000)
   await page.goto('/dashboard')
 
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
   const chooserPromise = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'สแกนสลิป' }).click()
+  await sheet.getByRole('tab', { name: 'สลิป' }).click()
   const chooser = await chooserPromise
   await chooser.setFiles([SLIP_A, SLIP_B])
 
-  const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
   await expect(sheet).toBeVisible()
   await expect(sheet.getByRole('tab', { name: 'สลิป' })).toHaveAttribute('aria-selected', 'true')
   await expect(sheet.getByText(/สลิป 2 ใบ · อ่านแล้ว 2\/2/).first()).toBeVisible({ timeout: 480_000 })
@@ -51,15 +52,16 @@ test('OWNER-FB A1 Home opens two slips in the global sheet and bulk-saves ready 
 
 test('OWNER-FB A1 manual fallback saves one failed item and warns before discarding the other', async ({ page }) => {
   await page.goto('/dashboard')
+  await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
   const chooserPromise = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'สแกนสลิป' }).click()
+  await sheet.getByRole('tab', { name: 'สลิป' }).click()
   const chooser = await chooserPromise
   await chooser.setFiles([
     { name: 'broken-1.png', mimeType: 'image/png', buffer: Buffer.from('not-an-image-1') },
     { name: 'broken-2.png', mimeType: 'image/png', buffer: Buffer.from('not-an-image-2') },
   ])
 
-  const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
   await expect(sheet.getByText('อ่านไม่ได้')).toHaveCount(2, { timeout: 30_000 })
   await sheet.getByRole('button', { name: 'กรอกเอง' }).first().click()
   await sheet.getByLabel('จำนวนเงิน (บาท)').fill('99.00')
@@ -77,7 +79,7 @@ test('OWNER-FB A1 manual fallback saves one failed item and warns before discard
 
 test('OWNER-FB A1 /transactions uses the same global add sheet', async ({ page }) => {
   await page.goto('/transactions')
-  await page.getByRole('button', { name: 'เพิ่มรายการ' }).click()
+  await page.locator('main').getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
   await expect(sheet.getByRole('tab', { name: 'กรอกเอง' })).toHaveAttribute('aria-selected', 'true')
   await expect(sheet.getByRole('tab', { name: 'สลิป' })).toBeVisible()

@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const e2ePort = process.env.JODSA_E2E_PORT ?? '3000'
+const e2eBaseUrl = `http://localhost:${e2ePort}`
+
 /**
  * E2E config — owned by qa-lab (see REVIEW-INBOX.md handshake).
  * Runs against `pnpm dev` + the live Supabase test project.
@@ -15,7 +18,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: e2eBaseUrl,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -32,8 +35,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000/login',
+    command: `pnpm dev --port ${e2ePort}`,
+    url: `${e2eBaseUrl}/login`,
     reuseExistingServer: true,
     timeout: 180_000,
   },
