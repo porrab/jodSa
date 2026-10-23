@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { th, enUS } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { CategoryLabel } from '@/lib/categories'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +18,7 @@ import {
   TransactionTypeIcon,
   transactionAmountPrefix,
 } from '@/components/transaction-type-indicator'
+import TransactionRowCopy from '@/components/transaction-row-copy'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -127,14 +127,14 @@ export default function TransactionDetailSheet({
                 {t(tx.type)}
               </span>
             </p>
-            <p className="text-sm text-muted-foreground">
-              {tx.category && <><CategoryLabel value={tx.category} /> · </>}
-              {toAcct ? `${acct?.name ?? '—'} → ${toAcct.name}` : acct?.name ?? '—'}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(tx.datetime), 'd MMM yyyy · HH:mm', { locale: dateLocale })}
-              {tx.counterparty && <> · {tx.counterparty}</>}
-            </p>
+            <TransactionRowCopy
+              tx={tx}
+              accountName={acct?.name}
+              toAccountName={toAcct?.name}
+              time={format(new Date(tx.datetime), 'd MMM yyyy · HH:mm', { locale: dateLocale })}
+              testId="transaction-detail-copy"
+              titleClassName="text-lg font-semibold"
+            />
             {tx.ref_code && (
               <p className="truncate font-mono text-sm text-muted-foreground">
                 {t('refCode', { code: tx.ref_code })}

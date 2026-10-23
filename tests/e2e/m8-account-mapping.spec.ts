@@ -75,9 +75,11 @@ async function importSlip(page: Page, fixture: string): Promise<void> {
   await expect(page.getByRole('heading', { name: 'ยืนยันรายการ' })).toBeVisible({ timeout: 240_000 })
 }
 
-// Confirm-form comboboxes in DOM order: [Type, Account, Category] → account = nth(1).
-// Scoped to the form so page chrome (nav) can never shift the index.
-const accountSelect = (page: Page) => page.locator('form').getByRole('combobox').nth(1)
+// DS-3 moved category before the AccountGrid. Target the accessible grid by
+// name so field order can change without making this precedence suite brittle.
+const accountGrid = (page: Page) => page.locator('form').getByRole('radiogroup', { name: 'บัญชี' })
+const accountRadio = (page: Page, name: string) =>
+  accountGrid(page).getByRole('radio', { name: new RegExp(`^${name},`) })
 // The "เลือกจากสลิป" (matchedFromSlip) badge — shown only when the account came
 // from a slip signal AND the user has not manually overridden it. Lives in the
 // account Label inside the form.
@@ -97,15 +99,14 @@ test('QA-M8-1 Paotang slip auto-selects the Paotang account (app signature beats
   await importSlip(page, PAOTANG)
 
   // Auto-selected the Paotang account, not another KTB account.
-  await expect(accountSelect(page)).toContainText('Paotang')
-  await expect(accountSelect(page)).not.toContainText('krungthai')
+  await expect(accountRadio(page, 'Paotang')).toHaveAttribute('aria-checked', 'true')
+  await expect(accountRadio(page, 'krungthai')).toHaveAttribute('aria-checked', 'false')
   // "เลือกจากสลิป" hint present because it was auto-matched and untouched.
   await expect(slipHint(page)).toBeVisible()
 
   // Manual override → the hint must disappear (shows only when untouched).
-  await accountSelect(page).click()
-  await page.getByRole('option', { name: 'krungthai (KTB)', exact: true }).click()
-  await expect(accountSelect(page)).toContainText('krungthai')
+  await accountRadio(page, 'krungthai').click()
+  await expect(accountRadio(page, 'krungthai')).toHaveAttribute('aria-checked', 'true')
   await expect(slipHint(page)).toBeHidden()
 })
 
@@ -121,8 +122,8 @@ test('QA-M8-2 MAKE slip auto-selects the make account via number_hint (not Kbank
 
   await importSlip(page, MAKE)
 
-  await expect(accountSelect(page)).toContainText('make')
-  await expect(accountSelect(page)).not.toContainText('บัตร') // not the Kbank บัตร sibling
+  await expect(accountRadio(page, 'make')).toHaveAttribute('aria-checked', 'true')
+  await expect(accountRadio(page, 'Kbank บัตร')).toHaveAttribute('aria-checked', 'false')
   await expect(slipHint(page)).toBeVisible()
 })
 
@@ -135,20 +136,19 @@ test('QA-M8-3 correct the account once → next same-fingerprint slip auto-selec
   // First import: no learned mapping / number_hint / app signature → bank-code
   // tier picks the FIRST KTB account (KTB-Alpha).
   await importSlip(page, KTB)
-  await expect(accountSelect(page)).toContainText('KTB-Alpha')
+  await expect(accountRadio(page, 'KTB-Alpha')).toHaveAttribute('aria-checked', 'true')
 
   // Correct to KTB-Beta and SAVE → recordSlipAccountMapping upserts
   // fingerprint("ktb||441-5") → KTB-Beta into slip_account_map (live DB round-trip).
-  await accountSelect(page).click()
-  await page.getByRole('option', { name: 'KTB-Beta (KTB)', exact: true }).click()
-  await expect(accountSelect(page)).toContainText('KTB-Beta')
+  await accountRadio(page, 'KTB-Beta').click()
+  await expect(accountRadio(page, 'KTB-Beta')).toHaveAttribute('aria-checked', 'true')
   await confirmButton(page).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
 
   // Re-import the SAME slip (same fingerprint) → the learned tier now outranks the
   // bank-code default and auto-selects the corrected account, KTB-Beta.
   await importSlip(page, KTB)
-  await expect(accountSelect(page)).toContainText('KTB-Beta')
+  await expect(accountRadio(page, 'KTB-Beta')).toHaveAttribute('aria-checked', 'true')
   // Learned selection is a from-slip signal → the hint shows.
   await expect(slipHint(page)).toBeVisible()
 })

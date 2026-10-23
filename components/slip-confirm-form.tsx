@@ -150,6 +150,9 @@ export default function SlipConfirmForm({
     learnedAccountId || numberHintAccountId || appSignatureAccountId || parsedAccountId
   const showSlipMatchHint =
     !accountTouched && !!slipSignalAccountId && accountId === slipSignalAccountId
+  const selectedAccount = accounts.find((account) => account.id === accountId)
+  const categoryDefault =
+    !showSlipMatchHint && !accountTouched && !!category && lastByCategory[category] === accountId
 
   function handleAccountChange(id: string) {
     setAccountId(id)
@@ -377,17 +380,42 @@ export default function SlipConfirmForm({
           />
         </div>
 
+        {/* Category drives the account fallback, so it must come before the grid. */}
+        <div data-testid="slip-category-field" className="space-y-1.5">
+          <Label>{t('category')}</Label>
+          <Select value={category} onValueChange={handleCategoryChange}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('selectCategoryOptional')} />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  <CategoryLabel value={c} />
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Account */}
-        <div className="space-y-1.5">
-          <Label>
-            {t('account')} <RequiredMark />
-            {showSlipMatchHint && (
-              <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-1 text-sm font-medium text-honey-text">
-                <Sparkles className="size-2.5" />
-                {t('matchedFromSlip')}
+        <div data-testid="slip-account-field" className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <Label>{t('account')} <RequiredMark /></Label>
+            {selectedAccount && (
+              <span data-testid="account-selection-hint" className="truncate text-sm text-muted-foreground">
+                {showSlipMatchHint ? (
+                  <span className="inline-flex items-center gap-0.5 text-honey-text">
+                    <Sparkles className="size-3" />
+                    {t('matchedFromSlip')}
+                  </span>
+                ) : categoryDefault ? (
+                  <>{t('selectedByCategory')} <CategoryLabel value={category} /></>
+                ) : (
+                  t('selectedAccount', { account: selectedAccount.name })
+                )}
               </span>
             )}
-          </Label>
+          </div>
           {accounts.length === 0 ? (
             // Global empty-source rule (design v3, J4) — inline create, never
             // a dead-end message with no way out.
@@ -402,23 +430,6 @@ export default function SlipConfirmForm({
               label={t('account')}
             />
           )}
-        </div>
-
-        {/* Category */}
-        <div className="space-y-1.5">
-          <Label>{t('category')}</Label>
-          <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('selectCategoryOptional')} />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  <CategoryLabel value={c} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Counterparty */}

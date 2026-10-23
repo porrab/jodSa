@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-3] Add sheet: หมวดหมู่ before บัญชี · Tx Row title rule — 2026-10-23 · from review session (Claude) for owner + design-studio
-**Status:** OPEN — do before migration 0011 / A3 (A3 touches the same form).
+**Status:** RESOLVED 2026-10-23 — manual and slip-confirm now render category before account without changing the `accountTouched` guard; the right label distinguishes category defaults, slip matches, and manual selection. Home, `/transactions`, and detail share one Tx Row title/meta implementation. DS-3 E2E passes the category-default/manual-touch cases plus payee-less/payee rows on all three surfaces; Figma/app pairs are in `project/jodsa/tests/e2e/evidence/ds-3/side-by-side-*.png`. Migration 0011 was not started.
 
 **1. Owner decision 2026-10-23: category before account.** `components/transaction-form.tsx` `handleCategoryChange`
 re-defaults `accountId` from `lastByCategory` unless `accountTouched`. With the account grid above the category

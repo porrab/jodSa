@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { CategoryLabel } from '@/lib/categories'
 import { Plus } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
 import { format } from 'date-fns'
@@ -16,6 +15,7 @@ import { Chip } from '@/components/ui/chip'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 import { openQuickAdd } from '@/lib/quick-add'
+import TransactionRowCopy from '@/components/transaction-row-copy'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -138,29 +138,25 @@ export default function TransactionsClient({
                     // inside the sheet, separated from the primary edit action).
                     <button
                       key={tx.id}
+                      data-testid={`transaction-${tx.id}`}
                       type="button"
                       onClick={() => setDetailTx(tx)}
                       className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent/50"
                     >
                       <TransactionTypeBadge type={tx.type} label={t(typeKey)} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {tx.category && (
-                            <span className="text-sm text-muted-foreground"><CategoryLabel value={tx.category} /></span>
-                          )}
-                          {tx.recurring_rule_id && (
-                            <span className="text-sm" title={t('recurringBadge')} aria-label={t('recurringBadge')}>
-                              🔁
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 truncate text-base">
-                          {tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : acct?.name ?? '—')}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
-                          {acct && <> · {acct.name}</>}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <TransactionRowCopy
+                          tx={tx}
+                          accountName={acct?.name}
+                          toAccountName={toAcct?.name}
+                          time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
+                          testId={`transaction-${tx.id}-copy`}
+                        />
+                        {tx.recurring_rule_id && (
+                          <span className="text-sm" title={t('recurringBadge')} aria-label={t('recurringBadge')}>
+                            🔁
+                          </span>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className={cn('text-base font-semibold tabular-nums', style.text)}>

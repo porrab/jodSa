@@ -11,6 +11,7 @@ import TransactionDetailSheet from '@/components/transaction-detail-sheet'
 import { usePendingTx } from '@/components/pending-tx-provider'
 import { ArrowDown, Plus } from 'lucide-react'
 import { TransactionTypeBadge, transactionAmountPrefix } from '@/components/transaction-type-indicator'
+import TransactionRowCopy from '@/components/transaction-row-copy'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
@@ -106,35 +107,22 @@ export default function HomeTodayList({
           {transactions.map((tx) => {
             const acct = accountMap[tx.account_id]
             const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-            const label =
-              tx.counterparty ?? (toAcct ? `→ ${toAcct.name}` : (acct?.name ?? '—'))
-
             return (
               <button
                 key={tx.id}
+                data-testid={`home-transaction-${tx.id}`}
                 type="button"
                 onClick={() => setDetailTx(tx)}
                 className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left transition-colors hover:bg-accent/50"
               >
                 <TransactionTypeBadge type={tx.type} label={tx.type} />
-                <div className="min-w-0 flex-1">
-                  {/* Primary row content sits at the 16px base tier (design v4
-                      F3); the category chip and timestamp are the secondary
-                      rank — `muted-foreground` at 14px, NOT 12px: v3's type
-                      rule is "12px only for chart axes", because v2's 12px UI
-                      text was a named squint source (SPEC5-4). */}
-                  <p className="truncate text-base">
-                    {label}
-                    {tx.category && (
-                      <span className="ml-1.5 text-sm text-muted-foreground">
-                        <CategoryLabel value={tx.category} />
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
-                  </p>
-                </div>
+                <TransactionRowCopy
+                  tx={tx}
+                  accountName={acct?.name}
+                  toAccountName={toAcct?.name}
+                  time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
+                  testId={`home-transaction-${tx.id}-copy`}
+                />
                 <span className={cn('shrink-0 text-base font-semibold tabular-nums', TYPE_TEXT[tx.type])}>
                   {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
                 </span>

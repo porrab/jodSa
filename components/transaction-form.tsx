@@ -100,6 +100,9 @@ export default function TransactionForm({
   const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
   const [category, setCategory] = useState(defaultValues?.category ?? '')
   const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
+  const selectedAccount = accounts.find((account) => account.id === accountId)
+  const categoryDefault =
+    type !== 'transfer' && !accountTouched && !!category && lastByCategory[category] === accountId
 
   function handleAccountChange(id: string) {
     setAccountId(id)
@@ -258,11 +261,37 @@ export default function TransactionForm({
         </div>
       </div>
 
+      {/* Category drives the account default, so it must come before the grid. */}
+      {type !== 'transfer' && (
+        <div data-testid="transaction-category-field" className="space-y-1">
+          <Label>{t('categoryOptional')}</Label>
+          <Select value={category} onValueChange={handleCategoryChange}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('selectCategory')} />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Account — global empty-source rule (design v3, J4): an empty list
           renders an inline "+ สร้าง…" create action, never a disabled/dead
           control (the outside tester's exact zero-account dead end). */}
-      <div className="space-y-1">
-        <Label>{type === 'transfer' ? t('fromAccount') : t('account')} <RequiredMark /></Label>
+      <div data-testid="transaction-account-field" className="space-y-1">
+        <div className="flex items-center justify-between gap-3">
+          <Label>{type === 'transfer' ? t('fromAccount') : t('account')} <RequiredMark /></Label>
+          {selectedAccount && (
+            <span data-testid="account-selection-hint" className="truncate text-sm text-muted-foreground">
+              {categoryDefault
+                ? <>{t('selectedByCategory')} <CategoryLabel value={category} /></>
+                : t('selectedAccount', { account: selectedAccount.name })}
+            </span>
+          )}
+        </div>
         {accounts.length === 0 ? (
           <InlineCreateAccount
             hint={t('noAccountsInlineHint')}
@@ -313,23 +342,6 @@ export default function TransactionForm({
             )}
           </div>
         </>
-      )}
-
-      {/* Category (non-transfer) */}
-      {type !== 'transfer' && (
-        <div className="space-y-1">
-          <Label>{t('categoryOptional')}</Label>
-          <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('selectCategory')} />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       )}
 
       {/* Counterparty (non-transfer) */}
