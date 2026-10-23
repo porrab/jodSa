@@ -15,9 +15,32 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-3] Add sheet: หมวดหมู่ before บัญชี · Tx Row title rule — 2026-10-23 · from review session (Claude) for owner + design-studio
+**Status:** OPEN — do before migration 0011 / A3 (A3 touches the same form).
+
+**1. Owner decision 2026-10-23: category before account.** `components/transaction-form.tsx` `handleCategoryChange`
+re-defaults `accountId` from `lastByCategory` unless `accountTouched`. With the account grid above the category
+chips, picking a category makes the already-passed grid selection jump. New order for expense/income: amount →
+หมวดหมู่ → บัญชี → ผู้รับ/ผู้จ่าย → date → save; the grid's right label reads `เลือกตามหมวด <category>` when the
+account came from the category default (else the current `เลือกแล้ว: <name>`). Same order in
+`components/slip-confirm-form.tsx` (its slip-matched account can also be re-defaulted, see `reapplyAccountDefault`).
+Transfer / ลงทุน / ถอนจากพอร์ต have no category — unchanged. Keep the `accountTouched` precedence exactly as is.
+Spec: 07-design.md v6 "Category before account (2026-10-23)" (idea-forge `c60b9eb`); Figma manual `27:1357`
+(hint `27:1402`), slip confirm `28:1781`.
+
+**2. Tx Row title rule not followed (found re-checking DS-2).** Home today rows render the **account** as the title
+with the category beside it and only the time as meta ("make เดินทาง / 22:46"). Brief v6 Tx Row: title =
+display name ?? payee ?? **category**; meta = time · account (· payee when it is not the title), account shown once.
+Fix in the shared row so Home, `/transactions` and detail stay consistent.
+
+**Acceptance:** E2E: choose a category whose last-used account differs → the grid selection changes *below* the
+chips and the hint shows `เลือกตามหมวด …`; pick an account manually, then change category → account unchanged.
+Row title/meta assertions for a payee-less and a payee row. Side-by-side vs Figma for manual + slip confirm.
+
 ## [DS-2] Home: remove quick-add and match the Honey Figma frame — 2026-10-23 · from review session (Claude) for owner + design-studio
 **Status:** RESOLVED 2026-10-23 — `/dashboard` now follows the Honey Home composition (hero → budget band → today list) with the centre ＋ FAB as its sole add entry. Quick-add coverage now opens the global sheet, the 390×844 evidence pairs for filled / empty-today / over-budget / dark live in `tests/e2e/evidence/ds-2/side-by-side-*.png`, and only the Home light/dark baselines were refreshed after those comparisons. Migration 0011 was not started.
 **Disk sync:** implementation and evidence landed in `6f54606`.
+**Reviewer re-check 2026-10-23 (Claude): CONFIRMED** at `c66de6d` — quick-add gone (no `QuickAddCard` use left), `tsc` 0, vitest 333 passed / 34 skipped; own 390×844 screenshots (test user A, light + dark) show hero two-line sub-rows with dots, flat budget band without satang, and 3 today rows above the nav, matching Figma `26:1166`/`34:3525`. One rule gap carried to [DS-3] item 2 (Tx Row title). Empty/over-budget states taken from Codex evidence, not re-shot.
 
 **Owner decision 2026-10-23:** remove the จดเร็ว quick-add block (`components/quick-add-card.tsx` usage on
 `/dashboard`) from Home entirely. The centre ＋ FAB is the only entry point; its sheet's สลิป mode keeps OWNER-FB #9
