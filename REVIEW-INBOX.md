@@ -16,7 +16,14 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
-**From:** design-studio · **Status:** OPEN — implementation `8cb5288` landed 2026-10-24; awaiting design-studio re-review · **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
+**From:** design-studio · **Status:** CHANGES — re-reviewed 2026-10-25 at `ce023ec` (implementation `8cb5288`): 17 FIXED · 10 PARTIAL · 1 NOT FIXED · 1 REGRESSED + 5 NEW. Still open:
+1. **C12 REGRESSED [H]:** `/transactions` day headings throw a hydration error (the dev overlay's "1 Issue"), and the client shows the year in the current year.
+2. **PARTIAL:** C4, C6, C7, C9, C11, S2, S7, S9, S12, S13 (details in the re-review table below).
+3. **NOT FIXED:** S5.
+4. **NEW:** N1–N5 (below).
+5. **F1–F7:** awaiting owner (no app change).
+
+**Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
 **Implementation evidence (2026-10-24, `8cb5288`):** all C1–C13 shared primitives were completed before S1–S16. Section C (F1–F7) was deliberately left unchanged, and migrations 0011/0012 were not started. Forty 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5/README.md`. After visual comparison, the Honey baseline was refreshed and then passed 29/29 without update mode. DS-3, contrast, and the signup journey remain green; exact commands and counts are recorded in the implementing commit.
 **Verdict: CHANGES.** 40 built screens were compared with their Honey frames: 36 light and 4 dark. The finding count is
 **9 H · 15 M · 5 L** (29 findings: 13 shared-component, 16 per-screen).
@@ -152,6 +159,57 @@ Severity: **H** changes how the screen reads · **M** visible mismatch · **L** 
 - Out of scope: no migration (0011/0012 are untouched by this item). Section C items are not app changes.
 - **Not design (for QA):** the Next.js dev overlay shows "1 Issue" on `/accounts`, `/groups`, `/sessions` and `/sessions/[id]`.
   That is a runtime warning or error worth a look.
+
+### Re-review 2026-10-25 (design-studio, independent)
+**Evidence:** I re-ran my own harness, not Codex's pairs. It covered the same 40 states, at 390×844, as test user A only, against jodsa `ce023ec`. The Figma-left/app-right pairs, `index.md`
+and the harness are in `design-studio/reviews/jodsa/2026-10-25-ds5-recheck/`. Codex's `tests/e2e/evidence/ds-5/` pairs were treated as
+a claim and not used for these verdicts.
+**Not viewed by eye this round:** 01, 02, 04, 31, 37, 38, 39, D1, D2, D4. They were captured, but not used for any verdict below.
+**Totals:** 17 FIXED · 10 PARTIAL · 1 NOT FIXED · 1 REGRESSED (29 gaps) + 5 NEW.
+
+| Gap | Verdict | What the re-shot pair shows |
+|---|---|---|
+| C1 Select → chips/tiles | FIXED | Chips on the add sheet, slip confirm, account/budget/recurring forms, add trade and settings; AccountGrid in forms. |
+| C2 Dialog → bottom sheet | FIXED | Account, budget, recurring and add-trade forms are sheets with grabber + 44px ×. |
+| C3 Amount Input | FIXED | Centred caption + large figure + hairline (manual, transfer, slip, recurring). See N5 for slip formatting. |
+| C4 Mode tabs / type control | PARTIAL | Icons, underline, `โอน` and no `ประเภท` label are all done. The active mode tab still renders as a raised card with a shadow. The slip-confirm and recurring type controls have no type icons, and the recurring control lists รายจ่าย first. |
+| C5 Nav | FIXED | House/wallet icons, honey pill active state, and เพิ่มเติม active on More sub-pages. |
+| C6 Page Header | PARTIAL | Title and action are on one row everywhere. The action labels are long (`+ เพิ่มรายการประจำ`, `+ เพิ่มงบประมาณ`, `+ สร้างรายการ`); on `/recurring` the title wraps to two lines. Spec: short `+ เพิ่ม`-style labels. |
+| C7 Per-item cards → hairline rows | PARTIAL | Budgets, groups, recurring, sessions and settings are now hairline rows. Still card stacks: trip manage `34:3164`, payment detail `34:3227`, the group-detail summary card, and the boxed trade row in the holding sheet. |
+| C8 Budget Band on `/budgets` | FIXED | Normal and Over bands match `22:1195`/`22:1210`. |
+| C9 Tx Row everywhere | PARTIAL | Group detail now uses Tx Row. The holding-sheet trade is still a bordered box (`33:3140`). |
+| C10 Page Tabs | FIXED | Segmented track under the header on `/budgets` and `/invest`. |
+| C11 Sheet close button | PARTIAL | The plain × is fixed. The add sheet still has ~40px of dead space under `บันทึกรายการ`. |
+| C12 One date formatter | **REGRESSED [H]** | `/transactions` throws **"Hydration failed because the server rendered text didn't match the client"**. The server renders `เมื่อวาน · ส. 24`; the client renders `เมื่อวาน · เสาร์ 24 ต.ค. 2569`. After hydration every heading shows a full weekday + the BE year **in the current year** (`วันนี้ · อาทิตย์ 25 ต.ค. 2569`); spec `พ. 21 ต.ค.`. **Likely cause, unverified:** `lib/date-display.ts` `calendarYear()` does `Number(Intl.DateTimeFormat('th-TH-u-ca-buddhist', {year}).format())`. If the browser's ICU returns `พ.ศ. 2569`, this gives `NaN` and `includeYear` becomes true. Node and Chrome ICU also differ for `weekday:'short'` (`ส.` vs `เสาร์`). Fix: format on one side only, or derive the year from `formatToParts`. Screenshot: `overlay-transactions-hydration-error.png`. |
+| C13 Detail-sheet primary | FIXED | `แก้ไข` is Secondary in the transaction, account and holding sheets. |
+| S1 Transaction detail | FIXED | Shown-name title, centred amount, full field list. |
+| S2 Slip confirm | PARTIAL | OCR debug, Ref field and type Select are gone; chips and centred amount are in. Still missing: the slip thumb + read badge row from `28:1781`. See N5. |
+| S3 Slip queue | FIXED | Thai error copy, date · account meta, proper CTA; close-confirm is a Dialog. |
+| S4 Payment detail overflow | FIXED | No horizontal clipping at 390. |
+| S5 Home polish | NOT FIXED [L] | The hero still has a radial gradient; the budget band keeps ~32px of extra bottom padding. |
+| S6 Breakdown | FIXED | Caption present; the emoji is replaced by the TrendingUp icon. |
+| S7 Accounts | PARTIAL | The bank pill is gone. The total is a small inline line `รวม 6 บัญชี ฿19,250.38`; spec `29:2119` shows a 28/700 figure. |
+| S8 Account detail | FIXED | Centred amount and recent Tx Rows. |
+| S9 Invest holdings | PARTIAL | Total, symbol disc and P&L line are in. The `มูลค่ารวม (THB) · กรอกเอง` label is missing, and the holding name truncates (`ปตท. จำกัด ...`) because the two chips stack beside it. |
+| S10 Invest overview | FIXED | Single-colour % bars, actions at the top, no card. |
+| S11 Add trade | FIXED | Its own sheet with type chips. |
+| S12 Recurring | PARTIAL | Hairline rows, category title and BE dates are in. Rows have no type badge icon (spec Tx Row), and the page title wraps (C6). |
+| S13 Sessions / trip | PARTIAL | The list is fixed (no ฿0.00 line, no trash). Trip manage and payment detail are still cards. `ปิดรับ` still sits inside the link block next to คัดลอก/เปิดดู; spec: destructive apart. |
+| S14 Import | FIXED | Title and privacy line. |
+| S15 Settings logout | FIXED | `ออกจากระบบ` row present. |
+| S16 Trust notes | FIXED | `--info-soft` + info icon on trip manage (`35`). Guest pay and guest trip were not viewed this round. |
+
+**NEW (not in DS-5 originally):**
+- **N1 [M]** The recurring form's account tiles show `—` instead of balances (`27-recurring-form.jpg`). In the add sheet the same AccountGrid shows balances.
+- **N2 [L]** Bank chips in the account form mix English (`Other`) and uppercase codes (`KIATNAKIN`, `LH Bank`) into Thai UI. Spec `29:2288` uses Thai labels (`อื่นๆ`).
+- **N3 [L]** Expense-mode category chips also offer income categories (`เงินเดือน`, `ฟรีแลนซ์`). This is probably carried over from the old Select; it should be filtered by type.
+- **N4 [L]** The add-sheet transfer swap is plain text `⇅ สลับบัญชี`. The anchored Swap Divider pill `25:1187` is not used.
+- **N5 [L]** The slip-confirm amount renders without a thousands separator (`฿1250.00`); the add sheet shows `฿1,250.00`.
+
+**Reviewer note 2026-10-25 (Claude):** C12 cause partly confirmed — on this machine Node 24 formats `Intl.DateTimeFormat('th-TH-u-ca-buddhist',{year:'numeric'})` as `"พ.ศ. 2569"`, so `Number()` is `NaN` and `valueYear !== currentYear` is always true; any runtime whose ICU emits the prefix shows the year, and server/client ICU differ on the weekday form too. Fix by computing the year numerically (e.g. `formatToParts` → `year` part, or Gregorian year from an `en-CA` Bangkok date) and render headings from one deterministic formatter; add a unit test that asserts no year in the current year, and an E2E that fails on any console hydration error. Also verified at `ce023ec`: `tsc` 0, vitest 333 passed / 34 skipped.
+
+**F1–F7: awaiting owner** (no app change). **Next step for the dev session:** C12 first (H, a runtime error), then N1, then the PARTIAL items in the C → S order.
+Re-check with the same harness afterwards.
 
 ## [DS-4] Add sheet + /transactions header still differ from the Honey frames — 2026-10-23 · from review session (Claude)
 **Status:** SUPERSEDED by DS-5 (2026-10-24). Every point below is folded into [DS-5] (C1, C3, C4, C6); the text is kept for history.
