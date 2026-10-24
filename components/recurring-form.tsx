@@ -1,23 +1,22 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, AlertTriangle } from 'lucide-react'
+import { Plus, ChevronRight, AlertTriangle } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
 import { CategoryLabel } from '@/lib/categories'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { AmountInput } from '@/components/ui/amount-input'
+import { Chip } from '@/components/ui/chip'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
+import AccountGrid from '@/components/account-grid'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
+} from '@/components/ui/sheet'
 import {
   createRecurringRule, updateRecurringRule, deleteRecurringRule,
 } from '@/app/actions/recurring'
@@ -25,6 +24,8 @@ import { WEEKDAYS } from '@/lib/validators/recurring'
 import { CATEGORIES } from '@/lib/validators/transaction'
 import { formatTHB } from '@/lib/money'
 import InlineCreateAccount from '@/components/inline-create-account'
+import { PageHeader } from '@/components/ui/page-header'
+import { formatAppDate } from '@/lib/date-display'
 
 type Account = { id: string; name: string; bank: string }
 
@@ -53,6 +54,7 @@ function RuleForm({
   onSuccess: () => void
 }) {
   const t = useTranslations('recurring')
+  const locale = useLocale() === 'th' ? 'th' : 'en'
   const tc = useTranslations('common')
   const [type, setType] = useState<'income' | 'expense'>(defaultValues?.type ?? 'expense')
   const [accountId, setAccountId] = useState(defaultValues?.account_id ?? accounts[0]?.id ?? '')
@@ -84,61 +86,38 @@ function RuleForm({
     <form action={formAction} className="space-y-4">
       {defaultValues?.id && <input type="hidden" name="id" value={defaultValues.id} />}
 
-      <div className="space-y-1.5">
-        <Label>{t('type')}</Label>
-        <Select value={type} onValueChange={(v) => setType(v as 'income' | 'expense')}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="expense">{t('typeExpense')}</SelectItem>
-            <SelectItem value="income">{t('typeIncome')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Segmented className="grid-cols-2" aria-label={t('type')}>
+        <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')}>{t('typeExpense')}</SegmentedItem>
+        <SegmentedItem active={type === 'income'} onClick={() => setType('income')}>{t('typeIncome')}</SegmentedItem>
+      </Segmented>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="amount">{t('amountLabel')} <RequiredMark /></Label>
-        <Input
-          id="amount" name="amount" type="text" inputMode="decimal" required
-          defaultValue={defaultValues ? (defaultValues.amount_satang / 100).toFixed(2) : ''}
-          placeholder="0.00"
-        />
-      </div>
+      <AmountInput
+        id="amount" name="amount" caption={<>{t('amountLabel')} <RequiredMark /></>}
+        required defaultValue={defaultValues ? (defaultValues.amount_satang / 100).toFixed(2) : ''}
+      />
 
       <div className="space-y-1.5">
         <Label>{t('account')} <RequiredMark /></Label>
-        <Select value={accountId} onValueChange={setAccountId}>
-          <SelectTrigger><SelectValue placeholder={t('selectAccount')} /></SelectTrigger>
-          <SelectContent>
-            {accounts.map((a) => (
-              <SelectItem key={a.id} value={a.id}>{a.name} ({a.bank})</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <AccountGrid accounts={accounts} value={accountId} onValueChange={setAccountId} balances={{}} balancesLoading={false} label={t('account')} />
       </div>
 
       <div className="space-y-1.5">
         <Label>{t('categoryOptional')}</Label>
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => (
+            <Chip key={c} pressed={category === c} onClick={() => setCategory(c)}><CategoryLabel value={c} /></Chip>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>{t('freq')}</Label>
-          <Select value={freq} onValueChange={(v) => setFreq(v as typeof freq)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">{t('freqWeekly')}</SelectItem>
-              <SelectItem value="monthly">{t('freqMonthly')}</SelectItem>
-              <SelectItem value="yearly">{t('freqYearly')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {(['weekly', 'monthly', 'yearly'] as const).map((value) => (
+              <Chip key={value} pressed={freq === value} onClick={() => setFreq(value)}>{t(`freq${value[0].toUpperCase()}${value.slice(1)}`)}</Chip>
+            ))}
+          </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="interval">{t('everyLabel')} <RequiredMark /></Label>
@@ -230,6 +209,7 @@ export default function RecurringClient({
   status?: Record<string, RuleStatus>
 }) {
   const t = useTranslations('recurring')
+  const locale = useLocale() === 'th' ? 'th' : 'en'
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
 
@@ -245,23 +225,23 @@ export default function RecurringClient({
 
   return (
     <div className="space-y-4">
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        action={accounts.length > 0 ? <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('add')}</Button> : undefined}
+      />
       {/* Account — global empty-source rule (design v3, J4): an empty list
           renders an inline "+ สร้าง…" create action, never a disabled control
           with only a text hint. */}
       {accounts.length === 0 ? (
         <InlineCreateAccount hint={t('needAccountFirst')} onCreated={() => setAddOpen(true)} />
       ) : (
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="size-4 mr-2" />{t('add')}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
-            <RuleForm accounts={accounts} action={createRecurringRule} onSuccess={() => setAddOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <Sheet open={addOpen} onOpenChange={setAddOpen}>
+          <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+            <SheetHeader><SheetTitle>{t('add')}</SheetTitle></SheetHeader>
+            <div className="px-4 pb-6"><RuleForm accounts={accounts} action={createRecurringRule} onSuccess={() => setAddOpen(false)} /></div>
+          </SheetContent>
+        </Sheet>
       )}
 
       {rules.length === 0 ? (
@@ -271,47 +251,15 @@ export default function RecurringClient({
           <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="divide-y divide-border border-y border-border">
           {rules.map((rule) => {
             const acct = accounts.find((a) => a.id === rule.account_id)
             return (
-              <Card key={rule.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <span className={`tabular-nums ${rule.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                      {rule.type === 'income' ? '+' : '−'}{formatTHB(rule.amount_satang)}
-                    </span>
-                    <div className="flex gap-1">
-                      <Dialog open={editId === rule.id} onOpenChange={(o) => setEditId(o ? rule.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-h-[90vh] overflow-y-auto">
-                          <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
-                          <RuleForm
-                            accounts={accounts}
-                            defaultValues={rule}
-                            action={updateRecurringRule}
-                            onSuccess={() => setEditId(null)}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(rule.id)}>
-                        <Trash2 className="size-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1.5 text-sm text-muted-foreground">
-                  <p>{freqSummary(rule, t)}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {acct && <Badge variant="secondary">{acct.name}</Badge>}
-                    {rule.category && <Badge variant="outline"><CategoryLabel value={rule.category} /></Badge>}
-                  </div>
-                  <p className="text-sm">
-                    {t('startsOn', { date: rule.start_date })}
-                    {rule.end_date ? ` · ${t('untilDate', { date: rule.end_date })}` : ''}
-                  </p>
+              <div key={rule.id}>
+                <button type="button" onClick={() => setEditId(rule.id)} className="flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-accent/40">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="truncate font-medium">{rule.category ? <CategoryLabel value={rule.category} /> : t('uncategorized')}</p>
+                    <p className="text-sm text-muted-foreground">{freqSummary(rule, t)} · {acct?.name ?? '—'}</p>
                   {/* J7 — "did it work?" in one line: last deducted / next due, or an
                       explicit error state instead of a silent no-op. */}
                   {status[rule.id]?.error ? (
@@ -322,16 +270,30 @@ export default function RecurringClient({
                   ) : (
                     <p className="text-sm">
                       {status[rule.id]?.lastDeducted
-                        ? t('lastDeducted', { date: status[rule.id]!.lastDeducted! })
+                        ? t('lastDeducted', { date: formatAppDate(status[rule.id]!.lastDeducted!, { locale, includeYear: true }) })
                         : t('lastDeductedNone')}
                       {' · '}
                       {status[rule.id]?.nextDue
-                        ? t('nextDue', { date: status[rule.id]!.nextDue! })
+                        ? t('nextDue', { date: formatAppDate(status[rule.id]!.nextDue!, { locale, includeYear: true }) })
                         : t('nextDueNone')}
                     </p>
                   )}
-                </CardContent>
-              </Card>
+                  </div>
+                  <p className={`shrink-0 font-semibold tabular-nums ${rule.type === 'income' ? 'text-income' : 'text-expense'}`}>
+                    {rule.type === 'income' ? '+' : '−'}{formatTHB(rule.amount_satang)}
+                  </p>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </button>
+                <Sheet open={editId === rule.id} onOpenChange={(o) => setEditId(o ? rule.id : null)}>
+                  <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+                    <SheetHeader><SheetTitle>{t('edit')}</SheetTitle></SheetHeader>
+                    <div className="space-y-6 px-4 pb-6">
+                      <RuleForm accounts={accounts} defaultValues={rule} action={updateRecurringRule} onSuccess={() => setEditId(null)} />
+                      <button type="button" onClick={() => handleDelete(rule.id)} className="text-sm text-destructive hover:underline">{t('deleteAction')}</button>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
             )
           })}
         </div>

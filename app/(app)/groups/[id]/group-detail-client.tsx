@@ -1,24 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
-import { ChevronLeft, Plus, X } from 'lucide-react'
+import { ChevronLeft, Plus, Pencil } from 'lucide-react'
 import { format } from 'date-fns'
 import { th, enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet'
-import { setTransactionGroup } from '@/app/actions/groups'
+import { setTransactionGroup, updateGroup, deleteGroup } from '@/app/actions/groups'
 import { groupExpenseTotal, groupExpenseByCategory, UNCATEGORIZED } from '@/lib/group'
 import { formatTHB } from '@/lib/money'
 import { transactionAmountPrefix } from '@/components/transaction-type-indicator'
+import { TransactionTypeBadge } from '@/components/transaction-type-indicator'
+import TransactionRowCopy from '@/components/transaction-row-copy'
+import { formatAppDateTime } from '@/lib/date-display'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
@@ -36,17 +41,20 @@ function TxRow({
   accountMap,
   action,
   actionIcon,
+  actionLabel,
   onDone,
 }: {
   tx: Transaction
   accountMap: Record<string, Account>
   action: () => Promise<void>
   actionIcon: React.ReactNode
+  actionLabel: string
   onDone: () => void
 }) {
   const t = useTranslations('group')
   const locale = useLocale()
   const [busy, setBusy] = useState(false)
+  const [open, setOpen] = useState(false)
   const acct = accountMap[tx.account_id]
   const style = TYPE_STYLE[tx.type] ?? TYPE_STYLE.expense
 
@@ -55,6 +63,7 @@ function TxRow({
     try {
       await action()
       onDone()
+      setOpen(false)
     } catch {
       toast.error(t('actionFailed'))
       setBusy(false)
@@ -62,23 +71,31 @@ function TxRow({
   }
 
   return (
-    <div className="flex items-center gap-3 p-3">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm">
-          {tx.counterparty ?? acct?.name ?? '—'}
-          {tx.category && <span className="ml-1.5 text-sm text-muted-foreground"><CategoryLabel value={tx.category} /></span>}
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 p-3 text-left hover:bg-accent/40">
+        <TransactionTypeBadge type={tx.type} label={tx.type} />
+        <div className="min-w-0 flex-1">
+          <TransactionRowCopy
+            tx={tx}
+            accountName={acct?.name}
+            time={format(new Date(tx.datetime), 'HH:mm', { locale: locale === 'th' ? th : enUS })}
+          />
+        </div>
+        <p className={cn('shrink-0 text-sm font-semibold tabular-nums', style.textCls)}>
+          {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
         </p>
-        <p className="text-sm text-muted-foreground">
-          {format(new Date(tx.datetime), 'd MMM yyyy HH:mm', { locale: locale === 'th' ? th : enUS })}
-        </p>
-      </div>
-      <p className={cn('shrink-0 text-sm font-semibold tabular-nums', style.textCls)}>
-        {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
-      </p>
-      <Button variant="ghost" size="icon-sm" onClick={run} disabled={busy} className="shrink-0">
-        {actionIcon}
-      </Button>
-    </div>
+      </button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-2xl">
+          <SheetHeader><SheetTitle>{tx.counterparty ?? (tx.category ? <CategoryLabel value={tx.category} /> : '—')}</SheetTitle></SheetHeader>
+          <div className="space-y-5 px-4 pb-6">
+            <p className={cn('text-center text-3xl font-bold tabular-nums', style.textCls)}>{transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}</p>
+            <p className="text-center text-sm text-muted-foreground">{formatAppDateTime(tx.datetime, locale === 'th' ? 'th' : 'en')}</p>
+            <Button variant="outline" className="w-full" onClick={run} disabled={busy}>{actionIcon}{actionLabel}</Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 
@@ -96,6 +113,7 @@ export default function GroupDetailClient({
   const t = useTranslations('group')
   const router = useRouter()
   const [addOpen, setAddOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
 
   const totalSpent = groupExpenseTotal(members)
@@ -103,6 +121,17 @@ export default function GroupDetailClient({
 
   function refresh() {
     router.refresh()
+  }
+  const [editState, editAction, editPending] = useActionState(async (prev: { error: string }, fd: FormData) => {
+    const result = await updateGroup(prev, fd)
+    if (!result.error) { setEditOpen(false); refresh() }
+    return result
+  }, { error: '' })
+
+  async function handleDeleteGroup() {
+    if (!confirm(t('deleteConfirm'))) return
+    await deleteGroup(group.id)
+    router.push('/groups')
   }
 
   return (
@@ -115,9 +144,10 @@ export default function GroupDetailClient({
           <h1 className="truncate text-xl font-semibold">{group.title}</h1>
           {group.note && <p className="truncate text-sm text-muted-foreground">{group.note}</p>}
         </div>
+        <Button variant="outline" size="sm" className="ml-auto" onClick={() => setEditOpen(true)}><Pencil className="size-4" />{t('edit')}</Button>
       </div>
 
-      <Card>
+      <Card className="rounded-none border-x-0 shadow-none">
         <CardHeader className="pb-1">
           <CardTitle className="text-sm font-medium text-muted-foreground">{t('totalSpent')}</CardTitle>
         </CardHeader>
@@ -158,6 +188,7 @@ export default function GroupDetailClient({
                       accountMap={accountMap}
                       action={() => setTransactionGroup(tx.id, group.id)}
                       actionIcon={<Plus className="size-3.5" />}
+                      actionLabel={t('addMember')}
                       onDone={() => { toast.success(t('addedToGroup')); refresh() }}
                     />
                   ))}
@@ -180,13 +211,27 @@ export default function GroupDetailClient({
                 tx={tx}
                 accountMap={accountMap}
                 action={() => setTransactionGroup(tx.id, null)}
-                actionIcon={<X className="size-3.5 text-destructive" />}
+                actionIcon={null}
+                actionLabel={t('removeFromGroup')}
                 onDone={() => { toast.success(t('removedFromGroup')); refresh() }}
               />
             ))}
           </div>
         )}
       </div>
+      <Sheet open={editOpen} onOpenChange={setEditOpen}>
+        <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-2xl">
+          <SheetHeader><SheetTitle>{t('edit')}</SheetTitle></SheetHeader>
+          <form action={editAction} className="space-y-4 px-4 pb-6">
+            <input type="hidden" name="id" value={group.id} />
+            <div className="space-y-1"><Label htmlFor="group-title">{t('name')}</Label><Input id="group-title" name="title" required defaultValue={group.title} /></div>
+            <div className="space-y-1"><Label htmlFor="group-note">{t('noteOptional')}</Label><Input id="group-note" name="note" defaultValue={group.note ?? ''} /></div>
+            {editState.error && <p className="text-sm text-destructive">{editState.error}</p>}
+            <Button type="submit" className="w-full" disabled={editPending}>{t('edit')}</Button>
+            <button type="button" onClick={handleDeleteGroup} className="text-sm text-destructive hover:underline">{t('deleteAction')}</button>
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

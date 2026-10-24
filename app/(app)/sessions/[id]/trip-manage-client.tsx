@@ -120,11 +120,6 @@ export default function TripManageClient({
         </CardHeader>
         <CardContent className="space-y-3">
           <ShareLink path={payPath} title={session.title} />
-          <Button variant="outline" size="sm" onClick={toggleStatus} disabled={busy}>
-            {session.status === 'open'
-              ? <><Lock className="size-3.5 mr-1.5" />{tt('closeTrip')}</>
-              : <><LockOpen className="size-3.5 mr-1.5" />{tt('reopenTrip')}</>}
-          </Button>
         </CardContent>
       </Card>
 
@@ -137,6 +132,12 @@ export default function TripManageClient({
         ownerAccounts={accountsWithQr.map((a) => ({ id: a.id, label: `${a.name} (${a.bank})` }))}
         onOwnerAddExpense={(fd) => addTripExpenseAsOwner(session.id, fd)}
       />
+
+      <Button variant="ghost" size="sm" onClick={toggleStatus} disabled={busy} className="text-destructive">
+        {session.status === 'open'
+          ? <><Lock className="size-3.5 mr-1.5" />{tt('closeTrip')}</>
+          : <><LockOpen className="size-3.5 mr-1.5" />{tt('reopenTrip')}</>}
+      </Button>
 
       <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive">
         <Trash2 className="size-3.5 mr-1.5" />{tc('delete')}

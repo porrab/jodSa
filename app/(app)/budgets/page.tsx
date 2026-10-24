@@ -1,4 +1,3 @@
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
@@ -7,7 +6,6 @@ import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
 import type { BudgetItem } from './budgets-client'
 
 export default async function BudgetsPage() {
-  const t = await getTranslations('budget')
   const supabase = await createClient()
 
   // This month's expenses cover both month- and day-period budgets (day ⊂ month).
@@ -59,10 +57,6 @@ export default async function BudgetsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-      </div>
       <BudgetsOverviewTabs items={items} chartSeries={chartSeries} />
     </div>
   )

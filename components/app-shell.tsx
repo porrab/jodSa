@@ -21,6 +21,8 @@ import type { LastAccountMap } from '@/lib/last-account'
 import { QUICK_ADD_EVENT, type QuickAddPrefill } from '@/lib/quick-add'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
+import { Camera, Pencil } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 type Account = Database['public']['Tables']['accounts']['Row']
 
@@ -122,23 +124,13 @@ export default function AppShell({
           <div className="space-y-4 px-4 pb-8">
             <Segmented className="grid-cols-2 bg-transparent p-0" role="tablist" aria-label={t('modeLabel')}>
               <SegmentedItem role="tab" aria-selected={mode === 'manual'} active={mode === 'manual'} className={mode === 'manual' ? 'border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'bg-transparent'} onClick={() => setMode('manual')}>
-                {t('manualMode')}
+                <span className="inline-flex items-center gap-2"><Pencil className="size-4" />{t('manualMode')}</span>
               </SegmentedItem>
               <SegmentedItem role="tab" aria-selected={mode === 'slip'} active={mode === 'slip'} className={mode === 'slip' ? 'border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'bg-transparent'} onClick={() => slipFiles.length > 0 ? setMode('slip') : slipInputRef.current?.click()}>
-                {t('slipMode')}
+                <span className="inline-flex items-center gap-2"><Camera className="size-4" />{t('slipMode')}</span>
               </SegmentedItem>
               <input ref={slipInputRef} type="file" accept="image/*" multiple className="sr-only" onChange={pickSlips} />
             </Segmented>
-
-            {confirmClose && (
-              <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                <p className="text-sm">{t('discardWarning', { count: unsavedSlips })}</p>
-                <div className="flex gap-2">
-                  <Button type="button" className="flex-1" onClick={() => setConfirmClose(false)}>{t('keepEditing')}</Button>
-                  <Button type="button" variant="ghost" className="text-destructive" onClick={close}>{t('discard')}</Button>
-                </div>
-              </div>
-            )}
 
             {mode === 'manual' && (
             <div>
@@ -171,6 +163,18 @@ export default function AppShell({
           </div>
         </SheetContent>
       </Sheet>
+      <Dialog open={confirmClose} onOpenChange={setConfirmClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('discardTitle')}</DialogTitle>
+            <DialogDescription>{t('discardWarning', { count: unsavedSlips })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-4 sm:flex-col">
+            <Button type="button" onClick={() => setConfirmClose(false)}>{t('keepEditing')}</Button>
+            <Button type="button" variant="ghost" className="justify-start text-destructive" onClick={close}>{t('discard')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PendingTxProvider>
   )
 }

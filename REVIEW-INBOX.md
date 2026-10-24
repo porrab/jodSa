@@ -16,7 +16,8 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
-**From:** design-studio · **Status:** OPEN · **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
+**From:** design-studio · **Status:** IMPLEMENTED 2026-10-24 — awaiting design-studio re-review · **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
+**Implementation evidence:** all C1–C13 shared primitives were completed before S1–S16. Section C (F1–F7) was deliberately left unchanged, and migrations 0011/0012 were not started. Forty 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5/README.md`. After visual comparison, the Honey baseline was refreshed and then passed 29/29 without update mode. DS-3, contrast, and the signup journey remain green; exact commands and counts are recorded in the implementing commit.
 **Verdict: CHANGES.** 40 built screens were compared with their Honey frames: 36 light and 4 dark. The finding count is
 **9 H · 15 M · 5 L** (29 findings: 13 shared-component, 16 per-screen).
 **Evidence:** side-by-side JPGs (Figma left, app right, 390×844, E2E test user A only, jodsa `eabc254`) are in
@@ -29,92 +30,92 @@ entry on the account sheet, and the C2 linked-cash parts of `33:3140`/`33:3189`.
 Severity: **H** changes how the screen reads · **M** visible mismatch · **L** polish.
 
 ### A. Shared components first (fixing one primitive fixes many screens)
-- **C1 [H] Native `Select` dropdowns where the frames use chips or tiles.** These are: category (add sheet, slip confirm), bank
+- [x] **C1 [H] Native `Select` dropdowns where the frames use chips or tiles.** These are: category (add sheet, slip confirm), bank
   (account form), period/scope/category (budget form), type/account/frequency (recurring form), trade type (add
   trade) and language/theme (settings). Spec: **Chip** (On = honey-soft + 1.5px `--honey-edge` + check icon, pill 36px, wrapping
   row); account choice = **Account Tile** grid; type = **Type Segmented**. Nodes: Chip/Account Tile/Type Segmented in
   `20:1072`; screens `27:1357`, `28:1781`, `29:2288`, `31:2545`, `32:2742`, `33:3189`, `34:3436`. Keep the
   `handleCategoryChange` path and the `เลือกตามหมวด` hint (DS-3).
-- **C2 [H] Forms open as centred `Dialog`s.** This affects the account, budget, recurring and add-holding forms. The spec is a bottom sheet:
+- [x] **C2 [H] Forms open as centred `Dialog`s.** This affects the account, budget, recurring and add-holding forms. The spec is a bottom sheet:
   **Sheet Header** (grabber 40×4, title 20/600, a plain 44px ×), surface body, `--hero` scrim, sticky primary. A centred
   dialog is a v3 anti-pattern. Nodes `29:2288`, `31:2545`, `32:2742`; Sheet Header `21:1195`.
-- **C3 [H] Amount input.** The app shows a left-aligned filled well under a `จำนวนเงิน (บาท) *` label. The spec is the **Amount Input**:
+- [x] **C3 [H] Amount input.** The app shows a left-aligned filled well under a `จำนวนเงิน (บาท) *` label. The spec is the **Amount Input**:
   a muted 14 caption `จำนวนเงิน` centred over a **36/700 tabular** figure, with a hairline below; it is the focal point of every add
   sheet. Applies to add manual/transfer, slip confirm and the recurring form. Nodes `21:1186`, `27:1357`, `27:1487`, `28:1781`.
-- **C4 [M] Mode tabs and type control.** The pencil/camera icons are missing, and the active tab is a raised pill, not a 3px brown
+- [x] **C4 [M] Mode tabs and type control.** The pencil/camera icons are missing, and the active tab is a raised pill, not a 3px brown
   underline. There is an extra `ประเภท` label above the type control, and the label reads `โอนเงิน`; the frame says `โอน`. Nodes Mode Tabs `25:1163/25:1175`,
   Type Segmented `25:1112–25:1150`.
-- **C5 [M] Nav.**
+- [x] **C5 [M] Nav.**
   - The Home icon is a 4-square grid; the spec is a house. Budgets is a piggy bank; the spec is a wallet.
   - Active state is a honey disc around the icon; the spec is a honey pill (padding 2/12, 1.5px outline) + a 600 ink label.
   - On More sub-pages (`/accounts`, `/invest`, `/import`, `/recurring`, `/groups`, `/sessions`, `/settings`) no tab is
     active; เพิ่มเติม should be.
   - Nodes `22:1288/1323/1358/1393`.
-- **C6 [M] Page Header.** Every list page puts a large `+ เพิ่ม…` button on its own row under the title. On `/transactions`
+- [x] **C6 [M] Page Header.** Every list page puts a large `+ เพิ่ม…` button on its own row under the title. On `/transactions`
   this duplicates the FAB. The spec is **title 28/700 + one Primary M pill (`+ เพิ่ม`, `+ เพิ่มบัญชี`…) on the same row**. Nodes
   `23:1218`; `29:1937`, `29:2119`, `31:2339`, `31:2606`, `32:2652`, `33:2848`, `34:3093`.
-- **C7 [H] Cards around each item, with inline pencil/trash icons, instead of hairline rows.** This shows on budgets, groups, recurring,
+- [x] **C7 [H] Cards around each item, with inline pencil/trash icons, instead of hairline rows.** This shows on budgets, groups, recurring,
   sessions, settings, invest overview and the group-detail summary. v6: "lists use hairline rows … no card around each row".
   Use **List Row** / **Tx Row**, and move edit/delete into the item's detail sheet (destructive kept apart). Nodes `31:2339`, `31:2606`,
   `32:2652`, `34:3093`, `34:3436`, `33:2932`.
-- **C8 [H] `/budgets` does not use the Budget Band.**
+- [x] **C8 [H] `/budgets` does not use the Budget Band.**
   - The app shows `฿8,343.00 / ฿10,000.00` inside a blush inner box, with satang.
   - Labels wrap ("ทั้งหมด ราย / เดือน").
   - The spec is **Budget Band**: title row `งบเดือนนี้ · ทั้งหมด … อีก N วัน ›`, `เหลือ ฿8,052` 20/600 + `จาก ฿10,000` 14 muted, a 10px
     honey fill with outline, and a caption. **Over** = blush band + alert icon + `เกินงบ ฿x` in `--destructive`.
   - Nodes `22:1195`, `22:1210`; `31:2339`.
-- **C9 [M] Tx Row is not used** in group detail (category beside the title, full date, a red ×) or in the holding trades list. Spec
+- [x] **C9 [M] Tx Row is not used** in group detail (category beside the title, full date, a red ×) or in the holding trades list. Spec
   Tx Row `22:1122…`; nodes `31:2671`, `33:3140`.
-- **C10 [M] Page Tabs.** `/budgets` and `/invest` use underline tabs. On `/invest` the tabs sit **above** the page title. The spec is
+- [x] **C10 [M] Page Tabs.** `/budgets` and `/invest` use underline tabs. On `/invest` the tabs sit **above** the page title. The spec is
   a segmented `--muted` track under the header. Nodes `25:1195–25:1211`; `31:2339`, `33:2848`.
-- **C11 [L] Sheet close button.** Some sheets (breakdown, slip queue) draw an outlined circle around ×, and the add-sheet header
+- [x] **C11 [L] Sheet close button.** Some sheets (breakdown, slip queue) draw an outlined circle around ×, and the add-sheet header
   has ~40px of dead space under the title. Spec: Sheet Header `21:1195`.
-- **C12 [M] Date formats are mixed.** Day headers show the CE year (`ส. 24 ต.ค. 2026`), holdings show BE (`1/1/2569`),
+- [x] **C12 [M] Date formats are mixed.** Day headers show the CE year (`ส. 24 ต.ค. 2026`), holdings show BE (`1/1/2569`),
   recurring shows ISO (`2026-11-25`), and the detail sheet shows `24 ต.ค. 2026`. The frames use `พ. 21 ต.ค.` (no year in the current year) and
   `8 ก.ย. 2569`. Pick one Thai date formatter and use it everywhere (ties to Phase B #2).
-- **C13 [M] The primary action in detail sheets.** `แก้ไข` is a honey Primary in the transaction, account and holding sheets, and the destructive text
+- [x] **C13 [M] The primary action in detail sheets.** `แก้ไข` is a honey Primary in the transaction, account and holding sheets, and the destructive text
   sits right under it. The spec is **Secondary** แก้ไข, with destructive apart (rule: destructive never next to the primary). Nodes `29:2082`, `29:2211`,
   `33:3140`.
 
 ### B. Per-screen leftovers
-- **S1 [H] Transaction detail sheet.** The title is the generic `รายการ`, and the amount sits left beside a red stripe with only one meta
+- [x] **S1 [H] Transaction detail sheet.** The title is the generic `รายการ`, and the amount sits left beside a red stripe with only one meta
   line. The spec is **title = shown name**, centred Amount Input (`รายจ่าย · อาหาร` caption), then a field list (ชื่อที่แสดง,
   ผู้รับ/ผู้จ่าย, บัญชี, วันเวลา, กลุ่ม, ที่มา). The user currently cannot see the category, group or source. Node `29:2082`.
-- **S2 [H] Slip confirm still renders the legacy form.** It has a `ยืนยันรายการ` sub-header, a type Select, an amount text field, a category Select and a
+- [x] **S2 [H] Slip confirm still renders the legacy form.** It has a `ยืนยันรายการ` sub-header, a type Select, an amount text field, a category Select and a
   `Ref (จาก QR)` field. **An `OCR debug` disclosure is visible to users.** Spec `28:1781`: privacy line, read badge + slip thumb,
   Amount Input, category chips → AccountGrid → payee → `+ ตั้งชื่อที่แสดงเอง` → date → CTA. Hide OCR debug outside dev.
-- **S3 [H] Slip queue.**
+- [x] **S3 [H] Slip queue.**
   - A failed row shows the raw English `The source image could not be decoded.` Use Thai, for example `อ่านรูปนี้ไม่ได้`.
   - Row meta shows the file name (`slip-a.png`); the spec is `date · account`.
   - With nothing ready, the CTA reads `ตรวจสลิปที่เหลือ (0)`.
   - Close-with-unsaved is an inline banner with `ปิดทิ้ง` right beside the primary. The spec puts destructive apart (Dialog `23:1213`).
   - Nodes `28:1893`, `28:2001`.
-- **S4 [H] Payment session detail overflows 390px.** The link card and URL are clipped past the right edge. Node `34:3227`.
-- **S5 [L] Home.**
+- [x] **S4 [H] Payment session detail overflows 390px.** The link card and URL are clipped past the right edge. Node `34:3227`.
+- [x] **S5 [L] Home.**
   - The hero uses a radial gradient (v3: no gradients on content surfaces); spec is a flat `--hero`.
   - The budget band has ~32px of extra bottom padding.
   - Node `26:1166` / `34:3525`.
-- **S6 [M] Balance breakdown.** The caption `บัญชี + ลงทุน (ลงทุนเป็นมูลค่าที่กรอกเอง)` is missing above the total, and the investments heading uses a 📈
+- [x] **S6 [M] Balance breakdown.** The caption `บัญชี + ลงทุน (ลงทุนเป็นมูลค่าที่กรอกเอง)` is missing above the total, and the investments heading uses a 📈
   emoji. Honey uses the TrendingUp icon, no emoji. Node `26:1368`.
-- **S7 [M] Accounts.**
+- [x] **S7 [M] Accounts.**
   - There is no `รวม 6 บัญชี ฿…` summary.
   - The bank is drawn as a honey-soft pill that reads like a *selected chip*; the spec is a List Row `make · KBank` with the balance right.
   - Node `29:2119`.
-- **S8 [M] Account detail.** The balance is left-aligned with no caption, and there are no recent rows. Spec: centred Amount Input (`ยอดคงเหลือ · KBank ••1234`)
+- [x] **S8 [M] Account detail.** The balance is left-aligned with no caption, and there are no recent rows. Spec: centred Amount Input (`ยอดคงเหลือ · KBank ••1234`)
   + recent Tx Rows. Node `29:2211`.
-- **S9 [M] Invest holdings.** There is no total or unpriced note, and the rows lack the symbol disc and the P&L line. Node `33:2848`.
-- **S10 [M] Invest overview.** The app uses a donut chart where the spec has single-colour honey % bars with words, the total sits inside a card, and
+- [x] **S9 [M] Invest holdings.** There is no total or unpriced note, and the rows lack the symbol disc and the P&L line. Node `33:2848`.
+- [x] **S10 [M] Invest overview.** The app uses a donut chart where the spec has single-colour honey % bars with words, the total sits inside a card, and
   `อัปเดตราคา` / `บันทึกสแนปช็อต` are not at the top. Node `33:2932` / dark `34:3621`.
-- **S11 [M] Add trade** renders inline inside the holding sheet with a type Select. The spec is its own sheet with type chips. Node `33:3189`.
-- **S12 [M] Recurring.** Each rule card leads with the amount and shows ISO dates. Spec: Tx Row (title = category, see frame note F1) + a last-run line.
+- [x] **S11 [M] Add trade** renders inline inside the holding sheet with a type Select. The spec is its own sheet with type chips. Node `33:3189`.
+- [x] **S12 [M] Recurring.** Each rule card leads with the amount and shows ISO dates. Spec: Tx Row (title = category, see frame note F1) + a last-run line.
   Node `32:2652`.
-- **S13 [M] Sessions / trip.**
+- [x] **S13 [M] Sessions / trip.**
   - The trip row shows a meaningless `฿0.00 / ฿0.00 บันทึก` and an inline trash icon.
   - In trip manage, `ปิดทริป` sits among the link buttons; the spec separates it as a destructive item.
   - Nodes `34:3093`, `34:3164`.
-- **S14 [L] Import** has no page title or privacy line. Node `32:2828`.
-- **S15 [L] Settings** has no `ออกจากระบบ` row on mobile. Node `34:3436`.
-- **S16 [L] Trust notes** use a beige panel; the spec is `--info-soft` + info icon. This affects guest pay, guest trip and trip manage. Nodes `34:3288`,
+- [x] **S14 [L] Import** has no page title or privacy line. Node `32:2828`.
+- [x] **S15 [L] Settings** has no `ออกจากระบบ` row on mobile. Node `34:3436`.
+- [x] **S16 [L] Trust notes** use a beige panel; the spec is `--info-soft` + info icon. This affects guest pay, guest trip and trip manage. Nodes `34:3288`,
   `34:3318`, `34:3164`.
 
 ### C. Where the frame is wrong or the app is better (design-studio will update Figma/brief; do not "fix" the app)

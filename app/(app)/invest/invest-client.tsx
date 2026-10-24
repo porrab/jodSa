@@ -1,10 +1,11 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, ChevronRight, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Chip } from '@/components/ui/chip'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
@@ -27,6 +28,7 @@ import {
   type AssetClass, type Sleeve, type AssetTxType,
 } from '@/lib/validators/invest'
 import { formatMoney, parseMinor, toMajor, minorUnitDecimals } from '@/lib/invest/money'
+import { formatAppDate } from '@/lib/date-display'
 
 export type Asset = {
   id: string
@@ -308,14 +310,11 @@ function AddTransactionForm({ holding, onDone }: { holding: Holding; onDone: () 
     <form action={formAction} className="space-y-3 rounded-lg border p-3">
       <div className="space-y-1">
         <Label>{t('txTypeLabel')}</Label>
-        <Select value={type} onValueChange={(v) => setType(v as AssetTxType)}>
-          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {ASSET_TX_TYPES.map((tt) => (
-              <SelectItem key={tt} value={tt}>{t(`txType.${tt}`)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-2">
+          {ASSET_TX_TYPES.map((tt) => (
+            <Chip key={tt} pressed={type === tt} onClick={() => setType(tt)}>{t(`txType.${tt}`)}</Chip>
+          ))}
+        </div>
       </div>
       {needsQty && (
         <div className="space-y-1">
@@ -427,10 +426,14 @@ function HoldingDetailSheet({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useTranslations('invest')
-  const [mode, setMode] = useState<'view' | 'edit' | 'addTx'>('view')
+  const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const [tradeOpen, setTradeOpen] = useState(false)
+  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null)
 
   function close() {
     setMode('view')
+    setTradeOpen(false)
+    setSelectedTradeId(null)
     onOpenChange(false)
   }
 
@@ -460,6 +463,7 @@ function HoldingDetailSheet({
   const currency = holding.asset?.currency ?? 'THB'
   const display = getHoldingDisplay(holding, currency)
   const cb = holding.costBasis
+  const selectedTrade = holding.transactions.find((tx) => tx.id === selectedTradeId) ?? null
 
   return (
     <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
@@ -509,32 +513,23 @@ function HoldingDetailSheet({
                 ) : (
                   <div className="divide-y divide-border">
                     {holding.transactions.slice().reverse().map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                      <button type="button" onClick={() => setSelectedTradeId(tx.id)} key={tx.id} className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-sm hover:bg-accent/40">
                         <div className="min-w-0">
                           <p className="font-medium">{t(`txType.${tx.type}`)}{tx.qty ? ` · ${tx.qty}` : ''}</p>
-                          <p className="text-sm text-muted-foreground">{new Date(tx.datetime).toLocaleDateString('th-TH')}</p>
+                          <p className="text-sm text-muted-foreground">{formatAppDate(tx.datetime, { locale: 'th', includeYear: true })}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <p className="tabular-nums">{formatMoney(tx.price_minor, tx.currency)}</p>
-                          <button type="button" onClick={() => handleDeleteTx(tx.id)} className="text-sm text-destructive hover:underline">
-                            {t('deleteAction')}
-                          </button>
-                        </div>
-                      </div>
+                        <p className="tabular-nums">{formatMoney(tx.price_minor, tx.currency)}</p>
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {mode === 'addTx' ? (
-                <AddTransactionForm holding={holding} onDone={() => setMode('view')} />
-              ) : (
-                <Button variant="outline" className="w-full" onClick={() => setMode('addTx')}>
-                  <Plus className="mr-1.5 size-4" />{t('addTransaction')}
-                </Button>
-              )}
+              <Button variant="outline" className="w-full" onClick={() => setTradeOpen(true)}>
+                <Plus className="mr-1.5 size-4" />{t('addTransaction')}
+              </Button>
 
-              <Button className="w-full" onClick={() => setMode('edit')}>{t('edit')}</Button>
+              <Button variant="outline" className="w-full" onClick={() => setMode('edit')}>{t('edit')}</Button>
               <button
                 type="button"
                 onClick={handleDelete}
@@ -545,6 +540,22 @@ function HoldingDetailSheet({
             </>
           )}
         </div>
+        <Sheet open={tradeOpen} onOpenChange={setTradeOpen}>
+          <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+            <SheetHeader><SheetTitle>{t('addTransaction')}</SheetTitle></SheetHeader>
+            <div className="px-4 pb-6"><AddTransactionForm holding={holding} onDone={() => setTradeOpen(false)} /></div>
+          </SheetContent>
+        </Sheet>
+        <Sheet open={selectedTrade !== null} onOpenChange={(next) => { if (!next) setSelectedTradeId(null) }}>
+          <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-2xl">
+            <SheetHeader><SheetTitle>{selectedTrade ? t(`txType.${selectedTrade.type}`) : t('transactionsTitle')}</SheetTitle></SheetHeader>
+            {selectedTrade && <div className="space-y-5 px-4 pb-6">
+              <p className="text-center text-3xl font-bold tabular-nums">{formatMoney(selectedTrade.price_minor, selectedTrade.currency)}</p>
+              <p className="text-center text-sm text-muted-foreground">{formatAppDate(selectedTrade.datetime, { locale: 'th', includeYear: true })}</p>
+              <button type="button" onClick={() => handleDeleteTx(selectedTrade.id)} className="text-sm text-destructive hover:underline">{t('deleteAction')}</button>
+            </div>}
+          </SheetContent>
+        </Sheet>
       </SheetContent>
     </Sheet>
   )
@@ -553,26 +564,28 @@ function HoldingDetailSheet({
 export default function InvestClient({ holdings, assets, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; initialHoldingId: string | null }) {
   const t = useTranslations('invest')
   const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => {
+    const open = () => setAddOpen(true)
+    window.addEventListener('jodsa:holding-add', open)
+    return () => window.removeEventListener('jodsa:holding-add', open)
+  }, [])
   const [detailId, setDetailId] = useState<string | null>(
     holdings.some((holding) => holding.id === initialHoldingId) ? initialHoldingId : null,
   )
   const detailHolding = holdings.find((h) => h.id === detailId) ?? null
+  const holdingDisplays = holdings.map((holding) => ({ holding, display: getHoldingDisplay(holding, holding.asset?.currency ?? 'THB') }))
+  const priced = holdingDisplays.filter(({ display }) => display.valueMinor !== null)
+  const totalValue = priced.reduce((sum, { display }) => sum + BigInt(display.valueMinor ?? 0), 0n)
+  const unpricedCount = holdings.length - priced.length
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
-      </div>
-
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
-          <Button><Plus className="mr-2 size-4" />{t('addHolding')}</Button>
-        </DialogTrigger>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t('addHolding')}</DialogTitle></DialogHeader>
-          <AddHoldingDialog assets={assets} onClose={() => setAddOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <Sheet open={addOpen} onOpenChange={setAddOpen}>
+        <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+          <SheetHeader><SheetTitle>{t('addHolding')}</SheetTitle></SheetHeader>
+          <div className="px-4 pb-6"><AddHoldingDialog assets={assets} onClose={() => setAddOpen(false)} /></div>
+        </SheetContent>
+      </Sheet>
 
       {holdings.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
@@ -580,7 +593,12 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
           <p className="mt-1 text-sm">{t('noHoldingsHint')}</p>
         </div>
       ) : (
-        <div className="divide-y divide-border">
+        <div>
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <p className="text-lg font-semibold tabular-nums">≈ {formatMoney(totalValue, 'THB')}</p>
+            {unpricedCount > 0 && <p className="text-sm text-muted-foreground">{t('unpricedNote', { count: unpricedCount })}</p>}
+          </div>
+          <div className="divide-y divide-border border-y border-border">
           {holdings.map((h) => {
             const rowCurrency = h.asset?.currency ?? 'THB'
             const rowDisplay = getHoldingDisplay(h, rowCurrency)
@@ -591,6 +609,9 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                 onClick={() => setDetailId(h.id)}
                 className="flex w-full min-h-14 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
               >
+                <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-honey-text">
+                  {(h.asset?.symbol ?? h.asset?.name ?? '?').slice(0, 3).toUpperCase()}
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{h.asset?.name ?? t('unknownAsset')}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1">
@@ -605,11 +626,13 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                       : formatMoney(rowDisplay.costMinor, rowCurrency)}
                   </p>
                   <p className="text-sm text-muted-foreground">{t('qtyHeld', { qty: h.costBasis.qty })}</p>
+                  {rowDisplay.pnlMinor !== null && <p className={`text-sm tabular-nums ${rowDisplay.pnlMinor < 0n ? 'text-destructive' : 'text-income'}`}>{t('pnlLine', { amount: formatMoney(rowDisplay.pnlMinor, rowCurrency) })}</p>}
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </button>
             )
           })}
+          </div>
         </div>
       )}
 

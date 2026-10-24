@@ -3,12 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
+  House,
   ArrowLeftRight,
   CreditCard,
   Upload,
   LogOut,
-  PiggyBank,
+  WalletCards,
   Plus,
   Repeat,
   HandCoins,
@@ -27,10 +27,10 @@ import { openQuickAdd } from '@/lib/quick-add'
 // mental model with trip sessions; existing grouped data stays reachable via a
 // filter chip on /transactions instead of its own nav entry.
 const navItems = [
-  { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', key: 'dashboard', icon: House },
   { href: '/transactions', key: 'transactions', icon: ArrowLeftRight },
   { href: '/import', key: 'import', icon: Upload },
-  { href: '/budgets', key: 'budgets', icon: PiggyBank },
+  { href: '/budgets', key: 'budgets', icon: WalletCards },
   // SPEC-4 (M1): /invest enters via the desktop sidebar + /more, not the fixed
   // mobile 4-dest+FAB bottom bar (design v3 keeps that bar unchanged).
   { href: '/invest', key: 'invest', icon: TrendingUp },
@@ -42,11 +42,11 @@ const navItems = [
 
 // Mobile bar — 4 daily destinations flanking the center (＋); management screens live under /more.
 const mobileLeft = [
-  { href: '/dashboard',    key: 'dashboard',    icon: LayoutDashboard },
+  { href: '/dashboard',    key: 'dashboard',    icon: House },
   { href: '/transactions', key: 'transactions', icon: ArrowLeftRight },
 ] as const
 const mobileRight = [
-  { href: '/budgets', key: 'budgets', icon: PiggyBank },
+  { href: '/budgets', key: 'budgets', icon: WalletCards },
   { href: '/more',    key: 'more',    icon: MoreHorizontal },
 ] as const
 
@@ -55,6 +55,8 @@ export default function AppNav() {
   const pathname = usePathname()
   const router = useRouter()
   const isDashboard = pathname === '/dashboard'
+  const moreActive = ['/more', '/accounts', '/invest', '/import', '/recurring', '/groups', '/sessions', '/settings']
+    .some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
   async function handleLogout() {
     const supabase = createClient()
@@ -66,7 +68,7 @@ export default function AppNav() {
     cn(
       'flex flex-1 flex-col items-center gap-1 text-sm transition-colors',
       isDashboard ? 'justify-start' : 'py-2',
-      active ? 'font-semibold text-foreground [&>svg]:rounded-full [&>svg]:bg-primary [&>svg]:p-1 [&>svg]:size-8' : 'text-muted-foreground hover:text-foreground',
+      active ? 'font-semibold text-foreground [&>svg]:h-7 [&>svg]:w-12 [&>svg]:rounded-full [&>svg]:border-[1.5px] [&>svg]:border-honey-edge [&>svg]:bg-primary [&>svg]:px-3 [&>svg]:py-1' : 'text-muted-foreground hover:text-foreground',
     )
 
   return (
@@ -99,7 +101,7 @@ export default function AppNav() {
         </button>
 
         {mobileRight.map(({ href, key, icon: Icon }) => (
-          <Link key={href} href={href} className={navItemCls(pathname === href)}>
+          <Link key={href} href={href} className={navItemCls(href === '/more' ? moreActive : pathname === href)}>
             <Icon className="size-5" />
             <span>{t(key)}</span>
           </Link>

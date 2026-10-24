@@ -28,6 +28,7 @@
     "manualMode": "Manual",
     "slipMode": "Slip",
     "discardWarning": "{count} slips are not saved yet — closing means you will need to pick them again",
+    "discardTitle": "Close without saving slips?",
     "keepEditing": "Keep working",
     "discard": "Discard and close"
   },
@@ -52,7 +53,10 @@
     "income": "Income",
     "expense": "Expense",
     "transfer": "Transfer",
+    "transferShort": "Transfer",
     "add": "Add Transaction",
+    "addShort": "Add",
+    "amountCaption": "Amount",
     "skipOccurrenceConfirm": "Skip this recurring occurrence? (It won't be recreated)",
     "deleteConfirm": "Delete this transaction?",
     "occurrenceSkipped": "Recurring occurrence skipped",
@@ -90,6 +94,16 @@
     "edit": "Edit",
     "deleteAction": "Delete transaction",
     "refCode": "Slip reference: {code}",
+    "shownNameLabel": "Display name",
+    "payeeLabel": "Payee / payer",
+    "payerLabel": "Payer",
+    "dateTimeLabel": "Date and time",
+    "groupLabel": "Group",
+    "groupAssigned": "Assigned to a group",
+    "sourceLabel": "Source",
+    "sourceManual": "Manual entry",
+    "sourceSlip": "Slip",
+    "sourceRecurring": "Recurring",
     "noAccountsInlineHint": "No accounts yet — add one to start logging",
     "transferNeedsSecondAccount": "You need a second account to transfer between",
     "filterAll": "All",
@@ -98,6 +112,7 @@
   "account": {
     "title": "Accounts",
     "add": "Add Account",
+    "summary": "{count} accounts · {amount} total",
     "edit": "Edit Account",
     "name": "Account Name",
     "bank": "Bank",
@@ -308,11 +323,16 @@
     "deleteConfirm": "Delete this budget?",
     "deleted": "Budget deleted",
     "deleteFailed": "Could not delete",
+    "deleteAction": "Delete budget",
     "empty": "No budgets yet",
     "emptyHint": "Set a monthly or daily budget and see what's left vs. actual spend",
     "noCategory": "Uncategorized",
     "overBy": "Over by {amount}",
     "remaining": "{amount} left"
+    ,"bandTitle": "{period} budget"
+    ,"today": "Today"
+    ,"fromAmount": "from {amount}"
+    ,"spentCaption": "Spent {amount}"
   },
   "recurring": {
     "title": "Recurring",
@@ -321,6 +341,7 @@
     "typeExpense": "Expense",
     "typeIncome": "Income",
     "amountLabel": "Amount (THB)",
+    "amountCaption": "Amount",
     "account": "Account",
     "selectAccount": "Select account",
     "categoryOptional": "Category",
@@ -354,6 +375,8 @@
     "needAccountFirst": "Add an account first to create recurring entries",
     "empty": "No recurring entries yet",
     "emptyHint": "e.g. rent, salary, monthly subscriptions",
+    "uncategorized": "Uncategorized",
+    "deleteAction": "Delete recurring item",
     "startsOn": "From {date}",
     "untilDate": "until {date}",
     "lastDeducted": "Last deducted: {date}",
@@ -419,6 +442,7 @@
     "deleteConfirm": "Delete this group? Its transactions won't be deleted, just removed from the group",
     "deleted": "Group deleted",
     "deleteFailed": "Could not delete",
+    "deleteAction": "Delete this group",
     "empty": "No groups yet",
     "emptyHint": "Group transactions into trips or projects and see totals",
     "itemCount": "{count} items",
@@ -433,6 +457,7 @@
     "noMembers": "No transactions in this group yet",
     "noMembersHint": "Tap “Add transaction” to assign transactions to this group",
     "removedFromGroup": "Removed from group"
+    ,"removeFromGroup": "Remove from group"
   },
   "session": {
     "title": "Trips",
@@ -452,6 +477,7 @@
     "deleteConfirm": "Delete this group pay session? All recorded slips will be deleted",
     "deleted": "Deleted",
     "deleteFailed": "Could not delete",
+    "deleteAction": "Delete this trip",
     "add": "New Session",
     "addTitle": "Create Group Pay Session",
     "empty": "No group pay sessions yet",
@@ -613,6 +639,8 @@
     "stage_ocr": "Reading text...",
     "stage_extract": "Extracting data...",
     "privacyNote": "The image never leaves your device",
+    "amountCaption": "Amount",
+    "pickSlip": "Pick slip image",
     "tryAgain": "Try again",
     "supportedBanks": "Supports SCB, KBank, KTB, BBL and PromptPay slips — images are processed on-device and discarded right after reading",
     "batchTitle": "Batch Import — {count} slips",
@@ -632,6 +660,7 @@
     "queueReplace": "Pick another image",
     "queueManual": "Enter manually",
     "queueBack": "Slip list ({count})",
+    "queueBackShort": "Back to slip list",
     "queueSaveReady": "Save all ready slips ({count})",
     "queueReviewRemaining": "Review remaining slips ({count})",
     "queueItemA11y": "Slip {index}, {status}, {amount}, {duplicate}",
@@ -689,7 +718,8 @@
     "deleteAccount": "Delete Account",
     "deleting": "Deleting...",
     "deleteConfirm1": "Delete your account and all data? This cannot be undone",
-    "deleteConfirm2": "Confirm once more: all of your data will be permanently deleted"
+    "deleteConfirm2": "Confirm once more: all of your data will be permanently deleted",
+    "logout": "Sign out"
   },
   "common": {
     "save": "Save",

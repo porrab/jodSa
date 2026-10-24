@@ -14,6 +14,7 @@ import { updatePortfolioPrices, savePortfolioSnapshot } from '@/app/actions/inve
 import { formatMoney, parseMinor, toMajor, minorUnitDecimals } from '@/lib/invest/money'
 import LazyAllocationPieChart from '@/components/charts/lazy-allocation-pie-chart'
 import type { AssetClass, Sleeve } from '@/lib/validators/invest'
+import { formatAppDateTime } from '@/lib/date-display'
 
 type Bucket = { key: string; valueMinor: string; pct: number }
 
@@ -72,6 +73,15 @@ function assetIdToName(dashboard: DashboardData, assetId: string): string {
 
 function bucketsToSlices(buckets: Bucket[], labelFor: (key: string) => string) {
   return buckets.map((b) => ({ label: labelFor(b.key), value: Number(b.valueMinor), pct: b.pct }))
+}
+
+function AllocationBars({ buckets, labelFor }: { buckets: Bucket[]; labelFor: (key: string) => string }) {
+  return <div className="space-y-3">
+    {buckets.map((bucket) => <div key={bucket.key} className="space-y-1">
+      <div className="flex items-center justify-between text-sm"><span>{labelFor(bucket.key)}</span><span className="tabular-nums">{bucket.pct.toFixed(1)}%</span></div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full border-[1.5px] border-honey-edge bg-primary" style={{ width: `${Math.min(bucket.pct, 100)}%` }} /></div>
+    </div>)}
+  </div>
 }
 
 /** "Update prices" bulk form (M3): one row per holding, current value + FX where needed. */
@@ -205,7 +215,7 @@ function SnapshotDetail({ snapshot, onClose }: { snapshot: SnapshotRow; onClose:
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="bottom" className="mx-auto max-h-[90vh] max-w-lg overflow-y-auto rounded-t-2xl">
         <SheetHeader>
-          <SheetTitle>{new Date(snapshot.taken_at).toLocaleString('th-TH')}</SheetTitle>
+          <SheetTitle>{formatAppDateTime(snapshot.taken_at, 'th')}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-6">
           <div className="space-y-1">
@@ -279,14 +289,26 @@ export default function PortfolioDashboard({
 
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" onClick={() => setPricesOpen(true)}>
+          <RefreshCw className="mr-1.5 size-4" />
+          {t('updatePrices')}
+        </Button>
+        <form action={snapAction}>
+          <Button type="submit" variant="outline" className="w-full" disabled={snapPending}>
+            <Camera className="mr-1.5 size-4" />
+            {snapPending ? tc('saving') : t('saveSnapshot')}
+          </Button>
+        </form>
+      </div>
+      {snapState.error && <p className="text-sm text-destructive">{snapState.error}</p>}
       {!hasAnyValue ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           <p>{t('noHoldings')}</p>
         </div>
       ) : (
         <>
-          <Card>
-            <CardContent className="space-y-2 pt-4">
+          <section className="space-y-2 border-y border-border py-4">
               <p className="text-sm text-muted-foreground">{t('totalValueLabel', { currency: dashboard.displayCurrency })}</p>
               <p className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
                 {formatMoney(dashboard.totals.totalValueMinor, dashboard.totals.currency)}
@@ -308,12 +330,10 @@ export default function PortfolioDashboard({
                   {t('excludedFxNote', { count: dashboard.totals.excludedCount })}
                 </p>
               )}
-            </CardContent>
-          </Card>
+          </section>
 
           {dashboard.concentration.top.length > 0 && (
-            <Card>
-              <CardContent className="space-y-2 pt-4">
+            <section className="space-y-2 border-b border-border pb-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{t('concentrationTitle')}</p>
                   {dashboard.concentration.anyConcentrated && (
@@ -333,46 +353,25 @@ export default function PortfolioDashboard({
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+            </section>
           )}
 
-          <Card>
-            <CardContent className="space-y-3 pt-4">
+          <section className="space-y-3 border-b border-border pb-4">
               <p className="text-sm font-medium">{t('allocationByClass')}</p>
-              <LazyAllocationPieChart data={bucketsToSlices(dashboard.allocationByClass, classLabel)} />
-            </CardContent>
-          </Card>
+              <AllocationBars buckets={dashboard.allocationByClass} labelFor={classLabel} />
+          </section>
 
-          <Card>
-            <CardContent className="space-y-3 pt-4">
+          <section className="space-y-3 border-b border-border pb-4">
               <p className="text-sm font-medium">{t('allocationByCurrency')}</p>
-              <LazyAllocationPieChart data={bucketsToSlices(dashboard.allocationByCurrency, currencyLabel)} />
-            </CardContent>
-          </Card>
+              <AllocationBars buckets={dashboard.allocationByCurrency} labelFor={currencyLabel} />
+          </section>
 
-          <Card>
-            <CardContent className="space-y-3 pt-4">
+          <section className="space-y-3 border-b border-border pb-4">
               <p className="text-sm font-medium">{t('allocationBySleeve')}</p>
-              <LazyAllocationPieChart data={bucketsToSlices(dashboard.allocationBySleeve, sleeveLabel)} />
-            </CardContent>
-          </Card>
+              <AllocationBars buckets={dashboard.allocationBySleeve} labelFor={sleeveLabel} />
+          </section>
         </>
       )}
-
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={() => setPricesOpen(true)}>
-          <RefreshCw className="mr-1.5 size-4" />
-          {t('updatePrices')}
-        </Button>
-        <form action={snapAction}>
-          <Button type="submit" variant="outline" className="w-full" disabled={snapPending}>
-            <Camera className="mr-1.5 size-4" />
-            {snapPending ? tc('saving') : t('saveSnapshot')}
-          </Button>
-        </form>
-      </div>
-      {snapState.error && <p className="text-sm text-destructive">{snapState.error}</p>}
 
       {snapshots.length > 0 && (
         <Card>
@@ -388,7 +387,7 @@ export default function PortfolioDashboard({
                     onClick={() => setSelectedSnapshot(s)}
                     className="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-accent/50"
                   >
-                    <span>{new Date(s.taken_at).toLocaleString('th-TH')}</span>
+                    <span>{formatAppDateTime(s.taken_at, 'th')}</span>
                     <span className="tabular-nums">{formatMoney(totals.valueMinor, totals.currency)}</span>
                   </button>
                 )

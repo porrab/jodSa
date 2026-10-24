@@ -9,11 +9,10 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Input } from '@/components/ui/input'
+import { AmountInput } from '@/components/ui/amount-input'
+import { Chip } from '@/components/ui/chip'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
 import { createTransaction, updateTransaction } from '@/app/actions/transactions'
 import { usePendingTx } from '@/components/pending-tx-provider'
 import { toDatetimeLocal, type TxFormValues } from '@/lib/quick-add'
@@ -222,8 +221,7 @@ export default function TransactionForm({
     <form action={formAction} className="space-y-4">
       {editId && <input type="hidden" name="id" value={editId} />}
       {/* Type */}
-      <div className="space-y-1">
-        <Label>{t('type')}</Label>
+      <div>
         <Segmented className="grid-cols-3" aria-label={t('type')}>
           {(['income', 'expense', 'transfer'] as const).map((ty) => {
             const Icon = TYPE_META[ty].icon
@@ -232,49 +230,35 @@ export default function TransactionForm({
               key={ty}
               onClick={() => setType(ty)}
               active={type === ty}
+              aria-label={t(ty)}
               className={cn('inline-flex items-center justify-center gap-1.5', TYPE_META[ty].cls)}
             >
               <Icon aria-hidden="true" className="size-4" />
-              {t(ty)}
+              {ty === 'transfer' ? t('transferShort') : t(ty)}
             </SegmentedItem>
           )})}
         </Segmented>
       </div>
 
-      {/* Amount — hero input: ฿ prefix + large tabular-nums (design 07) */}
-      <div className="space-y-1">
-        <Label htmlFor={`${idPrefix}-amount`}>{t('amount')} <RequiredMark /></Label>
-        <div className="flex items-center gap-2 rounded-md bg-muted px-3 focus-within:ring-2 focus-within:ring-honey-edge">
-          <span className="select-none text-2xl font-semibold tabular-nums text-muted-foreground">฿</span>
-          <Input
-            id={`${idPrefix}-amount`}
-            name="amount"
-            type="text"
-            inputMode="decimal"
-            placeholder="0.00"
-            defaultValue={defaultValues?.amount}
-            required
-            // The Input base's `md:text-sm` outranks the
-            // unprefixed size at >= md, so the hero amount needs its own md: rule.
-            className="h-14 border-0 bg-transparent px-0 text-3xl font-semibold tabular-nums shadow-none focus-visible:ring-0 md:text-3xl"
-          />
-        </div>
-      </div>
+      <AmountInput
+        id={`${idPrefix}-amount`}
+        name="amount"
+        caption={<>{t('amountCaption')} <RequiredMark /></>}
+        defaultValue={defaultValues?.amount}
+        required
+      />
 
       {/* Category drives the account default, so it must come before the grid. */}
       {type !== 'transfer' && (
         <div data-testid="transaction-category-field" className="space-y-1">
           <Label>{t('categoryOptional')}</Label>
-          <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('selectCategory')} />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('categoryOptional')}>
+            {CATEGORIES.map((c) => (
+              <Chip key={c} pressed={category === c} onClick={() => handleCategoryChange(c)}>
+                <CategoryLabel value={c} />
+              </Chip>
+            ))}
+          </div>
         </div>
       )}
 

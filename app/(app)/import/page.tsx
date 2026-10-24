@@ -1,10 +1,12 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import { buildLastAccountMap } from '@/lib/last-account'
 import ImportClient from './import-client'
+import { getTranslations } from 'next-intl/server'
 
 export const metadata = { title: 'นำเข้าสลิป — JodSa' }
 
 export default async function ImportPage() {
+  const t = await getTranslations('slip')
   const user = await getUser()
   if (!user) return null // (app)/layout.tsx already redirects unauthenticated users
 
@@ -29,7 +31,11 @@ export default async function ImportPage() {
   ])
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl space-y-5">
+      <header className="space-y-1">
+        <h1 className="text-[28px] font-bold leading-[1.35]">{t('importTitle')}</h1>
+        <p className="text-sm text-muted-foreground">{t('privacyBadge')}</p>
+      </header>
       <ImportClient
         displayName={profile?.display_name ?? null}
         accounts={accounts ?? []}

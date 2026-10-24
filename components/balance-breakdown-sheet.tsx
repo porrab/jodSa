@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, TrendingUp } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { formatTHB } from '@/lib/money'
@@ -54,6 +54,7 @@ export default function BalanceBreakdownSheet({
       <SheetContent side="bottom" className="mx-auto max-h-[85vh] max-w-lg overflow-y-auto rounded-t-2xl">
         <SheetHeader><SheetTitle>{t('moneyTotalTitle')}</SheetTitle></SheetHeader>
         <div className="space-y-6 px-4 pb-6">
+          <p className="text-sm text-muted-foreground">{t('moneyTotalLabel')}</p>
           <p className="text-4xl font-bold leading-[1.7] tabular-nums">≈ {formatMoney(totalMinor, 'THB', locale)}</p>
 
           <section id="money-cash" className="scroll-mt-4 space-y-2">
@@ -74,7 +75,7 @@ export default function BalanceBreakdownSheet({
           {holdings.length > 0 && (
             <section id="money-invest" className="scroll-mt-4 space-y-2">
               <div className="flex items-baseline justify-between gap-3 font-semibold">
-                <h3>📈 {t('investmentsManual')}</h3><span className="tabular-nums">≈ {formatMoney(investMinor, 'THB', locale)}</span>
+                <h3 className="inline-flex items-center gap-1.5"><TrendingUp className="size-4" />{t('investmentsManual')}</h3><span className="tabular-nums">≈ {formatMoney(investMinor, 'THB', locale)}</span>
               </div>
               <div className="divide-y divide-border">
                 {holdings.map((holding) => (

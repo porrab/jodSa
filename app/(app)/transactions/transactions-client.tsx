@@ -16,6 +16,8 @@ import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 import { openQuickAdd } from '@/lib/quick-add'
 import TransactionRowCopy from '@/components/transaction-row-copy'
+import { PageHeader } from '@/components/ui/page-header'
+import { formatAppDayHeading } from '@/lib/date-display'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -59,7 +61,7 @@ export default function TransactionsClient({
   const yesterdayKey = bangkokDayKey(new Date(Date.now() - 86_400_000).toISOString())
 
   function dayLabel(key: string, sampleIso: string): string {
-    const date = format(new Date(sampleIso), 'EEE d MMM yyyy', { locale: dateLocale })
+    const date = formatAppDayHeading(sampleIso, locale === 'th' ? 'th' : 'en')
     if (key === todayKey) return `${t('today')} · ${date}`
     if (key === yesterdayKey) return `${t('yesterday')} · ${date}`
     return date
@@ -86,7 +88,10 @@ export default function TransactionsClient({
 
   return (
     <div className="space-y-4">
-      <Button onClick={() => openQuickAdd()}><Plus className="size-4 mr-2" />{t('add')}</Button>
+      <PageHeader
+        title={t('title')}
+        action={<Button size="sm" onClick={() => openQuickAdd()}><Plus className="size-4" />{t('addShort')}</Button>}
+      />
 
       {groups.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

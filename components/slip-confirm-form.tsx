@@ -6,6 +6,9 @@ import { CategoryLabel } from '@/lib/categories'
 import { AlertTriangle, ChevronLeft, Info, LockKeyhole, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AmountInput } from '@/components/ui/amount-input'
+import { Chip } from '@/components/ui/chip'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
 import {
@@ -275,14 +278,11 @@ export default function SlipConfirmForm({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <Button type="button" variant="ghost" size="icon" onClick={onBack}>
           <ChevronLeft className="size-4" />
         </Button>
-        <div>
-          <h1 className="text-xl font-semibold">{t('confirmTitle')}</h1>
-          <p className="text-sm text-muted-foreground">{t('confirmSubtitle')}</p>
-        </div>
+        <span className="text-sm text-muted-foreground">{t('queueBackShort')}</span>
       </div>
 
       {/* Privacy promise — visible at the scan/confirm step */}
@@ -349,52 +349,31 @@ export default function SlipConfirmForm({
           <input type="hidden" name="bank_code" value={slip.bankCode.value} />
         )}
 
-        {/* Type */}
-        <div className="space-y-1.5">
-          <Label>{t('type')}</Label>
-          <Select value={type} onValueChange={(v) => setType(v as 'income' | 'expense')}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="income">{t('income')}</SelectItem>
-              <SelectItem value="expense">{t('expense')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Segmented className="grid-cols-2" aria-label={t('type')}>
+          <SegmentedItem active={type === 'income'} onClick={() => setType('income')}>{t('income')}</SegmentedItem>
+          <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')}>{t('expense')}</SegmentedItem>
+        </Segmented>
 
         {/* Amount */}
-        <div className="space-y-1.5">
-          <Label>
-            {t('amountLabel')} <RequiredMark />
-            <ConfidenceBadge confidence={slip.amount.confidence} />
-          </Label>
-          <Input
-            name="amount"
-            type="text"
-            inputMode="decimal"
-            required
-            defaultValue={slip.amount.value ? (slip.amount.value / 100).toFixed(2) : ''}
-            placeholder="0.00"
-            className={slip.amount.confidence < LOW_CONFIDENCE ? 'border-warn' : ''}
-          />
-        </div>
+        <AmountInput
+          id="slip-amount"
+          name="amount"
+          caption={<>{t('amountCaption')} <RequiredMark /> <ConfidenceBadge confidence={slip.amount.confidence} /></>}
+          required
+          defaultValue={slip.amount.value ? (slip.amount.value / 100).toFixed(2) : ''}
+          className={slip.amount.confidence < LOW_CONFIDENCE ? 'border-warn' : ''}
+        />
 
         {/* Category drives the account fallback, so it must come before the grid. */}
         <div data-testid="slip-category-field" className="space-y-1.5">
           <Label>{t('category')}</Label>
-          <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('selectCategoryOptional')} />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  <CategoryLabel value={c} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('category')}>
+            {CATEGORIES.map((c) => (
+              <Chip key={c} pressed={category === c} onClick={() => handleCategoryChange(c)}>
+                <CategoryLabel value={c} />
+              </Chip>
+            ))}
+          </div>
         </div>
 
         {/* Account */}
@@ -461,16 +440,8 @@ export default function SlipConfirmForm({
           />
         </div>
 
-        {/* Ref code (read-only display) */}
-        {slip.refCode.value && (
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground">{t('refFromQr')}</Label>
-            <Input value={slip.refCode.value} readOnly className="font-mono text-sm text-muted-foreground" />
-          </div>
-        )}
-
         {/* Debug block (dev-only) */}
-        {slip.rawTextDebug && (
+        {process.env.NEXT_PUBLIC_SLIP_OCR_DEBUG === '1' && slip.rawTextDebug && (
           <details className="rounded-lg border p-3 text-sm">
             <summary className="cursor-pointer text-muted-foreground">OCR debug</summary>
             <pre className="mt-2 whitespace-pre-wrap text-muted-foreground">{slip.rawTextDebug}</pre>

@@ -28,6 +28,7 @@
     "manualMode": "กรอกเอง",
     "slipMode": "สลิป",
     "discardWarning": "ยังมีสลิปที่ยังไม่บันทึก {count} ใบ — ปิดแล้วจะต้องเลือกรูปใหม่",
+    "discardTitle": "ปิดโดยไม่บันทึกสลิป?",
     "keepEditing": "กลับไปบันทึก",
     "discard": "ปิดทิ้ง"
   },
@@ -52,7 +53,10 @@
     "income": "รายรับ",
     "expense": "รายจ่าย",
     "transfer": "โอนเงิน",
+    "transferShort": "โอน",
     "add": "เพิ่มรายการ",
+    "addShort": "เพิ่ม",
+    "amountCaption": "จำนวนเงิน",
     "skipOccurrenceConfirm": "ข้ามรายการประจำนี้? (จะไม่ถูกสร้างขึ้นใหม่)",
     "deleteConfirm": "ลบรายการนี้?",
     "occurrenceSkipped": "ข้ามรายการประจำแล้ว",
@@ -90,6 +94,16 @@
     "edit": "แก้ไข",
     "deleteAction": "ลบรายการ",
     "refCode": "อ้างอิงสลิป: {code}",
+    "shownNameLabel": "ชื่อที่แสดง",
+    "payeeLabel": "ผู้รับ / ผู้จ่าย",
+    "payerLabel": "ผู้จ่าย",
+    "dateTimeLabel": "วันเวลา",
+    "groupLabel": "กลุ่ม",
+    "groupAssigned": "อยู่ในกลุ่ม",
+    "sourceLabel": "ที่มา",
+    "sourceManual": "กรอกเอง",
+    "sourceSlip": "สลิป",
+    "sourceRecurring": "รายการประจำ",
     "noAccountsInlineHint": "ยังไม่มีบัญชี — สร้างบัญชีก่อนเริ่มบันทึกรายการ",
     "transferNeedsSecondAccount": "ต้องมีอย่างน้อย 2 บัญชีเพื่อโอนเงินระหว่างกัน",
     "filterAll": "ทั้งหมด",
@@ -98,6 +112,7 @@
   "account": {
     "title": "บัญชี",
     "add": "เพิ่มบัญชี",
+    "summary": "รวม {count} บัญชี {amount}",
     "edit": "แก้ไขบัญชี",
     "name": "ชื่อบัญชี",
     "bank": "ธนาคาร",
@@ -308,11 +323,16 @@
     "deleteConfirm": "ลบงบประมาณนี้?",
     "deleted": "ลบงบประมาณแล้ว",
     "deleteFailed": "ไม่สามารถลบได้",
+    "deleteAction": "ลบงบประมาณ",
     "empty": "ยังไม่มีงบประมาณ",
     "emptyHint": "ตั้งงบรายเดือนหรือรายวัน แล้วดูยอดคงเหลือเทียบกับการใช้จริง",
     "noCategory": "ไม่ระบุหมวด",
     "overBy": "เกินงบ {amount}",
     "remaining": "เหลือ {amount}"
+    ,"bandTitle": "งบ{period}"
+    ,"today": "วันนี้"
+    ,"fromAmount": "จาก {amount}"
+    ,"spentCaption": "ใช้ไป {amount}"
   },
   "recurring": {
     "title": "รายการประจำ",
@@ -321,6 +341,7 @@
     "typeExpense": "รายจ่าย",
     "typeIncome": "รายรับ",
     "amountLabel": "จำนวนเงิน (บาท)",
+    "amountCaption": "จำนวนเงิน",
     "account": "บัญชี",
     "selectAccount": "เลือกบัญชี",
     "categoryOptional": "หมวดหมู่",
@@ -354,6 +375,8 @@
     "needAccountFirst": "เพิ่มบัญชีก่อนจึงจะสร้างรายการประจำได้",
     "empty": "ยังไม่มีรายการประจำ",
     "emptyHint": "เช่น ค่าเช่า เงินเดือน ค่าสมาชิกรายเดือน",
+    "uncategorized": "ไม่ระบุหมวด",
+    "deleteAction": "ลบรายการประจำ",
     "startsOn": "เริ่ม {date}",
     "untilDate": "ถึง {date}",
     "lastDeducted": "หักล่าสุด: {date}",
@@ -419,6 +442,7 @@
     "deleteConfirm": "ลบกลุ่มนี้? รายการที่อยู่ในกลุ่มจะไม่ถูกลบ แต่จะถูกนำออกจากกลุ่ม",
     "deleted": "ลบกลุ่มแล้ว",
     "deleteFailed": "ไม่สามารถลบได้",
+    "deleteAction": "ลบกลุ่มนี้",
     "empty": "ยังไม่มีกลุ่ม",
     "emptyHint": "จัดกลุ่มรายการเป็นทริปหรือโปรเจกต์ แล้วดูยอดรวม",
     "itemCount": "{count} รายการ",
@@ -433,6 +457,7 @@
     "noMembers": "ยังไม่มีรายการในกลุ่มนี้",
     "noMembersHint": "กด “เพิ่มรายการ” เพื่อจัดรายการเข้ากลุ่ม",
     "removedFromGroup": "นำออกจากกลุ่มแล้ว"
+    ,"removeFromGroup": "นำออกจากกลุ่ม"
   },
   "session": {
     "title": "ทริป",
@@ -452,6 +477,7 @@
     "deleteConfirm": "ลบรายการจ่ายกลุ่มนี้? สลิปที่บันทึกไว้จะถูกลบทั้งหมด",
     "deleted": "ลบแล้ว",
     "deleteFailed": "ไม่สามารถลบได้",
+    "deleteAction": "ลบทริปนี้",
     "add": "สร้างรายการ",
     "addTitle": "สร้างรายการจ่ายกลุ่ม",
     "empty": "ยังไม่มีรายการจ่ายกลุ่ม",
@@ -613,6 +639,8 @@
     "stage_ocr": "อ่านข้อความ...",
     "stage_extract": "ดึงข้อมูล...",
     "privacyNote": "รูปภาพไม่ถูกส่งออกนอกอุปกรณ์",
+    "amountCaption": "จำนวนเงิน",
+    "pickSlip": "เลือกภาพสลิป",
     "tryAgain": "ลองอีกครั้ง",
     "supportedBanks": "รองรับสลิป SCB, KBank, KTB, BBL และ PromptPay — รูปภาพถูกประมวลผลบนอุปกรณ์และทิ้งทันทีหลังอ่าน",
     "batchTitle": "นำเข้าหลายอัน — {count} สลิป",
@@ -632,6 +660,7 @@
     "queueReplace": "เลือกรูปใหม่",
     "queueManual": "กรอกเอง",
     "queueBack": "รายการสลิป ({count})",
+    "queueBackShort": "กลับไปรายการสลิป",
     "queueSaveReady": "บันทึกที่พร้อมแล้วทั้งหมด ({count})",
     "queueReviewRemaining": "ตรวจสลิปที่เหลือ ({count})",
     "queueItemA11y": "สลิป {index}, {status}, {amount}, {duplicate}",
@@ -689,7 +718,8 @@
     "deleteAccount": "ลบบัญชีผู้ใช้",
     "deleting": "กำลังลบ...",
     "deleteConfirm1": "ลบบัญชีผู้ใช้และข้อมูลทั้งหมด? การกระทำนี้กู้คืนไม่ได้",
-    "deleteConfirm2": "ยืนยันอีกครั้ง: ข้อมูลทั้งหมดของคุณจะถูกลบถาวร"
+    "deleteConfirm2": "ยืนยันอีกครั้ง: ข้อมูลทั้งหมดของคุณจะถูกลบถาวร",
+    "logout": "ออกจากระบบ"
   },
   "common": {
     "save": "บันทึก",

@@ -257,6 +257,14 @@ export default function SlipQueue({
   const amountLabel = (item: QueueItem) => item.parsed?.amount.value
     ? new Intl.NumberFormat(locale === 'th' ? 'th-TH' : 'en-US', { style: 'currency', currency: 'THB' }).format(item.parsed.amount.value / 100)
     : ''
+  const rowMeta = (item: QueueItem) => {
+    if (!item.parsed?.datetime.value) return item.status === 'error' ? t('batchParseFailed') : t('queueStatus_pending')
+    const date = new Date(item.parsed.datetime.value).toLocaleDateString(locale === 'th' ? 'th-TH' : 'en-GB', {
+      day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok',
+    })
+    const account = accounts.find((candidate) => candidate.id === item.accountId)?.name
+    return account ? `${date} · ${account}` : date
+  }
 
   if (items.length === 0) {
     return (
@@ -320,7 +328,7 @@ export default function SlipQueue({
                   </Badge>
                   <span>{amountLabel(item)}{item.parsed?.counterparty.value ? ` · ${item.parsed.counterparty.value}` : ''}</span>
                 </span>
-                <span className="block truncate text-sm text-muted-foreground">{item.error ?? item.filename}</span>
+                <span className="block truncate text-sm text-muted-foreground">{rowMeta(item)}</span>
                 {item.status === 'parsing' && (
                   <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-muted">
                     <span className="block h-full w-full origin-left bg-primary transition-transform" style={{ transform: `scaleX(${item.progress.percent / 100})` }} />
@@ -355,11 +363,11 @@ export default function SlipQueue({
         ))}
       </div>
 
-      <div className={variant === 'sheet' ? 'sticky bottom-0 bg-background pt-2' : ''}>
+      {(readyCount > 0 || reviewCount > 0) && <div className={variant === 'sheet' ? 'sticky bottom-0 bg-background pt-2' : ''}>
         <Button className="w-full" onClick={saveReady} disabled={items.some((item) => item.status === 'saving')}>
           {readyCount > 0 ? t('queueSaveReady', { count: readyCount }) : t('queueReviewRemaining', { count: reviewCount })}
         </Button>
-      </div>
+      </div>}
     </div>
   )
 }

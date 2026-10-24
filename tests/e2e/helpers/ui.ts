@@ -12,11 +12,19 @@ export async function login(page: Page, email: string, password: string): Promis
 /** Create a bank account via the accounts dialog. */
 export async function createAccount(page: Page, name: string, bank: string): Promise<void> {
   await page.goto('/accounts')
-  await page.getByRole('button', { name: 'เพิ่มบัญชี' }).click()
   const dialog = page.getByRole('dialog')
+  const firstRunSheetOpened = await dialog.waitFor({ state: 'visible', timeout: 5_000 }).then(() => true).catch(() => false)
+  if (!firstRunSheetOpened) {
+    await page.getByRole('button', { name: 'เพิ่มบัญชี' }).click()
+  }
   await dialog.getByLabel('ชื่อบัญชี').fill(name)
-  await dialog.getByRole('combobox').click()
-  await page.getByRole('option', { name: bank, exact: true }).click()
+  const bankChip = dialog.getByRole('button', { name: bank, exact: true })
+  if (await bankChip.count()) {
+    await bankChip.click()
+  } else {
+    await dialog.getByRole('combobox').click()
+    await page.getByRole('option', { name: bank, exact: true }).click()
+  }
   await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click()
   await expect(dialog).toBeHidden()
   await expect(page.getByText(name, { exact: true })).toBeVisible()
@@ -34,10 +42,10 @@ const TYPE_LABEL = { income: 'รายรับ', expense: 'รายจ่า�
 /** Log a transaction via the transactions dialog. */
 export async function addTransaction(page: Page, tx: NewTransaction): Promise<void> {
   await page.goto('/transactions')
-  await page.getByRole('button', { name: 'เพิ่มรายการ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: TYPE_LABEL[tx.type], exact: true }).click()
-  await dialog.getByLabel('จำนวนเงิน (บาท)').fill(tx.amount)
+  await dialog.getByLabel('จำนวนเงิน').fill(tx.amount)
 
   const sourceGroup = dialog.getByRole('radiogroup', {
     name: tx.type === 'transfer' ? 'บัญชีต้นทาง' : 'บัญชี',

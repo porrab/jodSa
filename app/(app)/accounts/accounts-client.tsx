@@ -8,21 +8,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
+import { Chip } from '@/components/ui/chip'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import {
   createAccount, updateAccount, deleteAccount, uploadAccountQr, removeAccountQr,
 } from '@/app/actions/accounts'
 import { BANKS } from '@/lib/validators/account'
 import { formatTHB } from '@/lib/money'
+import { PageHeader } from '@/components/ui/page-header'
+import TransactionRowCopy from '@/components/transaction-row-copy'
+import { TransactionTypeBadge, transactionAmountPrefix, TRANSACTION_TYPE_STYLE } from '@/components/transaction-type-indicator'
+import { format } from 'date-fns'
+import type { Database } from '@/lib/supabase/types'
 
 type Account = {
   id: string
@@ -34,6 +37,7 @@ type Account = {
   qr_image_path: string | null
   qrUrl: string | null
 }
+type RecentTransaction = Database['public']['Tables']['transactions']['Row']
 
 function AccountForm({
   defaultValues,
@@ -73,16 +77,11 @@ function AccountForm({
       </div>
       <div className="space-y-1">
         <Label>{t('bank')} <RequiredMark /></Label>
-        <Select value={bank} onValueChange={setBank} required>
-          <SelectTrigger>
-            <SelectValue placeholder={t('selectBank')} />
-          </SelectTrigger>
-          <SelectContent>
-            {BANKS.map((b) => (
-              <SelectItem key={b} value={b}>{b}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('bank')}>
+          {BANKS.map((b) => (
+            <Chip key={b} pressed={bank === b} onClick={() => setBank(b)}>{b}</Chip>
+          ))}
+        </div>
       </div>
       <div className="space-y-1">
         <Label htmlFor="opening_balance">{t('openingBalance')}</Label>
@@ -199,10 +198,14 @@ function QrManageDialog({ account, onClose }: { account: Account; onClose: () =>
  */
 function AccountDetailSheet({
   account,
+  accounts,
+  recentTransactions,
   open,
   onOpenChange,
 }: {
   account: Account | null
+  accounts: Account[]
+  recentTransactions: RecentTransaction[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -228,6 +231,8 @@ function AccountDetailSheet({
   }
 
   if (!account) return null
+  const accountMap = Object.fromEntries(accounts.map((item) => [item.id, item]))
+  const recent = recentTransactions.filter((tx) => tx.account_id === account.id || tx.to_account_id === account.id).slice(0, 5)
 
   return (
     <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
@@ -252,13 +257,26 @@ function AccountDetailSheet({
           </div>
         ) : (
           <div className="space-y-3 px-4 pb-6">
-            <p className={`text-4xl font-bold leading-[1.7] tabular-nums text-focal ${account.balance < 0 ? 'text-destructive' : ''}`}>
-              {formatTHB(account.balance)}
-            </p>
-            <p className="text-sm text-muted-foreground">
+            <div className="border-b border-border pb-3 text-center">
+              <p className="text-sm text-muted-foreground">
               {account.bank}
               {account.number_hint && ` · ${t('numberHint')} ${account.number_hint}`}
-            </p>
+              </p>
+              <p className={`text-4xl font-bold leading-[1.35] tabular-nums text-focal ${account.balance < 0 ? 'text-destructive' : ''}`}>
+                {formatTHB(account.balance)}
+              </p>
+            </div>
+
+            {recent.length > 0 && <div className="divide-y divide-border">
+              {recent.map((tx) => {
+                const style = TRANSACTION_TYPE_STYLE[tx.type] ?? TRANSACTION_TYPE_STYLE.expense
+                return <div key={tx.id} className="flex items-center gap-3 py-3">
+                  <TransactionTypeBadge type={tx.type} label={tx.type} />
+                  <TransactionRowCopy tx={tx} accountName={accountMap[tx.account_id]?.name} toAccountName={tx.to_account_id ? accountMap[tx.to_account_id]?.name : null} time={format(new Date(tx.datetime), 'HH:mm')} />
+                  <span className={`shrink-0 font-semibold tabular-nums ${style.text}`}>{transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}</span>
+                </div>
+              })}
+            </div>}
 
             <div className="rounded-lg border p-3 text-center">
               {account.qrUrl ? (
@@ -278,7 +296,7 @@ function AccountDetailSheet({
               </Dialog>
             </div>
 
-            <Button className="w-full" onClick={() => setEditing(true)}>
+            <Button variant="outline" className="w-full" onClick={() => setEditing(true)}>
               {t('edit')}
             </Button>
             <button
@@ -297,9 +315,11 @@ function AccountDetailSheet({
 
 export default function AccountsClient({
   accounts,
+  recentTransactions,
   initialAccountId,
 }: {
   accounts: Account[]
+  recentTransactions: RecentTransaction[]
   initialAccountId: string | null
 }) {
   const t = useTranslations('account')
@@ -311,15 +331,16 @@ export default function AccountsClient({
 
   return (
     <div className="space-y-4">
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
-          <AccountForm action={createAccount} onSuccess={() => setAddOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <PageHeader
+        title={t('title')}
+        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('add')}</Button>}
+      />
+      <Sheet open={addOpen} onOpenChange={setAddOpen}>
+        <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+          <SheetHeader><SheetTitle>{t('add')}</SheetTitle></SheetHeader>
+          <div className="px-4 pb-6"><AccountForm action={createAccount} onSuccess={() => setAddOpen(false)} /></div>
+        </SheetContent>
+      </Sheet>
 
       {accounts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
@@ -330,7 +351,9 @@ export default function AccountsClient({
         // Compact rows (design v3) — replaces the tall per-account cards with
         // 3 always-visible icon actions. Density budget: single line, amount
         // right/tabular; tap opens the detail sheet for edit/QR/delete.
-        <div className="divide-y divide-border">
+        <div>
+          <p className="mb-2 text-sm text-muted-foreground">{t('summary', { count: accounts.length, amount: formatTHB(accounts.reduce((sum, account) => sum + account.balance, 0)) })}</p>
+          <div className="divide-y divide-border border-y border-border">
           {accounts.map((acct) => (
             <button
               key={acct.id}
@@ -340,7 +363,7 @@ export default function AccountsClient({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{acct.name}</p>
-                <Badge variant="secondary" className="mt-0.5 text-sm">{acct.bank}</Badge>
+                <p className="mt-0.5 text-sm text-muted-foreground">{acct.bank}</p>
               </div>
               <p className={`shrink-0 text-sm font-semibold tabular-nums ${acct.balance < 0 ? 'text-destructive' : ''}`}>
                 {formatTHB(acct.balance)}
@@ -348,11 +371,14 @@ export default function AccountsClient({
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </button>
           ))}
+          </div>
         </div>
       )}
 
       <AccountDetailSheet
         account={detailAccount}
+        accounts={accounts}
+        recentTransactions={recentTransactions}
         open={detailId !== null}
         onOpenChange={(o) => { if (!o) setDetailId(null) }}
       />

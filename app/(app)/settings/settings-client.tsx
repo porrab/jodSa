@@ -7,12 +7,10 @@ import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
+import { Chip } from '@/components/ui/chip'
 import { setLocale, deleteOwnAccount } from '@/app/actions/preferences'
 import { createClient } from '@/lib/supabase/client'
+import { LogOut } from 'lucide-react'
 
 export default function SettingsClient({ email }: { email: string }) {
   const t = useTranslations('settings')
@@ -44,48 +42,32 @@ export default function SettingsClient({ email }: { email: string }) {
     router.push('/login')
   }
 
-  return (
-    <div className="space-y-4 max-w-xl">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t('preferences')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <Label>{t('language')}</Label>
-            <Select value={locale} onValueChange={handleLocaleChange} disabled={isPending}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="th">ไทย</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <Label>{t('theme')}</Label>
-            <Select value={theme ?? 'system'} onValueChange={setTheme}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">{t('themeLight')}</SelectItem>
-                <SelectItem value="dark">{t('themeDark')}</SelectItem>
-                <SelectItem value="system">{t('themeSystem')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t('account')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">{email}</p>
-          <div className="space-y-2 rounded-md bg-blush p-4">
+  return (
+    <div className="max-w-xl divide-y divide-border border-y border-border">
+          <div className="flex min-h-16 items-center justify-between gap-4 py-3">
+            <Label>{t('language')}</Label>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Chip pressed={locale === 'th'} onClick={() => handleLocaleChange('th')} disabled={isPending}>ไทย</Chip>
+              <Chip pressed={locale === 'en'} onClick={() => handleLocaleChange('en')} disabled={isPending}>English</Chip>
+            </div>
+          </div>
+          <div className="flex min-h-16 items-center justify-between gap-4 py-3">
+            <Label>{t('theme')}</Label>
+            <div className="flex flex-wrap justify-end gap-2">
+              {(['light', 'dark', 'system'] as const).map((value) => (
+                <Chip key={value} pressed={(theme ?? 'system') === value} onClick={() => setTheme(value)}>{t(`theme${value[0].toUpperCase()}${value.slice(1)}`)}</Chip>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2 py-4">
+            <p className="text-sm text-muted-foreground">{email}</p>
+            <div className="space-y-2 bg-blush p-4">
             <p className="text-sm font-medium text-destructive">{t('dangerZone')}</p>
             <p className="text-sm text-muted-foreground">{t('deleteAccountDesc')}</p>
             <Button
@@ -96,9 +78,11 @@ export default function SettingsClient({ email }: { email: string }) {
             >
               {deleting ? t('deleting') : t('deleteAccount')}
             </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <button type="button" onClick={handleLogout} className="flex min-h-14 w-full items-center gap-3 py-3 text-left font-medium md:hidden">
+            <LogOut className="size-4" />{t('logout')}
+          </button>
     </div>
   )
 }

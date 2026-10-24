@@ -2,11 +2,14 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { PageTabs, PageTab } from '@/components/ui/page-tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import BudgetsClient, { type BudgetItem } from './budgets-client'
 import LazyIncomeExpenseChart from '@/components/charts/lazy-income-expense-chart'
 import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
+import { PageHeader } from '@/components/ui/page-header'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
 
 /**
  * J6 — budget bars first; charts move here as a second "ภาพรวม" segment,
@@ -26,21 +29,22 @@ export default function BudgetsOverviewTabs({
 
   return (
     <div className="space-y-4">
-      <div className="flex border-b border-border">
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        action={<Button size="sm" onClick={() => window.dispatchEvent(new Event('jodsa:budget-add'))}><Plus className="size-4" />{t('add')}</Button>}
+      />
+      <PageTabs className="grid-cols-2">
         {(['budgets', 'overview'] as const).map((tb) => (
-          <button
+          <PageTab
             key={tb}
-            type="button"
             onClick={() => setTab(tb)}
-            className={cn(
-              'min-h-11 border-b-[3px] px-4 py-2 text-sm transition-colors',
-              tab === tb ? 'border-honey-edge font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
+            active={tab === tb}
           >
             {tb === 'budgets' ? t('tabBudgets') : t('tabOverview')}
-          </button>
+          </PageTab>
         ))}
-      </div>
+      </PageTabs>
 
       {tab === 'budgets' ? (
         <BudgetsClient items={items} />

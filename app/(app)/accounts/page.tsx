@@ -1,17 +1,16 @@
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import AccountsClient from './accounts-client'
 
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
-  const t = await getTranslations('account')
   const { account: initialAccountId } = await searchParams
   const supabase = await createClient()
 
   // account_balances aggregates in Postgres (RLS applies) so this page doesn't
   // pull the user's whole transaction history just to sum it.
-  const [{ data: accounts }, { data: balances }] = await Promise.all([
+  const [{ data: accounts }, { data: balances }, { data: recentTransactions }] = await Promise.all([
     supabase.from('accounts').select('*').order('created_at'),
     supabase.rpc('account_balances'),
+    supabase.from('transactions').select('*').order('datetime', { ascending: false }).limit(100),
   ])
   const balanceByAccount = new Map((balances ?? []).map((b) => [b.account_id, b.balance_satang]))
 
@@ -36,10 +35,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
-      </div>
-      <AccountsClient accounts={accountsWithBalance} initialAccountId={initialAccountId ?? null} />
+      <AccountsClient accounts={accountsWithBalance} recentTransactions={recentTransactions ?? []} initialAccountId={initialAccountId ?? null} />
     </div>
   )
 }

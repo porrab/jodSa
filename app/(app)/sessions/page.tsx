@@ -1,9 +1,7 @@
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import SessionsClient from './sessions-client'
 
 export default async function SessionsPage() {
-  const t = await getTranslations('session')
   const supabase = await createClient()
 
   const [{ data: sessions }, { data: slips }, { data: accounts }] = await Promise.all([
@@ -28,10 +26,6 @@ export default async function SessionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-[1.7]">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-      </div>
       <SessionsClient sessions={items} accounts={accounts ?? []} />
     </div>
   )

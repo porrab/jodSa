@@ -36,11 +36,11 @@ test.describe('M1-S1 new user signs up and logs first expense', () => {
     await addTransaction(page, { type: 'expense', amount: '120', account: 'QA Wallet' })
 
     await page.goto('/transactions')
-    await expect(page.getByText('รายจ่าย', { exact: true })).toBeVisible()
-    await expect(page.getByText('-฿120.00').first()).toBeVisible()
+    await expect(page.getByText('จ่าย ฿120.00', { exact: true })).toBeVisible()
+    await expect(page.getByText('−฿120.00').first()).toBeVisible()
 
     await page.goto('/dashboard')
-    await expect(page.getByText('-฿120.00').first()).toBeVisible() // month expense total
+    await expect(page.getByText('−฿120.00').first()).toBeVisible() // month expense total
   })
 })
 

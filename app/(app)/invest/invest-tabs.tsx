@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { PageTabs, PageTab } from '@/components/ui/page-tabs'
 import InvestClient, { type Holding, type Asset } from './invest-client'
 import PortfolioDashboard, { type DashboardData, type SnapshotRow } from './portfolio-dashboard'
 import PlanClient, { type PlanRow } from './plan-client'
+import { PageHeader } from '@/components/ui/page-header'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
 
 /**
  * M3/M5 — same tabbed pattern as app/(app)/budgets/budgets-overview-tabs.tsx:
@@ -34,21 +37,21 @@ export default function InvestTabs({
 
   return (
     <div className="space-y-4">
-      <div className="flex border-b border-border">
+      <PageHeader
+        title={t('title')}
+        action={<Button size="sm" onClick={() => window.dispatchEvent(new Event('jodsa:holding-add'))}><Plus className="size-4" />{t('addHolding')}</Button>}
+      />
+      <PageTabs className="grid-cols-3">
         {(['holdings', 'overview', 'plan'] as const).map((tb) => (
-          <button
+          <PageTab
             key={tb}
-            type="button"
             onClick={() => setTab(tb)}
-            className={cn(
-              'min-h-11 border-b-[3px] px-4 py-2 text-sm transition-colors',
-              tab === tb ? 'border-honey-edge font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
+            active={tab === tb}
           >
             {tb === 'holdings' ? t('tabHoldings') : tb === 'overview' ? t('tabOverview') : t('tabPlan')}
-          </button>
+          </PageTab>
         ))}
-      </div>
+      </PageTabs>
 
       {tab === 'holdings' ? (
         <InvestClient holdings={holdings} assets={assets} initialHoldingId={initialHoldingId} />

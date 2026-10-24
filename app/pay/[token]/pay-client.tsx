@@ -152,7 +152,7 @@ export default function PayClient({
       </header>
 
       {/* Trust note — always visible: recorded not bank-verified */}
-      <div className="flex items-start gap-2 rounded-lg border border-muted bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+      <div className="flex items-start gap-2 rounded-lg bg-info-soft px-3 py-2.5 text-sm text-foreground">
         <Info className="mt-0.5 size-3.5 shrink-0" />
         <span>{t('trustNote')}</span>
       </div>

@@ -4,12 +4,11 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Trash2, ChevronRight, HandCoins, Lock } from 'lucide-react'
+import { Plus, ChevronRight, HandCoins, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -20,6 +19,7 @@ import {
 import { createSession, deleteSession } from '@/app/actions/sessions'
 import { formatTHB, parseInputToSatang } from '@/lib/money'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/page-header'
 
 type SessionItem = {
   id: string
@@ -173,10 +173,12 @@ export default function SessionsClient({
 
   return (
     <div className="space-y-4">
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('add')}</Button>}
+      />
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
-        </DialogTrigger>
         <DialogContent>
           <DialogHeader><DialogTitle>{t('addTitle')}</DialogTitle></DialogHeader>
           <CreateSessionForm accounts={accounts} onSuccess={() => setAddOpen(false)} />
@@ -190,23 +192,14 @@ export default function SessionsClient({
           <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="divide-y divide-border border-y border-border">
           {sessions.map((s) => (
-            <Card key={s.id}>
-              <CardContent className="flex items-center gap-2 py-4">
-                <Link href={`/sessions/${s.id}`} className="flex-1 min-w-0">
+            <Link key={s.id} href={`/sessions/${s.id}`} className="flex min-h-16 items-center gap-3 px-1 py-3 transition-colors hover:bg-accent/40">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 font-medium">
                     <span className="truncate">{s.title}</span>
                     {s.status === 'closed' && <Lock className="size-3.5 shrink-0 text-muted-foreground" />}
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   </div>
-                  <p className="mt-1 text-sm tabular-nums">
-                    <span className="text-income">{formatTHB(s.confirmed)}</span>
-                    <span className="text-muted-foreground"> / {t('recordedAmount', { amount: formatTHB(s.recorded) })}</span>
-                    {s.target_amount_satang !== null && (
-                      <span className="text-muted-foreground"> · {t('targetAmount', { amount: formatTHB(s.target_amount_satang) })}</span>
-                    )}
-                  </p>
                   <div className="mt-1 flex items-center gap-1.5">
                     {s.type === 'trip' && <Badge variant="outline">{t('tripBadge')}</Badge>}
                     <Badge variant={s.status === 'open' ? 'secondary' : 'outline'}>
@@ -214,12 +207,9 @@ export default function SessionsClient({
                     </Badge>
                     <span className="text-sm text-muted-foreground">{t('slipCount', { count: s.count })}</span>
                   </div>
-                </Link>
-                <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(s.id)}>
-                  <Trash2 className="size-3.5 text-destructive" />
-                </Button>
-              </CardContent>
-            </Card>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </Link>
           ))}
         </div>
       )}

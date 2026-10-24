@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Trash2, CheckCircle2, Circle, Lock, LockOpen,
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { setSessionStatus, setSlipConfirmed, deleteSlip } from '@/app/actions/sessions'
+import { setSessionStatus, setSlipConfirmed, deleteSlip, deleteSession } from '@/app/actions/sessions'
 import AddSlipSheet from '@/components/add-slip-sheet'
 import ShareLink from '@/components/share-link'
 import { formatTHB } from '@/lib/money'
@@ -52,6 +53,7 @@ export default function SessionDetailClient({
 }) {
   const t = useTranslations('session')
   const locale = useLocale()
+  const router = useRouter()
   const [busy, setBusy] = useState(false)
   const payPath = `/pay/${session.id}`
 
@@ -88,6 +90,17 @@ export default function SessionDetailClient({
     }
   }
 
+  async function handleDeleteSession() {
+    if (!confirm(t('deleteConfirm'))) return
+    try {
+      await deleteSession(session.id)
+      toast.success(t('deleted'))
+      router.push('/sessions')
+    } catch {
+      toast.error(t('deleteFailed'))
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-2">
@@ -104,7 +117,7 @@ export default function SessionDetailClient({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{t('friendLink')}</CardTitle>
           </CardHeader>
@@ -138,7 +151,7 @@ export default function SessionDetailClient({
                   : t('targetShortBy', { amount: formatTHB(session.target_amount_satang - confirmed) })}
               </p>
             )}
-            <p className="pt-1 text-sm text-muted-foreground">{t('notVerifiedHint')}</p>
+            <p className="mt-2 rounded-lg bg-info-soft p-3 text-sm text-foreground">{t('notVerifiedHint')}</p>
           </CardContent>
         </Card>
       </div>
@@ -181,6 +194,7 @@ export default function SessionDetailClient({
           </div>
         )}
       </div>
+      <button type="button" onClick={handleDeleteSession} className="text-sm text-destructive hover:underline">{t('deleteAction')}</button>
     </div>
   )
 }

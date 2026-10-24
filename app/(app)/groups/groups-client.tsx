@@ -4,17 +4,17 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Users, ChevronRight } from 'lucide-react'
+import { Plus, Users, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet'
 import { createGroup, updateGroup, deleteGroup } from '@/app/actions/groups'
 import { formatTHB } from '@/lib/money'
+import { PageHeader } from '@/components/ui/page-header'
 
 export type GroupItem = {
   id: string
@@ -81,10 +81,12 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
 
   return (
     <div className="space-y-4">
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('add')}</Button>}
+      />
       <Sheet open={addOpen} onOpenChange={setAddOpen}>
-        <SheetTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
-        </SheetTrigger>
         <SheetContent side="bottom" className="px-4 pb-8">
           <SheetHeader><SheetTitle>{t('addTitle')}</SheetTitle></SheetHeader>
           <GroupForm action={createGroup} onSuccess={() => setAddOpen(false)} />
@@ -98,41 +100,21 @@ export default function GroupsClient({ groups }: { groups: GroupItem[] }) {
           <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="divide-y divide-border border-y border-border">
           {groups.map((g) => (
-            <Card key={g.id}>
-              <CardContent className="flex items-center gap-2 py-4">
-                <Link href={`/groups/${g.id}`} className="flex-1 min-w-0">
+            <Link key={g.id} href={`/groups/${g.id}`} className="flex min-h-16 items-center gap-3 px-1 py-3 transition-colors hover:bg-accent/40">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 font-medium">
                     <span className="truncate">{g.title}</span>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   </div>
                   {g.note && <p className="truncate text-sm text-muted-foreground">{g.note}</p>}
                   <p className="mt-1 text-sm tabular-nums text-expense">
                     {formatTHB(g.spent)}
                     <span className="ml-1.5 text-sm text-muted-foreground">{t('itemCount', { count: g.count })}</span>
                   </p>
-                </Link>
-                <div className="flex flex-col gap-1">
-                  <Sheet open={editId === g.id} onOpenChange={(o) => setEditId(o ? g.id : null)}>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="px-4 pb-8">
-                      <SheetHeader><SheetTitle>{t('edit')}</SheetTitle></SheetHeader>
-                      <GroupForm
-                        defaultValues={{ id: g.id, title: g.title, note: g.note }}
-                        action={updateGroup}
-                        onSuccess={() => setEditId(null)}
-                      />
-                    </SheetContent>
-                  </Sheet>
-                  <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(g.id)}>
-                    <Trash2 className="size-3.5 text-destructive" />
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </Link>
           ))}
         </div>
       )}

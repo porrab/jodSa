@@ -1,21 +1,18 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, PiggyBank } from 'lucide-react'
+import { Plus, PiggyBank, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import { Card, CardContent } from '@/components/ui/card'
+import { Chip } from '@/components/ui/chip'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
+} from '@/components/ui/sheet'
 import BudgetBar from '@/components/budget-bar'
 import { createBudget, updateBudget, deleteBudget } from '@/app/actions/budgets'
 import { CATEGORIES } from '@/lib/validators/transaction'
@@ -55,40 +52,31 @@ function BudgetForm({
     <form action={formAction} className="space-y-4">
       {defaultValues?.id && <input type="hidden" name="id" value={defaultValues.id} />}
 
-      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-4">
         <div className="space-y-1.5">
           <Label>{t('period')}</Label>
-          <Select value={period} onValueChange={(v) => setPeriod(v as 'day' | 'month')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">{t('periodMonth')}</SelectItem>
-              <SelectItem value="day">{t('periodDay')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Chip pressed={period === 'month'} onClick={() => setPeriod('month')}>{t('periodMonth')}</Chip>
+            <Chip pressed={period === 'day'} onClick={() => setPeriod('day')}>{t('periodDay')}</Chip>
+          </div>
         </div>
         <div className="space-y-1.5">
           <Label>{t('scope')}</Label>
-          <Select value={scope} onValueChange={(v) => setScope(v as 'overall' | 'category')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="overall">{t('scopeOverall')}</SelectItem>
-              <SelectItem value="category">{t('scopeCategory')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Chip pressed={scope === 'overall'} onClick={() => setScope('overall')}>{t('scopeOverall')}</Chip>
+            <Chip pressed={scope === 'category'} onClick={() => setScope('category')}>{t('scopeCategory')}</Chip>
+          </div>
         </div>
       </div>
 
       {scope === 'category' && (
         <div className="space-y-1.5">
           <Label>{t('category')} <RequiredMark /></Label>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}><CategoryLabel value={c} /></SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((c) => (
+              <Chip key={c} pressed={category === c} onClick={() => setCategory(c)}><CategoryLabel value={c} /></Chip>
+            ))}
+          </div>
         </div>
       )}
 
@@ -113,6 +101,11 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
   const t = useTranslations('budget')
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  useEffect(() => {
+    const open = () => setAddOpen(true)
+    window.addEventListener('jodsa:budget-add', open)
+    return () => window.removeEventListener('jodsa:budget-add', open)
+  }, [])
 
   async function handleDelete(id: string) {
     if (!confirm(t('deleteConfirm'))) return
@@ -126,15 +119,12 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
 
   return (
     <div className="space-y-4">
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild>
-          <Button><Plus className="size-4 mr-2" />{t('add')}</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t('add')}</DialogTitle></DialogHeader>
-          <BudgetForm action={createBudget} onSuccess={() => setAddOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <Sheet open={addOpen} onOpenChange={setAddOpen}>
+        <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+          <SheetHeader><SheetTitle>{t('add')}</SheetTitle></SheetHeader>
+          <div className="px-4 pb-6"><BudgetForm action={createBudget} onSuccess={() => setAddOpen(false)} /></div>
+        </SheetContent>
+      </Sheet>
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
@@ -143,33 +133,27 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
           <p className="text-sm mt-1">{t('emptyHint')}</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-border border-y border-border">
           {items.map(({ budget, status }) => (
-            <Card key={budget.id}>
-              <CardContent className="flex items-center gap-3 py-4">
-                <div className="flex-1">
+            <div key={budget.id}>
+              <button type="button" onClick={() => setEditId(budget.id)} className="flex w-full items-center gap-3 text-left hover:bg-accent/40">
+                <div className="min-w-0 flex-1">
                   <BudgetBar budget={budget} status={status} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <Dialog open={editId === budget.id} onOpenChange={(o) => setEditId(o ? budget.id : null)}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>{t('edit')}</DialogTitle></DialogHeader>
-                      <BudgetForm
-                        defaultValues={budget}
-                        action={updateBudget}
-                        onSuccess={() => setEditId(null)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(budget.id)}>
-                    <Trash2 className="size-3.5 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <ChevronRight className="mr-2 size-4 shrink-0 text-muted-foreground" />
+              </button>
+              <Sheet open={editId === budget.id} onOpenChange={(o) => setEditId(o ? budget.id : null)}>
+                <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+                  <SheetHeader><SheetTitle>{t('edit')}</SheetTitle></SheetHeader>
+                  <div className="space-y-6 px-4 pb-6">
+                    <BudgetForm defaultValues={budget} action={updateBudget} onSuccess={() => setEditId(null)} />
+                    <button type="button" onClick={() => handleDelete(budget.id)} className="text-sm text-destructive hover:underline">
+                      {t('deleteAction')}
+                    </button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           ))}
         </div>
       )}

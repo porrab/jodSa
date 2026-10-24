@@ -19,17 +19,13 @@ import {
   transactionAmountPrefix,
 } from '@/components/transaction-type-indicator'
 import TransactionRowCopy from '@/components/transaction-row-copy'
+import { CategoryLabel } from '@/lib/categories'
+import { formatAppDateTime } from '@/lib/date-display'
 import type { LastAccountMap } from '@/lib/last-account'
 import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
-
-const TYPE_STRIPE: Record<string, string> = {
-  income: 'border-l-income',
-  expense: 'border-l-expense',
-  transfer: 'border-l-transfer',
-}
 
 const TYPE_TEXT: Record<string, string> = {
   income: 'text-income',
@@ -91,12 +87,19 @@ export default function TransactionDetailSheet({
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
   const acct = accountMap[tx.account_id]
   const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
+  const shownName = tx.counterparty?.trim()
+    ? tx.counterparty
+    : tx.type === 'transfer' && toAcct
+      ? `→ ${toAcct.name}`
+      : tx.category
+        ? <CategoryLabel value={tx.category} />
+        : '—'
 
   return (
     <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
       <SheetContent side="bottom" className="mx-auto max-h-[85vh] max-w-lg overflow-y-auto rounded-t-2xl">
         <SheetHeader>
-          <SheetTitle>{t('title')}</SheetTitle>
+          <SheetTitle>{shownName}</SheetTitle>
         </SheetHeader>
 
         {editing ? (
@@ -119,32 +122,26 @@ export default function TransactionDetailSheet({
             />
           </div>
         ) : (
-          <div className={cn('space-y-3 border-l-4 px-4 pb-6', TYPE_STRIPE[tx.type])}>
-            <p className={cn('text-4xl font-bold leading-[1.7] tabular-nums', TYPE_TEXT[tx.type])}>
-              {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
-              <span className="ml-2 inline-flex items-center text-sm font-normal text-muted-foreground">
-                <TransactionTypeIcon type={tx.type} />
-                {t(tx.type)}
-              </span>
-            </p>
-            <TransactionRowCopy
-              tx={tx}
-              accountName={acct?.name}
-              toAccountName={toAcct?.name}
-              time={format(new Date(tx.datetime), 'd MMM yyyy · HH:mm', { locale: dateLocale })}
-              testId="transaction-detail-copy"
-              titleClassName="text-lg font-semibold"
-            />
-            {tx.ref_code && (
-              <p className="truncate font-mono text-sm text-muted-foreground">
-                {t('refCode', { code: tx.ref_code })}
+          <div className="space-y-5 px-4 pb-6">
+            <div className="border-b border-border pb-3 text-center">
+              <p className="text-sm text-muted-foreground">{t(tx.type)}{tx.category && <> · <CategoryLabel value={tx.category} /></>}</p>
+              <p className={cn('text-4xl font-bold leading-[1.35] tabular-nums', TYPE_TEXT[tx.type])}>
+                {transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}
               </p>
-            )}
-            {tx.recurring_rule_id && (
-              <p className="text-sm text-muted-foreground">🔁 {t('recurringBadge')}</p>
-            )}
+            </div>
+            <div className="divide-y divide-border border-y border-border">
+              <DetailField label={t('shownNameLabel')} value={shownName} />
+              <DetailField label={tx.type === 'income' ? t('payerLabel') : t('payeeLabel')} value={tx.counterparty ?? '—'} />
+              <DetailField label={t('account')} value={tx.type === 'transfer' && toAcct ? `${acct?.name ?? '—'} → ${toAcct.name}` : acct?.name ?? '—'} />
+              <DetailField label={t('dateTimeLabel')} value={formatAppDateTime(tx.datetime, locale === 'th' ? 'th' : 'en')} />
+              <DetailField label={t('groupLabel')} value={tx.group_id ? t('groupAssigned') : '—'} />
+              <DetailField label={t('sourceLabel')} value={tx.recurring_rule_id ? t('sourceRecurring') : tx.ref_code ? t('sourceSlip') : t('sourceManual')} />
+            </div>
+            <div className="sr-only">
+              <TransactionRowCopy tx={tx} accountName={acct?.name} toAccountName={toAcct?.name} time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })} testId="transaction-detail-copy" />
+            </div>
 
-            <Button className="w-full" onClick={() => setEditing(true)}>
+            <Button variant="outline" className="w-full" onClick={() => setEditing(true)}>
               {t('edit')}
             </Button>
             <button
@@ -158,5 +155,14 @@ export default function TransactionDetailSheet({
         )}
       </SheetContent>
     </Sheet>
+  )
+}
+
+function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
   )
 }
