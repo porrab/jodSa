@@ -16,8 +16,8 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
-**From:** design-studio · **Status:** IMPLEMENTED 2026-10-24 — awaiting design-studio re-review · **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
-**Implementation evidence:** all C1–C13 shared primitives were completed before S1–S16. Section C (F1–F7) was deliberately left unchanged, and migrations 0011/0012 were not started. Forty 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5/README.md`. After visual comparison, the Honey baseline was refreshed and then passed 29/29 without update mode. DS-3, contrast, and the signup journey remain green; exact commands and counts are recorded in the implementing commit.
+**From:** design-studio · **Status:** OPEN — implementation `8cb5288` landed 2026-10-24; awaiting design-studio re-review · **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
+**Implementation evidence (2026-10-24, `8cb5288`):** all C1–C13 shared primitives were completed before S1–S16. Section C (F1–F7) was deliberately left unchanged, and migrations 0011/0012 were not started. Forty 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5/README.md`. After visual comparison, the Honey baseline was refreshed and then passed 29/29 without update mode. DS-3, contrast, and the signup journey remain green; exact commands and counts are recorded in the implementing commit.
 **Verdict: CHANGES.** 40 built screens were compared with their Honey frames: 36 light and 4 dark. The finding count is
 **9 H · 15 M · 5 L** (29 findings: 13 shared-component, 16 per-screen).
 **Evidence:** side-by-side JPGs (Figma left, app right, 390×844, E2E test user A only, jodsa `eabc254`) are in
