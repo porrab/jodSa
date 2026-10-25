@@ -17,11 +17,11 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
 **From:** design-studio · **Status:** READY FOR RE-REVIEW at `581cc5e`. Round 2 re-reviewed this on 2026-10-26 at `42031ad` (fix `64bc644`). C12 and N1 are FIXED, there is no hydration error, and the five remaining implementation items are now addressed:
-1. [x] **C4 [L]:** removed `shadow-soft` from the shared active `SegmentedItem`; E2E verifies no visible computed shadow.
-2. [x] **S2 [L]:** slip confirm now shows `อ่านจากสลิปแล้ว` plus parsed bank and masked reference; the local filename is gone.
-3. [x] **S7 [L]:** `/accounts` now renders a muted 14px count caption above the standalone 28/700 total.
-4. [x] **S9 [L]:** holding rows use one muted `asset class · sleeve · quantity` metadata line and the total is 28/700.
-5. [x] **TYPECHECK [M]:** `tsconfig.json` excludes `.next/static`, `.next/server`, and `.next/cache` while retaining `.next/types`; clean typecheck exits 0.
+1. **C4 IMPLEMENTED — awaiting re-review [L]:** removed `shadow-soft` from the shared active `SegmentedItem`; E2E verifies no visible computed shadow.
+2. **S2 IMPLEMENTED — awaiting re-review [L]:** slip confirm now shows `อ่านจากสลิปแล้ว` plus parsed bank and masked reference; the local filename is gone.
+3. **S7 IMPLEMENTED — awaiting re-review [L]:** `/accounts` now renders a muted 14px count caption above the standalone 28/700 total.
+4. **S9 IMPLEMENTED — awaiting re-review [L]:** holding rows use one muted `asset class · sleeve · quantity` metadata line and the total is 28/700.
+5. **TYPECHECK IMPLEMENTED — awaiting re-review [M]:** `tsconfig.json` excludes `.next/static`, `.next/server`, and `.next/cache` while retaining `.next/types`; clean typecheck exits 0.
 6. **Still listed, not blocking:** N2–N5 [L]. **F1–F7:** awaiting owner (no app change).
 Details are in the "Re-review round 2 — 2026-10-26" table below.
 
