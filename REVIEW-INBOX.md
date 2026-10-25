@@ -16,12 +16,14 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
-**From:** design-studio · **Status:** CHANGES — re-reviewed 2026-10-25 at `ce023ec` (implementation `8cb5288`): 17 FIXED · 10 PARTIAL · 1 NOT FIXED · 1 REGRESSED + 5 NEW. Still open:
-1. **C12 REGRESSED [H]:** `/transactions` day headings throw a hydration error (the dev overlay's "1 Issue"), and the client shows the year in the current year.
-2. **PARTIAL:** C4, C6, C7, C9, C11, S2, S7, S9, S12, S13 (details in the re-review table below).
-3. **NOT FIXED:** S5.
-4. **NEW:** N1–N5 (below).
-5. **F1–F7:** awaiting owner (no app change).
+**From:** design-studio · **Status:** CHANGES. Round 2 re-reviewed this on 2026-10-26 at `42031ad` (fix `64bc644`). C12 and N1 are FIXED, there is no hydration error, and 9 of 13 re-checked items are FIXED. Four small polish items are still open:
+1. **C4 PARTIAL [L]:** the active mode tab (`กรอกเอง`/`สลิป`) still draws a raised shadow. Its computed `box-shadow` is `shadow-soft`.
+2. **S2 PARTIAL [L]:** the slip-confirm read row says `พร้อม` + the file name. The spec has the `อ่านจากสลิปแล้ว` pill + `bank · เลขอ้างอิง`.
+3. **S7 PARTIAL [L]:** on `/accounts` the label `รวม 6 บัญชี` is set at 28/700 together with the figure. The spec has a muted caption above the figure.
+4. **S9 PARTIAL [L]:** each invest holding row stacks two badge chips beside the name, and the total is 18px instead of 28/700.
+5. **TYPECHECK [M] (reviewer, 2026-10-26):** a clean `npx tsc --noEmit --incremental false` fails at `42031ad` with TS2322 in `workers/slip.worker.ts:55`. Cause: `tsconfig.json` `include` has `**/*.ts`, which sweeps the dev-build copy `.next/static/media/slip.worker.b4d19b50.ts` (2026-10-04) into the program as a second global script. Excluding `.next/static` makes the same check exit 0, so app code is fine — but incremental runs have been hiding it, and any clean CI check fails. Fix: exclude `.next` except `.next/types` (e.g. add `".next/static"`, `".next/server"`, `".next/cache"` to `exclude`) and report tsc with `--incremental false` from now on.
+6. **Still listed, not blocking:** N2–N5 [L]. **F1–F7:** awaiting owner (no app change).
+Details are in the "Re-review round 2 — 2026-10-26" table below.
 
 **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
 **Implementation evidence (2026-10-24, `8cb5288`):** all C1–C13 shared primitives were completed before S1–S16. Section C (F1–F7) was deliberately left unchanged, and migrations 0011/0012 were not started. Forty 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5/README.md`. After visual comparison, the Honey baseline was refreshed and then passed 29/29 without update mode. DS-3, contrast, and the signup journey remain green; exact commands and counts are recorded in the implementing commit.
@@ -210,7 +212,34 @@ a claim and not used for these verdicts.
 
 **Implementation sync 2026-10-25 (`64bc644`):** addressed C12 first, then N1, then every item marked PARTIAL in C → S order. C12 now derives numeric Bangkok date parts through one formatter path; the current-year unit test and hydration-console E2E are in `tests/unit/date-display.test.ts` and `tests/e2e/ds5-date-hydration.spec.ts`. The same E2E verifies recurring account balances for N1. Fourteen fresh 390×844 Figma/app pairs for every changed page are indexed in `tests/e2e/evidence/ds-5-recheck-2026-10-25/README.md`; Honey baselines were updated only after those pairs were inspected. Final gates: `tsc` exit 0; vitest 334 passed / 34 skipped; DS-3 + C12/N1 + contrast 8/8; Honey visual 29/29 without update mode. F1–F7 and migration 0011 remain untouched. DS-5 stays open for independent design-studio re-review.
 
-**F1–F7: awaiting owner** (no app change). **Next step:** design-studio re-checks implementation `64bc644` with the same independent harness.
+### Re-review round 2 — 2026-10-26 (design-studio, independent)
+**Evidence:** I ran my own harness again and did not use Codex's `ds-5-recheck-2026-10-25/` pairs. It covered 17 states at 390×844 with E2E test user A only, against jodsa `42031ad`.
+The Figma-left/app-right pairs, `index.md` and the harness are in `design-studio/reviews/jodsa/2026-10-26-ds5-round2/`. The run passed 3/3 tests with 16/16 steps OK.
+**Console:** I captured console errors, warnings and page errors on `/transactions`, `/dashboard`, `/accounts`, `/budgets`, `/groups`, `/groups/[id]`,
+`/recurring`, `/invest`, `/sessions` and both `/sessions/[id]` pages, and while the add/slip sheet was open. **There was no hydration error and no `pageerror`, and no dev-overlay
+issue badge appeared on any route** (`harness/console-capture.txt`). The only entries are Radix "Missing `Description`" warnings on the recurring and holding sheets.
+**Totals for the 13 items re-checked:** 9 FIXED · 4 PARTIAL · 0 NOT FIXED · 0 REGRESSED. Home and the add sheet show no regressions.
+
+| Gap | Round 2 | What the re-shot pair shows |
+|---|---|---|
+| C12 Date formatter | FIXED | There is no hydration error on `/transactions`. Headings read `วันนี้ · อา. 25 ต.ค.`, `เมื่อวาน · ส. 24 ต.ค.` and `ศ. 23 ต.ค.`: short weekday and no year in the current year, matching `29:1937`. A previous-year heading lies below the captured viewport, so the with-year branch rests on `tests/unit/date-display.test.ts` (not seen by eye). |
+| N1 Recurring tiles | FIXED | The recurring-form AccountGrid shows balances (`฿420`, `฿5,630`, `-฿1,299`…). |
+| C4 Mode tabs / type control | **PARTIAL [L]** | The slip-confirm and recurring type controls now have icons, with รายรับ first: fixed. The active mode tab still looks raised. `probe-add-sheet.spec.ts` reads its computed `box-shadow` as `0 1px 2px -1px …, 0 8px 22px -12px …`. Cause: `SegmentedItem` adds `shadow-soft` when active (`components/ui/segmented.tsx:29`), and `tailwind-merge` does not treat the custom `shadow-soft` as a shadow class, so the `shadow-none` that `app-shell.tsx` passes does not cancel it. Fix: drop `shadow-soft` for the tab use (or teach `cn` that `shadow-soft` is a shadow). Spec `25:1163`: a flat 3px underline. |
+| C6 Page Header | FIXED | `/recurring`, `/budgets` and `/sessions` now use `+ เพิ่ม`, and every title fits on one row. `/accounts`, `/groups` and `/invest` keep `+ เพิ่มบัญชี`/`+ เพิ่มกลุ่ม`/`+ เพิ่มสินทรัพย์`, as in their frames. |
+| C7 Cards → hairline rows | FIXED | The trip manage, payment detail, group-detail summary and `สรุปของคุณ` blocks are now hairline sections, not cards. |
+| C9 Tx Row in holding sheet | FIXED | The trade is a hairline row with an icon disc, a date, the amount and a chevron. In my capture it shows its focus-visible fill only because the sheet was opened from a deep link (see `index.md`). |
+| C11 Add-sheet header | FIXED | Measured in the live DOM: 20px from the title box to the mode tabs. The frame has about 22px. This region is pixel-identical to my round-1 capture, so my round-1 "~40px dead space" was a misreading, not something `64bc644` changed. |
+| S2 Slip confirm | **PARTIAL [L]** | The thumb row now exists, but it reads `✦ พร้อม` (green text) above the file name `slip-a.png`. Spec `28:1781` has a green `✓ อ่านจากสลิปแล้ว` pill above `KBank · เลขอ้างอิง 0142…88`. The file name is the same meaningless meta S3 removed from the queue. Use bank + masked ref from the parsed slip. |
+| S5 Home polish | FIXED | The hero is a flat `--hero`. The budget band's bottom gap matches the frame (about 40px from caption to divider in the pair, vs about 60px before). |
+| S7 Accounts total | **PARTIAL [L]** | The whole sentence `รวม 6 บัญชี ฿19,051.38` is now 28/700, so the label shouts as loudly as the money. Spec `29:2119`: a muted 14 caption `รวม 6 บัญชี`, then `฿26,940.38` alone at 28/700. |
+| S9 Invest holdings | **PARTIAL [L]** | `มูลค่ารวม (THB) · กรอกเอง` is in, and the name no longer truncates. But asset class and sleeve still render as two stacked badge chips beside the name, so `ปตท. จำกัด (มหาชน)` wraps and the row is four lines tall. Spec `33:2848`: one muted meta line `หุ้นไทย (SET) · หลัก (Core) · 10 หน่วย`. The total `≈ ฿21,279.00` is 18/600, where the spec has a 28/700 figure (`≈ ฿27,379`). |
+| S12 Recurring | FIXED | The rows have a type badge icon and a category title, and the page title fits on one line. Note (not blocking): the last-run text is inline in the meta, so the meta wraps to three lines. The frame puts `หักล่าสุด:` on its own line under the row. |
+| S13 Sessions / trip | FIXED | Trip manage and payment detail are hairline sections. On payment detail, `ปิดรับ` is now a full-width destructive outline button below the slip list, away from the link block (seen). On trip manage, `ปิดทริป` is below the fold in my capture. The code at `trip-manage-client.tsx:127` renders it the same way, after the trip content. |
+
+**Still open, unchanged (not re-checked beyond a glance):** N2 (not viewed), N3 (still visible: expense chips offer `เงินเดือน`/`ฟรีแลนซ์`), N4 (still visible: plain `⇅ สลับบัญชี`) and N5 (still visible: `฿1250.00` on slip confirm), all [L]. S3, which was FIXED in round 1, was captured (`11-add-slip-queue.jpg`) but not viewed.
+**To approve DS-5:** fix C4, S2, S7 and S9 above. Each needs one pair: 06, 10, 15 and 29. N2–N5 can then move to their own item.
+
+**F1–F7: awaiting owner** (no app change).
 
 ## [DS-4] Add sheet + /transactions header still differ from the Honey frames — 2026-10-23 · from review session (Claude)
 **Status:** SUPERSEDED by DS-5 (2026-10-24). Every point below is folded into [DS-5] (C1, C3, C4, C6); the text is kept for history.
