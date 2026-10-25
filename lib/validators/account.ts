@@ -5,6 +5,22 @@ export const BANKS = [
   'TTB', 'UOB', 'LH Bank', 'Other',
 ] as const
 
+export type BankCode = (typeof BANKS)[number]
+
+export const BANK_LABEL_KEYS: Record<BankCode, string> = {
+  SCB: 'scb',
+  KBank: 'kbank',
+  KTB: 'ktb',
+  BBL: 'bbl',
+  BAY: 'bay',
+  KIATNAKIN: 'kiatnakin',
+  CIMB: 'cimb',
+  TTB: 'ttb',
+  UOB: 'uob',
+  'LH Bank': 'lhBank',
+  Other: 'other',
+}
+
 export const accountSchema = z.object({
   name: z.string().min(1, 'Account name is required').max(100),
   bank: z.string().min(1, 'Bank is required'),

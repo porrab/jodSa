@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   createAccount, updateAccount, deleteAccount, uploadAccountQr, removeAccountQr,
 } from '@/app/actions/accounts'
-import { BANKS } from '@/lib/validators/account'
+import { BANKS, BANK_LABEL_KEYS } from '@/lib/validators/account'
 import { formatTHB } from '@/lib/money'
 import { PageHeader } from '@/components/ui/page-header'
 import TransactionRowCopy from '@/components/transaction-row-copy'
@@ -79,7 +79,7 @@ function AccountForm({
         <Label>{t('bank')} <RequiredMark /></Label>
         <div className="flex flex-wrap gap-2" role="group" aria-label={t('bank')}>
           {BANKS.map((b) => (
-            <Chip key={b} pressed={bank === b} onClick={() => setBank(b)}>{b}</Chip>
+            <Chip key={b} data-bank-code={b} pressed={bank === b} onClick={() => setBank(b)}>{t(`bankLabels.${BANK_LABEL_KEYS[b]}`)}</Chip>
           ))}
         </div>
       </div>
@@ -272,7 +272,7 @@ function AccountDetailSheet({
                 const style = TRANSACTION_TYPE_STYLE[tx.type] ?? TRANSACTION_TYPE_STYLE.expense
                 return <div key={tx.id} className="flex items-center gap-3 py-3">
                   <TransactionTypeBadge type={tx.type} label={tx.type} />
-                  <TransactionRowCopy tx={tx} accountName={accountMap[tx.account_id]?.name} toAccountName={tx.to_account_id ? accountMap[tx.to_account_id]?.name : null} time={format(new Date(tx.datetime), 'HH:mm')} />
+                  <TransactionRowCopy tx={tx} toAccountName={tx.to_account_id ? accountMap[tx.to_account_id]?.name : null} time={format(new Date(tx.datetime), 'HH:mm')} />
                   <span className={`shrink-0 font-semibold tabular-nums ${style.text}`}>{transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}</span>
                 </div>
               })}

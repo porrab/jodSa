@@ -618,8 +618,8 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                   {(h.asset?.symbol ?? h.asset?.name ?? '?').slice(0, 3).toUpperCase()}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium leading-snug">{h.asset?.name ?? t('unknownAsset')}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
+                  <p className="truncate whitespace-nowrap text-sm font-medium leading-snug">{h.asset?.name ?? t('unknownAsset')}</p>
+                  <p className="mt-0.5 truncate whitespace-nowrap text-sm text-muted-foreground">
                     {t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)} · {t(`sleeve.${h.sleeve}`)} · {t('qtyHeld', { qty: h.costBasis.qty })}
                   </p>
                 </div>
@@ -629,7 +629,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                       ? formatMoney(rowDisplay.valueMinor, h.current_value_currency ?? rowCurrency)
                       : formatMoney(rowDisplay.costMinor, rowCurrency)}
                   </p>
-                  {rowDisplay.pnlMinor !== null && <p className={`text-sm tabular-nums ${rowDisplay.pnlMinor < 0n ? 'text-destructive' : 'text-income'}`}>{t('pnlLine', { amount: formatMoney(rowDisplay.pnlMinor, rowCurrency) })}</p>}
+                  {rowDisplay.pnlMinor !== null && <p className={`text-sm tabular-nums ${rowDisplay.pnlMinor < 0n ? 'text-destructive' : 'text-income'}`}>{rowDisplay.pnlMinor > 0n ? '+' : ''}{formatMoney(rowDisplay.pnlMinor, rowCurrency)}</p>}
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </button>

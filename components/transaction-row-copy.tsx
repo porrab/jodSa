@@ -13,7 +13,7 @@ type Transaction = Pick<
 /**
  * Shared Tx Row copy rule from design v6:
  *   title = display name ?? payee ?? category
- *   meta  = time · account · payee-when-display-name-is-title
+ *   meta  = time · account · category · payee, omitting category/payee when used as title
  *
  * `displayName` is intentionally optional until A3 adds its persisted field.
  * Transfer rows have no category, so their destination remains the title while
@@ -40,6 +40,10 @@ export default function TransactionRowCopy({
 }) {
   const explicitName = displayName?.trim() || null
   const payee = tx.counterparty?.trim() || null
+  const payeeIsTitle = !explicitName && !!payee
+  const categoryIsTitle = !explicitName && !payee && tx.type !== 'transfer' && !!tx.category
+  const showCategory = !!tx.category && !categoryIsTitle
+  const showPayee = !!payee && !payeeIsTitle && payee !== explicitName
 
   let title: ReactNode = '—'
   if (explicitName) title = explicitName
@@ -52,10 +56,11 @@ export default function TransactionRowCopy({
       <p data-testid={testId ? `${testId}-title` : undefined} className={cn('truncate text-base', titleClassName)}>
         {title}
       </p>
-      <p data-testid={testId ? `${testId}-meta` : undefined} className={cn('text-sm text-muted-foreground', metaClassName)}>
+      <p data-testid={testId ? `${testId}-meta` : undefined} className={cn('truncate whitespace-nowrap text-sm text-muted-foreground', metaClassName)}>
         {time}
         {accountName && <> · {accountName}</>}
-        {explicitName && payee && payee !== explicitName && <> · {payee}</>}
+        {showCategory && <> · <CategoryLabel value={tx.category} /></>}
+        {showPayee && <> · {payee}</>}
       </p>
     </div>
   )

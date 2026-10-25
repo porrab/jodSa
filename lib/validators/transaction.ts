@@ -5,6 +5,15 @@ export const CATEGORIES = [
   'utilities', 'salary', 'freelance', 'other',
 ] as const
 
+export const INCOME_CATEGORIES: readonly string[] = ['salary', 'freelance', 'other']
+export const EXPENSE_CATEGORIES: readonly string[] = [
+  'food', 'transport', 'shopping', 'health', 'entertainment', 'utilities', 'other',
+]
+
+export function categoriesForType(type: 'income' | 'expense'): readonly string[] {
+  return type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
+}
+
 export const transactionSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('income'),

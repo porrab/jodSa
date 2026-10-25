@@ -65,9 +65,13 @@ test('DS-3 category precedes account; category default moves the grid, manual to
   const sheet = await openManualSheet(page)
   const categoryField = sheet.getByTestId('transaction-category-field')
   const accountField = sheet.getByTestId('transaction-account-field')
+  await expect(categoryField.getByRole('button', { name: 'อาหาร', exact: true })).toBeVisible()
+  await expect(accountField.getByRole('radio', { name: /บัญชี A/ })).toBeVisible()
   const categoryBox = await categoryField.boundingBox()
   const accountBox = await accountField.boundingBox()
-  expect(categoryBox && accountBox && categoryBox.y < accountBox.y).toBe(true)
+  expect(categoryBox).not.toBeNull()
+  expect(accountBox).not.toBeNull()
+  expect(categoryBox!.y).toBeLessThan(accountBox!.y)
 
   await categoryField.getByRole('button', { name: 'อาหาร', exact: true }).click()
   const grid = accountField.getByRole('radiogroup', { name: 'บัญชี' })
@@ -87,26 +91,26 @@ test('DS-3 title/meta rule is identical on Home, transactions, and detail', asyn
   await page.goto('/dashboard')
 
   await expect(page.getByTestId(`home-transaction-${categoryId}-copy-title`)).toHaveText('อาหาร')
-  await expect(page.getByTestId(`home-transaction-${categoryId}-copy-meta`)).toContainText('19:02 · บัญชี B')
+  await expect(page.getByTestId(`home-transaction-${categoryId}-copy-meta`)).toHaveText('19:02 · บัญชี B')
   await expect(page.getByTestId(`home-transaction-${payeeId}-copy-title`)).toHaveText('ร้าน DS3')
-  await expect(page.getByTestId(`home-transaction-${payeeId}-copy-meta`)).toContainText('18:59 · บัญชี B')
+  await expect(page.getByTestId(`home-transaction-${payeeId}-copy-meta`)).toHaveText('18:59 · บัญชี B · เดินทาง')
 
   await page.goto('/transactions')
   await expect(page.getByTestId(`transaction-${categoryId}-copy-title`)).toHaveText('อาหาร')
-  await expect(page.getByTestId(`transaction-${categoryId}-copy-meta`)).toContainText('19:02 · บัญชี B')
+  await expect(page.getByTestId(`transaction-${categoryId}-copy-meta`)).toHaveText('19:02 · บัญชี B')
   await expect(page.getByTestId(`transaction-${payeeId}-copy-title`)).toHaveText('ร้าน DS3')
-  await expect(page.getByTestId(`transaction-${payeeId}-copy-meta`)).toContainText('18:59 · บัญชี B')
+  await expect(page.getByTestId(`transaction-${payeeId}-copy-meta`)).toHaveText('18:59 · บัญชี B · เดินทาง')
 
   await page.getByTestId(`transaction-${categoryId}`).click()
   const detail = page.getByRole('dialog', { name: 'อาหาร' })
   await expect(detail.getByTestId('transaction-detail-copy-title')).toHaveText('อาหาร')
-  await expect(detail.getByTestId('transaction-detail-copy-meta')).toContainText('19:02 · บัญชี B')
+  await expect(detail.getByTestId('transaction-detail-copy-meta')).toHaveText('19:02 · บัญชี B')
   await detail.getByRole('button', { name: 'Close' }).click()
 
   await page.getByTestId(`transaction-${payeeId}`).click()
   const payeeDetail = page.getByRole('dialog', { name: 'ร้าน DS3' })
   await expect(payeeDetail.getByTestId('transaction-detail-copy-title')).toHaveText('ร้าน DS3')
-  await expect(payeeDetail.getByTestId('transaction-detail-copy-meta')).toContainText('18:59 · บัญชี B')
+  await expect(payeeDetail.getByTestId('transaction-detail-copy-meta')).toHaveText('18:59 · บัญชี B · เดินทาง')
 })
 
 test('DS-3 evidence: manual and slip-confirm both render category above account', async ({ page }) => {

@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { createAccount } from '@/app/actions/accounts'
-import { BANKS } from '@/lib/validators/account'
+import { BANKS, BANK_LABEL_KEYS } from '@/lib/validators/account'
 
 /**
  * The minimal account-creation form design v3 (J4) specifies for guided
@@ -53,7 +53,7 @@ export default function AccountQuickCreateForm({
           </SelectTrigger>
           <SelectContent>
             {BANKS.map((b) => (
-              <SelectItem key={b} value={b}>{b}</SelectItem>
+              <SelectItem key={b} value={b}>{t(`bankLabels.${BANK_LABEL_KEYS[b]}`)}</SelectItem>
             ))}
           </SelectContent>
         </Select>

@@ -20,9 +20,9 @@ import {
 } from '@/components/ui/select'
 import { createTransaction, checkNullRefDedup, checkRefCodeDuplicate } from '@/app/actions/transactions'
 import { lookupSlipAccountMap, recordSlipAccountMapping } from '@/app/actions/slip-account-map'
-import { formatTHB } from '@/lib/money'
+import { formatTHB, formatTHBCompact } from '@/lib/money'
 import { parseInputToSatang } from '@/lib/money'
-import { CATEGORIES } from '@/lib/validators/transaction'
+import { categoriesForType } from '@/lib/validators/transaction'
 import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
 import InlineCreateAccount from '@/components/inline-create-account'
@@ -178,6 +178,12 @@ export default function SlipConfirmForm({
   const selectedAccount = accounts.find((account) => account.id === accountId)
   const categoryDefault =
     !showSlipMatchHint && !accountTouched && !!category && lastByCategory[category] === accountId
+  const visibleCategories = categoriesForType(type)
+
+  function handleTypeChange(nextType: 'income' | 'expense') {
+    setType(nextType)
+    if (category && !categoriesForType(nextType).includes(category)) setCategory('')
+  }
 
   function handleAccountChange(id: string) {
     setAccountId(id)
@@ -386,8 +392,8 @@ export default function SlipConfirmForm({
         )}
 
         <Segmented className="grid-cols-2" aria-label={t('type')}>
-          <SegmentedItem active={type === 'income'} onClick={() => setType('income')} className="inline-flex items-center justify-center gap-1.5 text-income"><ArrowDownLeft aria-hidden="true" className="size-4" />{t('income')}</SegmentedItem>
-          <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')} className="inline-flex items-center justify-center gap-1.5 text-expense"><ArrowUpRight aria-hidden="true" className="size-4" />{t('expense')}</SegmentedItem>
+          <SegmentedItem active={type === 'income'} onClick={() => handleTypeChange('income')} className="inline-flex items-center justify-center gap-1.5 text-income"><ArrowDownLeft aria-hidden="true" className="size-4" />{t('income')}</SegmentedItem>
+          <SegmentedItem active={type === 'expense'} onClick={() => handleTypeChange('expense')} className="inline-flex items-center justify-center gap-1.5 text-expense"><ArrowUpRight aria-hidden="true" className="size-4" />{t('expense')}</SegmentedItem>
         </Segmented>
 
         {/* Amount */}
@@ -396,7 +402,7 @@ export default function SlipConfirmForm({
           name="amount"
           caption={<>{t('amountCaption')} <RequiredMark /> <ConfidenceBadge confidence={slip.amount.confidence} /></>}
           required
-          defaultValue={slip.amount.value ? (slip.amount.value / 100).toFixed(2) : ''}
+          defaultValue={slip.amount.value ? formatTHBCompact(slip.amount.value) : ''}
           className={slip.amount.confidence < LOW_CONFIDENCE ? 'border-warn' : ''}
         />
 
@@ -404,7 +410,7 @@ export default function SlipConfirmForm({
         <div data-testid="slip-category-field" className="space-y-1.5">
           <Label>{t('category')}</Label>
           <div className="flex flex-wrap gap-2" role="group" aria-label={t('category')}>
-            {CATEGORIES.map((c) => (
+            {visibleCategories.map((c) => (
               <Chip key={c} pressed={category === c} onClick={() => handleCategoryChange(c)}>
                 <CategoryLabel value={c} />
               </Chip>

@@ -17,7 +17,7 @@ import { createTransaction, updateTransaction } from '@/app/actions/transactions
 import { usePendingTx } from '@/components/pending-tx-provider'
 import { toDatetimeLocal, type TxFormValues } from '@/lib/quick-add'
 import { parseInputToSatang } from '@/lib/money'
-import { CATEGORIES } from '@/lib/validators/transaction'
+import { categoriesForType } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import InlineCreateAccount from '@/components/inline-create-account'
 import AccountGrid from '@/components/account-grid'
@@ -102,6 +102,14 @@ export default function TransactionForm({
   const selectedAccount = accounts.find((account) => account.id === accountId)
   const categoryDefault =
     type !== 'transfer' && !accountTouched && !!category && lastByCategory[category] === accountId
+  const visibleCategories = type === 'transfer' ? [] : categoriesForType(type)
+
+  function handleTypeChange(nextType: TxType) {
+    setType(nextType)
+    if (nextType === 'transfer' || (category && !categoriesForType(nextType).includes(category))) {
+      setCategory('')
+    }
+  }
 
   function handleAccountChange(id: string) {
     setAccountId(id)
@@ -228,7 +236,7 @@ export default function TransactionForm({
             return (
             <SegmentedItem
               key={ty}
-              onClick={() => setType(ty)}
+              onClick={() => handleTypeChange(ty)}
               active={type === ty}
               aria-label={t(ty)}
               className={cn('inline-flex items-center justify-center gap-1.5', TYPE_META[ty].cls)}
@@ -253,7 +261,7 @@ export default function TransactionForm({
         <div data-testid="transaction-category-field" className="space-y-1">
           <Label>{t('categoryOptional')}</Label>
           <div className="flex flex-wrap gap-2" role="group" aria-label={t('categoryOptional')}>
-            {CATEGORIES.map((c) => (
+            {visibleCategories.map((c) => (
               <Chip key={c} pressed={category === c} onClick={() => handleCategoryChange(c)}>
                 <CategoryLabel value={c} />
               </Chip>
@@ -296,16 +304,20 @@ export default function TransactionForm({
       {/* To account (transfer only) */}
       {type === 'transfer' && (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={swapAccounts}
-            disabled={!accountId || !toAccountId}
-            className="mx-auto flex"
-          >
-            <ArrowUpDown aria-hidden="true" className="mr-2 size-4" />{t('swapAccounts')}
-          </Button>
+          <div data-testid="swap-divider" className="flex items-center gap-3 py-1">
+            <span data-slot="swap-divider-line" aria-hidden="true" className="h-px flex-1 bg-border" />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={swapAccounts}
+              disabled={!accountId || !toAccountId}
+              className="rounded-full bg-card px-3 shadow-none"
+            >
+              <ArrowUpDown aria-hidden="true" className="mr-1.5 size-4" />{t('swapAccounts')}
+            </Button>
+            <span data-slot="swap-divider-line" aria-hidden="true" className="h-px flex-1 bg-border" />
+          </div>
           <div className="space-y-1">
             <Label>{t('toAccount')} <RequiredMark /></Label>
             {accounts.filter((a) => a.id !== accountId).length === 0 ? (
