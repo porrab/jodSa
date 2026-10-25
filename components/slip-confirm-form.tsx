@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight, ChevronLeft, Info, LockKeyhole, Sparkles } from 'lucide-react'
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Check, ChevronLeft, Info, LockKeyhole, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AmountInput } from '@/components/ui/amount-input'
@@ -81,6 +81,15 @@ export default function SlipConfirmForm({
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const bankLabel = slip.bankCode.value === 'KBANK' ? 'KBank' : slip.bankCode.value
+  const reference = slip.refCode.value?.trim()
+  const maskedReference = reference && reference.length > 6
+    ? `${reference.slice(0, 4)}…${reference.slice(-2)}`
+    : reference
+  const slipMeta = [
+    bankLabel,
+    maskedReference ? t('referenceMeta', { ref: maskedReference }) : null,
+  ].filter(Boolean).join(' · ')
   // Account whose bank matches the slip's detected bank (case-insensitive: account.bank is
   // e.g. "KBank" while inferBankCode emits "KBANK"). Per the M8 precedence, this bank-code
   // match is now the 4th tier — learned fingerprint / number_hint / app signature outrank
@@ -309,8 +318,11 @@ export default function SlipConfirmForm({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={previewUrl} alt="" className="size-16 shrink-0 rounded-md object-cover" />
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-1.5 font-medium text-income"><Sparkles aria-hidden="true" className="size-4" />{t('queueStatus_ready')}</p>
-            <p className="text-sm text-muted-foreground">{imageFile?.name}</p>
+            <p className="inline-flex w-fit items-center gap-1.5 rounded-full bg-income-soft px-2 py-1 text-sm font-medium text-income">
+              <Check aria-hidden="true" className="size-4" />
+              {t('readFromSlip')}
+            </p>
+            {slipMeta && <p className="mt-1 text-sm text-muted-foreground">{slipMeta}</p>}
           </div>
         </div>
       )}

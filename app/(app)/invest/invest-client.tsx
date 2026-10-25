@@ -599,7 +599,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
           <div className="mb-2 flex items-end justify-between gap-3">
             <div>
               <p className="text-sm text-muted-foreground">{t('totalValueManualLabel')}</p>
-              <p className="text-lg font-semibold tabular-nums">≈ {formatMoney(totalValue, 'THB')}</p>
+              <p className="text-[28px] font-bold leading-[1.35] tabular-nums">≈ {formatMoney(totalValue, 'THB')}</p>
             </div>
             {unpricedCount > 0 && <p className="text-sm text-muted-foreground">{t('unpricedNote', { count: unpricedCount })}</p>}
           </div>
@@ -619,10 +619,9 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium leading-snug">{h.asset?.name ?? t('unknownAsset')}</p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1">
-                    <Badge variant="secondary" className="text-sm">{t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)}</Badge>
-                    <Badge variant={sleeveVariant(h.sleeve)} className="text-sm">{t(`sleeve.${h.sleeve}`)}</Badge>
-                  </div>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)} · {t(`sleeve.${h.sleeve}`)} · {t('qtyHeld', { qty: h.costBasis.qty })}
+                  </p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-sm font-semibold tabular-nums">
@@ -630,7 +629,6 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                       ? formatMoney(rowDisplay.valueMinor, h.current_value_currency ?? rowCurrency)
                       : formatMoney(rowDisplay.costMinor, rowCurrency)}
                   </p>
-                  <p className="text-sm text-muted-foreground">{t('qtyHeld', { qty: h.costBasis.qty })}</p>
                   {rowDisplay.pnlMinor !== null && <p className={`text-sm tabular-nums ${rowDisplay.pnlMinor < 0n ? 'text-destructive' : 'text-income'}`}>{t('pnlLine', { amount: formatMoney(rowDisplay.pnlMinor, rowCurrency) })}</p>}
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

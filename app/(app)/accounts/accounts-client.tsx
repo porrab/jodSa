@@ -352,7 +352,10 @@ export default function AccountsClient({
         // 3 always-visible icon actions. Density budget: single line, amount
         // right/tabular; tap opens the detail sheet for edit/QR/delete.
         <div>
-          <p className="mb-2 text-[28px] font-bold leading-[1.35] tabular-nums">{t('summary', { count: accounts.length, amount: formatTHB(accounts.reduce((sum, account) => sum + account.balance, 0)) })}</p>
+          <div className="mb-2">
+            <p className="text-sm text-muted-foreground">{t('summaryCount', { count: accounts.length })}</p>
+            <p className="text-[28px] font-bold leading-[1.35] tabular-nums">{formatTHB(accounts.reduce((sum, account) => sum + account.balance, 0))}</p>
+          </div>
           <div className="divide-y divide-border border-y border-border">
           {accounts.map((acct) => (
             <button

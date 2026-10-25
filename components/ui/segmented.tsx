@@ -26,7 +26,7 @@ function SegmentedItem({
       data-state={active ? 'active' : 'inactive'}
       className={cn(
         'min-h-10 rounded-sm px-3 text-sm text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey-edge',
-        active && 'bg-card font-semibold text-foreground shadow-soft',
+        active && 'bg-card font-semibold text-foreground',
         className,
       )}
       {...props}
