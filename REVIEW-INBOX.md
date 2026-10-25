@@ -16,12 +16,12 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
-**From:** design-studio · **Status:** CHANGES. Round 2 re-reviewed this on 2026-10-26 at `42031ad` (fix `64bc644`). C12 and N1 are FIXED, there is no hydration error, and 9 of 13 re-checked items are FIXED. Four small polish items are still open:
-1. **C4 PARTIAL [L]:** the active mode tab (`กรอกเอง`/`สลิป`) still draws a raised shadow. Its computed `box-shadow` is `shadow-soft`.
-2. **S2 PARTIAL [L]:** the slip-confirm read row says `พร้อม` + the file name. The spec has the `อ่านจากสลิปแล้ว` pill + `bank · เลขอ้างอิง`.
-3. **S7 PARTIAL [L]:** on `/accounts` the label `รวม 6 บัญชี` is set at 28/700 together with the figure. The spec has a muted caption above the figure.
-4. **S9 PARTIAL [L]:** each invest holding row stacks two badge chips beside the name, and the total is 18px instead of 28/700.
-5. **TYPECHECK [M] (reviewer, 2026-10-26):** a clean `npx tsc --noEmit --incremental false` fails at `42031ad` with TS2322 in `workers/slip.worker.ts:55`. Cause: `tsconfig.json` `include` has `**/*.ts`, which sweeps the dev-build copy `.next/static/media/slip.worker.b4d19b50.ts` (2026-10-04) into the program as a second global script. Excluding `.next/static` makes the same check exit 0, so app code is fine — but incremental runs have been hiding it, and any clean CI check fails. Fix: exclude `.next` except `.next/types` (e.g. add `".next/static"`, `".next/server"`, `".next/cache"` to `exclude`) and report tsc with `--incremental false` from now on.
+**From:** design-studio · **Status:** READY FOR RE-REVIEW at `581cc5e`. Round 2 re-reviewed this on 2026-10-26 at `42031ad` (fix `64bc644`). C12 and N1 are FIXED, there is no hydration error, and the five remaining implementation items are now addressed:
+1. [x] **C4 [L]:** removed `shadow-soft` from the shared active `SegmentedItem`; E2E verifies no visible computed shadow.
+2. [x] **S2 [L]:** slip confirm now shows `อ่านจากสลิปแล้ว` plus parsed bank and masked reference; the local filename is gone.
+3. [x] **S7 [L]:** `/accounts` now renders a muted 14px count caption above the standalone 28/700 total.
+4. [x] **S9 [L]:** holding rows use one muted `asset class · sleeve · quantity` metadata line and the total is 28/700.
+5. [x] **TYPECHECK [M]:** `tsconfig.json` excludes `.next/static`, `.next/server`, and `.next/cache` while retaining `.next/types`; clean typecheck exits 0.
 6. **Still listed, not blocking:** N2–N5 [L]. **F1–F7:** awaiting owner (no app change).
 Details are in the "Re-review round 2 — 2026-10-26" table below.
 
@@ -238,6 +238,8 @@ issue badge appeared on any route** (`harness/console-capture.txt`). The only en
 
 **Still open, unchanged (not re-checked beyond a glance):** N2 (not viewed), N3 (still visible: expense chips offer `เงินเดือน`/`ฟรีแลนซ์`), N4 (still visible: plain `⇅ สลับบัญชี`) and N5 (still visible: `฿1250.00` on slip confirm), all [L]. S3, which was FIXED in round 1, was captured (`11-add-slip-queue.jpg`) but not viewed.
 **To approve DS-5:** fix C4, S2, S7 and S9 above. Each needs one pair: 06, 10, 15 and 29. N2–N5 can then move to their own item.
+
+**Implementation sync 2026-10-25 (`581cc5e`):** completed C4, S2, S7, S9 and the clean-typecheck configuration. The four 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5-open-items-2026-10-25/README.md`; they were inspected before updating the two affected Accounts Honey baselines. Gates: focused DS-5 E2E 5/5, DS-3 + contrast 6/6, focused Honey visual 7/7 without update mode, Vitest 334 passed / 34 skipped, and `pnpm -s tsc --noEmit --incremental false` exit 0. Compiler `--listFiles` contains only `.next/types/routes.d.ts` and `.next/types/validator.ts` under `.next`. Post-mortem: `docs/postmortems/DS-5-round2-open-items.md`. N2–N5 remain separate; F1–F7 and migration 0011 were not touched. DS-5 awaits independent design-studio re-review.
 
 **F1–F7: awaiting owner** (no app change).
 
