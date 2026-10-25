@@ -208,8 +208,9 @@ a claim and not used for these verdicts.
 
 **Reviewer note 2026-10-25 (Claude):** C12 cause partly confirmed — on this machine Node 24 formats `Intl.DateTimeFormat('th-TH-u-ca-buddhist',{year:'numeric'})` as `"พ.ศ. 2569"`, so `Number()` is `NaN` and `valueYear !== currentYear` is always true; any runtime whose ICU emits the prefix shows the year, and server/client ICU differ on the weekday form too. Fix by computing the year numerically (e.g. `formatToParts` → `year` part, or Gregorian year from an `en-CA` Bangkok date) and render headings from one deterministic formatter; add a unit test that asserts no year in the current year, and an E2E that fails on any console hydration error. Also verified at `ce023ec`: `tsc` 0, vitest 333 passed / 34 skipped.
 
-**F1–F7: awaiting owner** (no app change). **Next step for the dev session:** C12 first (H, a runtime error), then N1, then the PARTIAL items in the C → S order.
-Re-check with the same harness afterwards.
+**Implementation sync 2026-10-25 (`64bc644`):** addressed C12 first, then N1, then every item marked PARTIAL in C → S order. C12 now derives numeric Bangkok date parts through one formatter path; the current-year unit test and hydration-console E2E are in `tests/unit/date-display.test.ts` and `tests/e2e/ds5-date-hydration.spec.ts`. The same E2E verifies recurring account balances for N1. Fourteen fresh 390×844 Figma/app pairs for every changed page are indexed in `tests/e2e/evidence/ds-5-recheck-2026-10-25/README.md`; Honey baselines were updated only after those pairs were inspected. Final gates: `tsc` exit 0; vitest 334 passed / 34 skipped; DS-3 + C12/N1 + contrast 8/8; Honey visual 29/29 without update mode. F1–F7 and migration 0011 remain untouched. DS-5 stays open for independent design-studio re-review.
+
+**F1–F7: awaiting owner** (no app change). **Next step:** design-studio re-checks implementation `64bc644` with the same independent harness.
 
 ## [DS-4] Add sheet + /transactions header still differ from the Honey frames — 2026-10-23 · from review session (Claude)
 **Status:** SUPERSEDED by DS-5 (2026-10-24). Every point below is folded into [DS-5] (C1, C3, C4, C6); the text is kept for history.
