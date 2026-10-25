@@ -16,8 +16,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-6] Honey polish leftovers (N2–N5) — 2026-10-26 · from design-studio
-**From:** design-studio · **Status:** OPEN, all [L] polish and not blocking. These were carried out of [DS-5] when it was approved.
+**From:** design-studio · **Status:** **READY FOR RE-REVIEW** at `4e9e9c9`; all [L] polish and not blocking. These were carried out of [DS-5] when it was approved.
 **Evidence:** `design-studio/reviews/jodsa/2026-10-26-ds5-final/` (06, 10, 29) and `design-studio/reviews/jodsa/2026-10-26-ds5-round2/`. Figma `85YURQNppODPO2dFxD8O6W`, page `20:1071`.
+**Implementation evidence (2026-10-26, `4e9e9c9`):** N2–N7 are implemented and awaiting independent re-review. Five 390×844 Figma/app pairs for account form, manual expense, transfer, slip confirm, and `/invest` are indexed in `tests/e2e/evidence/ds-6-2026-10-26/README.md`. The DS-3 + DS-6 E2E run passed 9/9, the affected Honey visual run passed 3/3 without update mode, unit tests passed 334 with 34 live-RLS skips, and clean typecheck exited 0. Migration 0011 was not started. Engineering record: `docs/postmortems/DS-6-honey-polish-leftovers.md`.
 - [ ] **N2** The bank chips in the account form mix English (`Other`) and uppercase codes (`KIATNAKIN`, `LH Bank`) into Thai UI. Change them to the display labels in `29:2288`, for example `อื่นๆ` for Other and a short brand label in place of the raw code. Keep the stored bank code unchanged.
 - [ ] **N3** In expense mode the category chips also offer income categories (`เงินเดือน`, `ฟรีแลนซ์`), on both the manual add sheet and slip confirm. Filter the chip list by the selected type: income categories for รายรับ, expense categories for รายจ่าย. Keep the `handleCategoryChange` / `เลือกตามหมวด` path (DS-3).
 - [ ] **N4** The add-sheet transfer swap is plain text `⇅ สลับบัญชี`. Replace it with the anchored Swap Divider pill from `25:1187`, placed on the hairline between the from and to account grids.
