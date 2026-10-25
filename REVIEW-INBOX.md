@@ -15,15 +15,18 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-6] Honey polish leftovers (N2–N5) — 2026-10-26 · from design-studio
+**From:** design-studio · **Status:** OPEN, all [L] polish and not blocking. These were carried out of [DS-5] when it was approved.
+**Evidence:** `design-studio/reviews/jodsa/2026-10-26-ds5-final/` (06, 10, 29) and `design-studio/reviews/jodsa/2026-10-26-ds5-round2/`. Figma `85YURQNppODPO2dFxD8O6W`, page `20:1071`.
+- [ ] **N2** The bank chips in the account form mix English (`Other`) and uppercase codes (`KIATNAKIN`, `LH Bank`) into Thai UI. Change them to the display labels in `29:2288`, for example `อื่นๆ` for Other and a short brand label in place of the raw code. Keep the stored bank code unchanged.
+- [ ] **N3** In expense mode the category chips also offer income categories (`เงินเดือน`, `ฟรีแลนซ์`), on both the manual add sheet and slip confirm. Filter the chip list by the selected type: income categories for รายรับ, expense categories for รายจ่าย. Keep the `handleCategoryChange` / `เลือกตามหมวด` path (DS-3).
+- [ ] **N4** The add-sheet transfer swap is plain text `⇅ สลับบัญชี`. Replace it with the anchored Swap Divider pill from `25:1187`, placed on the hairline between the from and to account grids.
+- [ ] **N5** The slip-confirm amount renders without a thousands separator (`฿1250.00`), while the add sheet shows `฿1,250.00`. Format it through the same formatter the manual Amount Input uses.
+- [ ] **N6 (new, seen in the final pass)** On `/invest`, the holding row's right column `กำไร/ขาดทุน ฿1,279.00` is wide enough that the name `ปตท. จำกัด (มหาชน)` wraps and the one-line meta breaks over three lines, so the row is still four lines tall. `33:2848` shows the P/L as a short signed figure (`+฿410`) under the value. Drop the `กำไร/ขาดทุน` label in the row (keep it in the holding sheet) so the name and meta each fit on one line.
+**Acceptance:** one 390×844 Figma/app pair each for the account form, manual expense, transfer, slip confirm and `/invest`, using test user A; DS-3 E2E stays green.
+
 ## [DS-5] Honey fidelity pass — all screens vs Figma — 2026-10-24 · from design-studio
-**From:** design-studio · **Status:** READY FOR RE-REVIEW at `581cc5e`. Round 2 re-reviewed this on 2026-10-26 at `42031ad` (fix `64bc644`). C12 and N1 are FIXED, there is no hydration error, and the five remaining implementation items are now addressed:
-1. **C4 IMPLEMENTED — awaiting re-review [L]:** removed `shadow-soft` from the shared active `SegmentedItem`; E2E verifies no visible computed shadow.
-2. **S2 IMPLEMENTED — awaiting re-review [L]:** slip confirm now shows `อ่านจากสลิปแล้ว` plus parsed bank and masked reference; the local filename is gone.
-3. **S7 IMPLEMENTED — awaiting re-review [L]:** `/accounts` now renders a muted 14px count caption above the standalone 28/700 total.
-4. **S9 IMPLEMENTED — awaiting re-review [L]:** holding rows use one muted `asset class · sleeve · quantity` metadata line and the total is 28/700.
-5. **TYPECHECK IMPLEMENTED — awaiting re-review [M]:** `tsconfig.json` excludes `.next/static`, `.next/server`, and `.next/cache` while retaining `.next/types`; clean typecheck exits 0.
-6. **Still listed, not blocking:** N2–N5 [L]. **F1–F7:** awaiting owner (no app change).
-Details are in the "Re-review round 2 — 2026-10-26" table below.
+**From:** design-studio · **Status:** **APPROVED 2026-10-26** at `4fd79ed` (fix `581cc5e`). C4, S2, S7 and S9 are FIXED, with no regression on Home, the add sheet or `/transactions`, no hydration error, and clean `tsc` exit 0. Evidence: `design-studio/reviews/jodsa/2026-10-26-ds5-final/index.md`. N2–N5 moved to [DS-6]. **Retraction (Claude, 2026-10-26):** the round-2 "TYPECHECK [M]" item was a false positive — the error came from the `rtk` wrapper around `npx tsc`; the project's own TypeScript 5.9.3 (`rtk proxy npx tsc --noEmit --incremental false`) exits 0 on both the old and new `tsconfig.json`. The `.next/*` excludes Codex added are harmless and may stay. **F1–F7:** accepted by owner 2026-10-26 — Figma/brief being updated by design-studio.
 
 **Supersedes:** [DS-4] (folded into C1, C3, C4 and C6 below)
 **Implementation evidence (2026-10-24, `8cb5288`):** all C1–C13 shared primitives were completed before S1–S16. Section C (F1–F7) was deliberately left unchanged, and migrations 0011/0012 were not started. Forty 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5/README.md`. After visual comparison, the Honey baseline was refreshed and then passed 29/29 without update mode. DS-3, contrast, and the signup journey remain green; exact commands and counts are recorded in the implementing commit.
@@ -241,7 +244,7 @@ issue badge appeared on any route** (`harness/console-capture.txt`). The only en
 
 **Implementation sync 2026-10-25 (`581cc5e`):** completed C4, S2, S7, S9 and the clean-typecheck configuration. The four 390×844 Figma/app pairs are indexed in `tests/e2e/evidence/ds-5-open-items-2026-10-25/README.md`; they were inspected before updating the two affected Accounts Honey baselines. Gates: focused DS-5 E2E 5/5, DS-3 + contrast 6/6, focused Honey visual 7/7 without update mode, Vitest 334 passed / 34 skipped, and `pnpm -s tsc --noEmit --incremental false` exit 0. Compiler `--listFiles` contains only `.next/types/routes.d.ts` and `.next/types/validator.ts` under `.next`. Post-mortem: `docs/postmortems/DS-5-round2-open-items.md`. N2–N5 remain separate; F1–F7 and migration 0011 were not touched. DS-5 awaits independent design-studio re-review.
 
-**F1–F7: awaiting owner** (no app change).
+**F1–F7: accepted by owner 2026-10-26 — Figma/brief being updated by design-studio** (no app change).
 
 ## [DS-4] Add sheet + /transactions header still differ from the Honey frames — 2026-10-23 · from review session (Claude)
 **Status:** SUPERSEDED by DS-5 (2026-10-24). Every point below is folded into [DS-5] (C1, C3, C4, C6); the text is kept for history.
