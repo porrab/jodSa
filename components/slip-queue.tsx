@@ -223,6 +223,7 @@ export default function SlipQueue({
     return (
       <SlipConfirmForm
         slip={selected.parsed}
+        imageFile={selected.file}
         accounts={accounts}
         lastByCategory={lastByCategory}
         globalLastAccountId={globalLastAccountId}

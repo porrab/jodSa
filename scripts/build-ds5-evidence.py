@@ -62,6 +62,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path, help="Directory containing figma/ and app/")
     parser.add_argument("--output", type=Path, default=Path("tests/e2e/evidence/ds-5/pairs"))
+    parser.add_argument(
+        "--screen",
+        action="append",
+        dest="screens",
+        help="Compose only this screen id (repeatable); defaults to the full DS-5 set.",
+    )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
 
@@ -73,7 +79,12 @@ def main() -> None:
     width = 520
     manifest = ["# DS-5 visual evidence", "", "Figma export is left; app at 390×844 is right.", ""]
     missing: list[str] = []
-    for screen_id, title, node, figma_name, app_names in SCREENS:
+    selected = [screen for screen in SCREENS if not args.screens or screen[0] in args.screens]
+    unknown = sorted(set(args.screens or []) - {screen[0] for screen in SCREENS})
+    if unknown:
+        raise SystemExit("Unknown screen ids: " + ", ".join(unknown))
+
+    for screen_id, title, node, figma_name, app_names in selected:
         figma_path = args.source / "figma" / f"{figma_name}.png"
         app_paths = [args.source / "app" / f"{name}.png" for name in app_names]
         absent = [str(path) for path in [figma_path, *app_paths] if not path.exists()]
@@ -98,9 +109,9 @@ def main() -> None:
 
     if missing:
         raise SystemExit("Missing inputs:\n" + "\n".join(missing))
-    manifest.extend(["", f"Total: {len(SCREENS)} paired states.", ""])
+    manifest.extend(["", f"Total: {len(selected)} paired states.", ""])
     (args.output.parent / "README.md").write_text("\n".join(manifest), encoding="utf-8")
-    print(f"wrote {len(SCREENS)} pairs to {args.output}")
+    print(f"wrote {len(selected)} pairs to {args.output}")
 
 
 if __name__ == "__main__":

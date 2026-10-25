@@ -16,7 +16,6 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { RequiredMark } from '@/components/ui/required-mark'
@@ -483,8 +482,7 @@ export default function TripClient({
       ) : (
         <>
           {/* Your summary */}
-          <Card>
-            <CardContent className="space-y-1 py-4">
+          <section className={cn('space-y-1 py-4', embedded ? 'border-y border-border' : 'rounded-xl border px-4 shadow-soft')}>
               <p className="text-sm font-medium text-muted-foreground">{t('summaryHeading')}</p>
               {remainingOwe > 0 ? (
                 <p className="text-lg font-semibold tabular-nums text-expense">
@@ -498,8 +496,7 @@ export default function TripClient({
                   {t('summaryOwed', { amount: formatTHB(mine.owedToThem) })}
                 </p>
               )}
-            </CardContent>
-          </Card>
+          </section>
 
           {/* Ledger header + add */}
           <div className="flex items-center justify-between">
@@ -519,7 +516,7 @@ export default function TripClient({
               {t('noExpenses')}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className={cn(embedded ? 'divide-y divide-border border-y border-border' : 'space-y-3')}>
               {expenses.map((e) => {
                 const isPayer = e.payer_participant_id === me.id
                 const share = perHead(e)
@@ -528,8 +525,7 @@ export default function TripClient({
                   (s) => s.payer_participant_id === me.id && s.confirmed,
                 )
                 return (
-                  <Card key={e.id}>
-                    <CardContent className="space-y-3 py-4">
+                  <section key={e.id} className={cn('space-y-3 py-4', !embedded && 'rounded-xl border px-4 shadow-soft')}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium">{e.title}</p>
@@ -585,8 +581,7 @@ export default function TripClient({
                           />
                         </>
                       )}
-                    </CardContent>
-                  </Card>
+                  </section>
                 )
               })}
             </div>

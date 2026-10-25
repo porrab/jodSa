@@ -117,16 +117,16 @@ export default function AppShell({
 
       <Sheet open={open} onOpenChange={(next) => next ? setOpen(true) : requestClose()}>
         <SheetContent side="bottom" className="max-h-[90svh] overflow-y-auto rounded-t-2xl">
-          <SheetHeader className="px-4 pt-4">
+          <SheetHeader className="px-4 pb-1 pt-4">
             <SheetTitle>{t('title')}</SheetTitle>
             <SheetDescription className="sr-only">{t('description')}</SheetDescription>
           </SheetHeader>
           <div className="space-y-4 px-4 pb-8">
             <Segmented className="grid-cols-2 bg-transparent p-0" role="tablist" aria-label={t('modeLabel')}>
-              <SegmentedItem role="tab" aria-selected={mode === 'manual'} active={mode === 'manual'} className={mode === 'manual' ? 'border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'bg-transparent'} onClick={() => setMode('manual')}>
+              <SegmentedItem role="tab" aria-selected={mode === 'manual'} active={mode === 'manual'} className={mode === 'manual' ? 'rounded-none border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'rounded-none bg-transparent'} onClick={() => setMode('manual')}>
                 <span className="inline-flex items-center gap-2"><Pencil className="size-4" />{t('manualMode')}</span>
               </SegmentedItem>
-              <SegmentedItem role="tab" aria-selected={mode === 'slip'} active={mode === 'slip'} className={mode === 'slip' ? 'border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'bg-transparent'} onClick={() => slipFiles.length > 0 ? setMode('slip') : slipInputRef.current?.click()}>
+              <SegmentedItem role="tab" aria-selected={mode === 'slip'} active={mode === 'slip'} className={mode === 'slip' ? 'rounded-none border-b-[3px] border-honey-edge bg-transparent shadow-none' : 'rounded-none bg-transparent'} onClick={() => slipFiles.length > 0 ? setMode('slip') : slipInputRef.current?.click()}>
                 <span className="inline-flex items-center gap-2"><Camera className="size-4" />{t('slipMode')}</span>
               </SegmentedItem>
               <input ref={slipInputRef} type="file" accept="image/*" multiple className="sr-only" onChange={pickSlips} />

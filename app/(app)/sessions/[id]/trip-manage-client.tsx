@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { ArrowLeft, Lock, LockOpen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import ShareLink from '@/components/share-link'
 import TripClient from '@/app/pay/[token]/trip-client'
@@ -94,11 +93,8 @@ export default function TripManageClient({
 
       {/* J5 — trip home is ledger-focal: "ใครติดใคร เท่าไหร่" front and center,
           not the expense list. One accent (the amount), flat surface. */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{tt('debtsHeading')}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <section className="space-y-3 border-y border-border py-4">
+          <h2 className="text-sm font-medium text-muted-foreground">{tt('debtsHeading')}</h2>
           {debts.length === 0 ? (
             <p className="text-sm font-medium text-income">{tt('allSettled')}</p>
           ) : (
@@ -111,17 +107,12 @@ export default function TripManageClient({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </section>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{t('friendLink')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <section className="space-y-3 border-b border-border pb-4">
+          <h2 className="text-sm font-medium text-muted-foreground">{t('friendLink')}</h2>
           <ShareLink path={payPath} title={session.title} />
-        </CardContent>
-      </Card>
+      </section>
 
       <TripClient
         token={session.id}
@@ -133,7 +124,7 @@ export default function TripManageClient({
         onOwnerAddExpense={(fd) => addTripExpenseAsOwner(session.id, fd)}
       />
 
-      <Button variant="ghost" size="sm" onClick={toggleStatus} disabled={busy} className="text-destructive">
+      <Button variant="outline" onClick={toggleStatus} disabled={busy} className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive">
         {session.status === 'open'
           ? <><Lock className="size-3.5 mr-1.5" />{tt('closeTrip')}</>
           : <><LockOpen className="size-3.5 mr-1.5" />{tt('reopenTrip')}</>}

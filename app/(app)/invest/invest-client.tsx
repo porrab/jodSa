@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, ChevronRight, AlertTriangle } from 'lucide-react'
+import { Plus, ChevronRight, AlertTriangle, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { Input } from '@/components/ui/input'
@@ -511,14 +511,16 @@ function HoldingDetailSheet({
                 {holding.transactions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('noTransactions')}</p>
                 ) : (
-                  <div className="divide-y divide-border">
+                  <div>
                     {holding.transactions.slice().reverse().map((tx) => (
-                      <button type="button" onClick={() => setSelectedTradeId(tx.id)} key={tx.id} className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-sm hover:bg-accent/40">
-                        <div className="min-w-0">
+                      <button type="button" onClick={() => setSelectedTradeId(tx.id)} key={tx.id} className="flex w-full items-center gap-3 border-b border-border py-3 text-left text-sm hover:bg-accent/40 focus-visible:border-b-2 focus-visible:border-honey-edge focus-visible:bg-accent/40 focus-visible:outline-none last:border-b-0">
+                        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-honey-soft text-focal"><WalletCards aria-hidden="true" className="size-4" /></span>
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium">{t(`txType.${tx.type}`)}{tx.qty ? ` · ${tx.qty}` : ''}</p>
                           <p className="text-sm text-muted-foreground">{formatAppDate(tx.datetime, { locale: 'th', includeYear: true })}</p>
                         </div>
-                        <p className="tabular-nums">{formatMoney(tx.price_minor, tx.currency)}</p>
+                        <p className="shrink-0 tabular-nums">{formatMoney(tx.price_minor, tx.currency)}</p>
+                        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
                       </button>
                     ))}
                   </div>
@@ -594,8 +596,11 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
         </div>
       ) : (
         <div>
-          <div className="mb-2 flex items-baseline justify-between gap-3">
-            <p className="text-lg font-semibold tabular-nums">≈ {formatMoney(totalValue, 'THB')}</p>
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-sm text-muted-foreground">{t('totalValueManualLabel')}</p>
+              <p className="text-lg font-semibold tabular-nums">≈ {formatMoney(totalValue, 'THB')}</p>
+            </div>
             {unpricedCount > 0 && <p className="text-sm text-muted-foreground">{t('unpricedNote', { count: unpricedCount })}</p>}
           </div>
           <div className="divide-y divide-border border-y border-border">
@@ -613,7 +618,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
                   {(h.asset?.symbol ?? h.asset?.name ?? '?').slice(0, 3).toUpperCase()}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{h.asset?.name ?? t('unknownAsset')}</p>
+                  <p className="text-sm font-medium leading-snug">{h.asset?.name ?? t('unknownAsset')}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1">
                     <Badge variant="secondary" className="text-sm">{t(`assetClass.${h.asset?.asset_class ?? 'us_equity'}`)}</Badge>
                     <Badge variant={sleeveVariant(h.sleeve)} className="text-sm">{t(`sleeve.${h.sleeve}`)}</Badge>

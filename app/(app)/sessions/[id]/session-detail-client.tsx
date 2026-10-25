@@ -9,7 +9,6 @@ import {
   ArrowLeft, Trash2, CheckCircle2, Circle, Lock, LockOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { setSessionStatus, setSlipConfirmed, deleteSlip, deleteSession } from '@/app/actions/sessions'
@@ -116,30 +115,18 @@ export default function SessionDetailClient({
         </Badge>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('friendLink')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <section className="min-w-0 space-y-3 border-y border-border py-4">
+            <h2 className="text-sm font-medium text-muted-foreground">{t('friendLink')}</h2>
             <ShareLink path={payPath} title={session.title} />
-            <Button variant="outline" size="sm" onClick={toggleStatus} disabled={busy}>
-              {session.status === 'open'
-                ? <><Lock className="size-3.5 mr-1.5" />{t('close')}</>
-                : <><LockOpen className="size-3.5 mr-1.5" />{t('reopen')}</>}
-            </Button>
             {qrUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qrUrl} alt={t('qrAlt')} className="max-h-40 rounded-lg border" />
             )}
-          </CardContent>
-        </Card>
+        </section>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('totals')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
+        <section className="space-y-1 border-b border-border pb-4 sm:border-y sm:py-4">
+            <h2 className="mb-3 text-sm font-medium text-muted-foreground">{t('totals')}</h2>
             <p className="text-lg font-semibold tabular-nums text-income">{t('confirmedAmount', { amount: formatTHB(confirmed) })}</p>
             <p className="text-sm tabular-nums text-muted-foreground">{t('recordedTotal', { amount: formatTHB(recorded), count: slips.length })}</p>
             {session.target_amount_satang !== null && (
@@ -152,8 +139,7 @@ export default function SessionDetailClient({
               </p>
             )}
             <p className="mt-2 rounded-lg bg-info-soft p-3 text-sm text-foreground">{t('notVerifiedHint')}</p>
-          </CardContent>
-        </Card>
+        </section>
       </div>
 
       <div className="space-y-2">
@@ -194,6 +180,11 @@ export default function SessionDetailClient({
           </div>
         )}
       </div>
+      <Button variant="outline" onClick={toggleStatus} disabled={busy} className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive">
+        {session.status === 'open'
+          ? <><Lock className="size-3.5 mr-1.5" />{t('close')}</>
+          : <><LockOpen className="size-3.5 mr-1.5" />{t('reopen')}</>}
+      </Button>
       <button type="button" onClick={handleDeleteSession} className="text-sm text-destructive hover:underline">{t('deleteAction')}</button>
     </div>
   )

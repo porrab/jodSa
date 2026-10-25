@@ -32,7 +32,7 @@ export default function BudgetsOverviewTabs({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        action={<Button size="sm" onClick={() => window.dispatchEvent(new Event('jodsa:budget-add'))}><Plus className="size-4" />{t('add')}</Button>}
+        action={<Button size="sm" onClick={() => window.dispatchEvent(new Event('jodsa:budget-add'))}><Plus className="size-4" />{t('addShort')}</Button>}
       />
       <PageTabs className="grid-cols-2">
         {(['budgets', 'overview'] as const).map((tb) => (

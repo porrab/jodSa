@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, ChevronRight, AlertTriangle } from 'lucide-react'
+import { Plus, ChevronRight, AlertTriangle, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import { Mascot } from '@/components/mascot'
 import { CategoryLabel } from '@/lib/categories'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,8 @@ import { formatTHB } from '@/lib/money'
 import InlineCreateAccount from '@/components/inline-create-account'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatAppDate } from '@/lib/date-display'
+import { useAccountBalances } from '@/lib/use-account-balances'
+import { TransactionTypeBadge } from '@/components/transaction-type-indicator'
 
 type Account = { id: string; name: string; bank: string }
 
@@ -61,6 +63,7 @@ function RuleForm({
   const [category, setCategory] = useState(defaultValues?.category ?? '')
   const [freq, setFreq] = useState<'weekly' | 'monthly' | 'yearly'>(defaultValues?.freq ?? 'monthly')
   const [weekdays, setWeekdays] = useState<number[]>(defaultValues?.by_weekday ?? [])
+  const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
 
   const [state, formAction, isPending] = useActionState(
     async (prev: { error: string }, fd: FormData) => {
@@ -87,8 +90,8 @@ function RuleForm({
       {defaultValues?.id && <input type="hidden" name="id" value={defaultValues.id} />}
 
       <Segmented className="grid-cols-2" aria-label={t('type')}>
-        <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')}>{t('typeExpense')}</SegmentedItem>
-        <SegmentedItem active={type === 'income'} onClick={() => setType('income')}>{t('typeIncome')}</SegmentedItem>
+        <SegmentedItem active={type === 'income'} onClick={() => setType('income')} className="inline-flex items-center justify-center gap-1.5 text-income"><ArrowDownLeft aria-hidden="true" className="size-4" />{t('typeIncome')}</SegmentedItem>
+        <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')} className="inline-flex items-center justify-center gap-1.5 text-expense"><ArrowUpRight aria-hidden="true" className="size-4" />{t('typeExpense')}</SegmentedItem>
       </Segmented>
 
       <AmountInput
@@ -98,7 +101,7 @@ function RuleForm({
 
       <div className="space-y-1.5">
         <Label>{t('account')} <RequiredMark /></Label>
-        <AccountGrid accounts={accounts} value={accountId} onValueChange={setAccountId} balances={{}} balancesLoading={false} label={t('account')} />
+        <AccountGrid accounts={accounts} value={accountId} onValueChange={setAccountId} balances={balances} balancesLoading={balancesLoading} label={t('account')} />
       </div>
 
       <div className="space-y-1.5">
@@ -228,7 +231,7 @@ export default function RecurringClient({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        action={accounts.length > 0 ? <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('add')}</Button> : undefined}
+        action={accounts.length > 0 ? <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addShort')}</Button> : undefined}
       />
       {/* Account — global empty-source rule (design v3, J4): an empty list
           renders an inline "+ สร้าง…" create action, never a disabled control
@@ -257,8 +260,9 @@ export default function RecurringClient({
             return (
               <div key={rule.id}>
                 <button type="button" onClick={() => setEditId(rule.id)} className="flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-accent/40">
+                  <TransactionTypeBadge type={rule.type} label={t(rule.type === 'income' ? 'typeIncome' : 'typeExpense')} />
                   <div className="min-w-0 flex-1 space-y-1">
-                    <p className="truncate font-medium">{rule.category ? <CategoryLabel value={rule.category} /> : t('uncategorized')}</p>
+                    <p className="break-words font-medium leading-snug">{rule.category ? <CategoryLabel value={rule.category} /> : t('uncategorized')}</p>
                     <p className="text-sm text-muted-foreground">{freqSummary(rule, t)} · {acct?.name ?? '—'}</p>
                   {/* J7 — "did it work?" in one line: last deducted / next due, or an
                       explicit error state instead of a silent no-op. */}

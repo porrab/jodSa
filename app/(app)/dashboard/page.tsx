@@ -149,7 +149,7 @@ export default async function DashboardPage() {
         />
       </section>
 
-      <section data-testid="home-budget" className="h-[150px] shrink-0 border-y border-border px-5 pb-2 pt-4 md:h-auto md:border-0 md:p-0">
+      <section data-testid="home-budget" className="h-[134px] shrink-0 border-y border-border px-5 pb-2 pt-4 md:h-auto md:border-0 md:p-0">
         <HomeBudgetStrip
           budget={homeBudgetItem?.budget ?? null}
           status={homeBudgetItem?.status ?? null}

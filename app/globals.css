@@ -157,7 +157,8 @@
      hero that used this read as glare/haze on dark). Kept only so any
      stray reference doesn't 404 on the class; do not use on new surfaces. */
   .bg-hero {
-    background-image: linear-gradient(135deg, var(--hero) 0%, var(--hero-inset) 100%);
+    background-color: var(--hero);
+    background-image: none;
   }
   /* Reserve near-white for the ONE focal number per screen (design v3 ceiling
      rule) — everything else uses the toned-down --foreground/--card-foreground. */

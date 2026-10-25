@@ -176,7 +176,7 @@ export default function SessionsClient({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('add')}</Button>}
+        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addShort')}</Button>}
       />
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>

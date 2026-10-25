@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet'
@@ -147,11 +146,8 @@ export default function GroupDetailClient({
         <Button variant="outline" size="sm" className="ml-auto" onClick={() => setEditOpen(true)}><Pencil className="size-4" />{t('edit')}</Button>
       </div>
 
-      <Card className="rounded-none border-x-0 shadow-none">
-        <CardHeader className="pb-1">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{t('totalSpent')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <section className="space-y-3 border-y border-border py-4">
+          <h2 className="text-sm font-medium text-muted-foreground">{t('totalSpent')}</h2>
           <p className="text-3xl font-bold tabular-nums text-expense">{formatTHB(totalSpent)}</p>
           {breakdown.length > 0 && (
             <div className="space-y-1">
@@ -163,8 +159,7 @@ export default function GroupDetailClient({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </section>
 
       <div>
         <div className="mb-3 flex items-center justify-between">

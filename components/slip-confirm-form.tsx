@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { CategoryLabel } from '@/lib/categories'
-import { AlertTriangle, ChevronLeft, Info, LockKeyhole, Sparkles } from 'lucide-react'
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, ChevronLeft, Info, LockKeyhole, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AmountInput } from '@/components/ui/amount-input'
@@ -39,6 +39,7 @@ interface Account {
 
 interface Props {
   slip: ParsedSlip
+  imageFile?: File | null
   accounts: Account[]
   lastByCategory?: LastAccountMap
   globalLastAccountId?: string | null
@@ -67,6 +68,7 @@ function toDatetimeLocal(iso: string): string {
 
 export default function SlipConfirmForm({
   slip,
+  imageFile = null,
   accounts,
   lastByCategory = {},
   globalLastAccountId = null,
@@ -78,6 +80,7 @@ export default function SlipConfirmForm({
   const locale = useLocale()
   const formRef = useRef<HTMLFormElement>(null)
   const [type, setType] = useState<'income' | 'expense'>(slip.suggestedType)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   // Account whose bank matches the slip's detected bank (case-insensitive: account.bank is
   // e.g. "KBank" while inferBankCode emits "KBANK"). Per the M8 precedence, this bank-code
   // match is now the 4th tier — learned fingerprint / number_hint / app signature outrank
@@ -116,6 +119,16 @@ export default function SlipConfirmForm({
   const accountTouchedRef = useRef(false)
   const [category, setCategory] = useState('')
   const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
+
+  useEffect(() => {
+    if (!imageFile) {
+      setPreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(imageFile)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [imageFile])
 
   // M8 top precedence tier: has this exact slip fingerprint been confirmed/corrected
   // to an account before? Runs once; only overrides the account if the user hasn't
@@ -291,6 +304,17 @@ export default function SlipConfirmForm({
         <span>{t('privacyBadge')}</span>
       </div>
 
+      {previewUrl && (
+        <div className="flex items-center gap-3 border-y border-border py-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={previewUrl} alt="" className="size-16 shrink-0 rounded-md object-cover" />
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-1.5 font-medium text-income"><Sparkles aria-hidden="true" className="size-4" />{t('queueStatus_ready')}</p>
+            <p className="text-sm text-muted-foreground">{imageFile?.name}</p>
+          </div>
+        </div>
+      )}
+
       {/* Low-confidence notice */}
       {[slip.amount, slip.datetime, slip.counterparty].some((f) => f.confidence < LOW_CONFIDENCE) && (
         <div className="flex items-start gap-2 rounded-md bg-warn-soft p-3 text-sm text-warn">
@@ -350,8 +374,8 @@ export default function SlipConfirmForm({
         )}
 
         <Segmented className="grid-cols-2" aria-label={t('type')}>
-          <SegmentedItem active={type === 'income'} onClick={() => setType('income')}>{t('income')}</SegmentedItem>
-          <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')}>{t('expense')}</SegmentedItem>
+          <SegmentedItem active={type === 'income'} onClick={() => setType('income')} className="inline-flex items-center justify-center gap-1.5 text-income"><ArrowDownLeft aria-hidden="true" className="size-4" />{t('income')}</SegmentedItem>
+          <SegmentedItem active={type === 'expense'} onClick={() => setType('expense')} className="inline-flex items-center justify-center gap-1.5 text-expense"><ArrowUpRight aria-hidden="true" className="size-4" />{t('expense')}</SegmentedItem>
         </Segmented>
 
         {/* Amount */}
