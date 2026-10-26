@@ -87,13 +87,15 @@ export default function TransactionDetailSheet({
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
   const acct = accountMap[tx.account_id]
   const toAcct = tx.to_account_id ? accountMap[tx.to_account_id] : null
-  const shownName = tx.counterparty?.trim()
-    ? tx.counterparty
-    : tx.type === 'transfer' && toAcct
-      ? `→ ${toAcct.name}`
-      : tx.category
-        ? <CategoryLabel value={tx.category} />
-        : '—'
+  const shownName = tx.note?.trim()
+    ? tx.note
+    : tx.counterparty?.trim()
+      ? tx.counterparty
+      : tx.type === 'transfer' && toAcct
+        ? `→ ${toAcct.name}`
+        : tx.category
+          ? <CategoryLabel value={tx.category} />
+          : '—'
 
   return (
     <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
@@ -117,6 +119,7 @@ export default function TransactionDetailSheet({
                 to_account_id: tx.to_account_id ?? undefined,
                 category: tx.category ?? undefined,
                 counterparty: tx.counterparty ?? undefined,
+                note: tx.note ?? undefined,
                 datetime: format(new Date(tx.datetime), "yyyy-MM-dd'T'HH:mm"),
               }}
             />
@@ -130,8 +133,8 @@ export default function TransactionDetailSheet({
               </p>
             </div>
             <div className="divide-y divide-border border-y border-border">
-              <DetailField label={t('shownNameLabel')} value={shownName} />
-              <DetailField label={tx.type === 'income' ? t('payerLabel') : t('payeeLabel')} value={tx.counterparty ?? '—'} />
+              {tx.note && <DetailField label={t('shownNameLabel')} value={tx.note} />}
+              {tx.counterparty && <DetailField label={tx.type === 'income' ? t('payerLabel') : t('payeeLabel')} value={tx.counterparty} />}
               <DetailField label={t('account')} value={tx.type === 'transfer' && toAcct ? `${acct?.name ?? '—'} → ${toAcct.name}` : acct?.name ?? '—'} />
               <DetailField label={t('dateTimeLabel')} value={formatAppDateTime(tx.datetime, locale === 'th' ? 'th' : 'en')} />
               <DetailField label={t('groupLabel')} value={tx.group_id ? t('groupAssigned') : '—'} />

@@ -13,6 +13,7 @@ export type TxFormValues = Partial<{
   to_account_id: string
   category: string
   counterparty: string
+  note: string
   datetime: string
   ref_code: string
   bank_code: string

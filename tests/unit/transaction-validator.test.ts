@@ -3,7 +3,7 @@
 // ref_code" is enforced structurally here (the schema has no ref_code field at
 // all), not just by the edit form omitting an input for it.
 import { describe, it, expect } from 'vitest'
-import { transactionUpdateSchema } from '@/lib/validators/transaction'
+import { transactionSchema, transactionUpdateSchema } from '@/lib/validators/transaction'
 
 describe('transactionUpdateSchema', () => {
   it('accepts a valid expense edit', () => {
@@ -92,5 +92,29 @@ describe('transactionUpdateSchema', () => {
       expect('ref_code' in r.data).toBe(false)
       expect('bank_code' in r.data).toBe(false)
     }
+  })
+
+  it.each(['income', 'expense', 'transfer'] as const)('accepts a 120-character note for %s', (type) => {
+    const r = transactionSchema.safeParse({
+      type,
+      amount_satang: 15000,
+      account_id: '11111111-1111-1111-1111-111111111111',
+      ...(type === 'transfer' ? { to_account_id: '22222222-2222-2222-2222-222222222222' } : {}),
+      note: 'ก'.repeat(120),
+      datetime: '2026-07-07T20:31:00+07:00',
+    })
+    expect(r.success).toBe(true)
+  })
+
+  it.each(['income', 'expense', 'transfer'] as const)('rejects a 121-character note for %s', (type) => {
+    const r = transactionUpdateSchema.safeParse({
+      type,
+      amount_satang: 15000,
+      account_id: '11111111-1111-1111-1111-111111111111',
+      ...(type === 'transfer' ? { to_account_id: '22222222-2222-2222-2222-222222222222' } : {}),
+      note: 'ก'.repeat(121),
+      datetime: '2026-07-07T20:31:00+07:00',
+    })
+    expect(r.success).toBe(false)
   })
 })

@@ -21,6 +21,7 @@ import { categoriesForType } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import InlineCreateAccount from '@/components/inline-create-account'
 import AccountGrid from '@/components/account-grid'
+import DisplayNameField from '@/components/display-name-field'
 import { useAccountBalances } from '@/lib/use-account-balances'
 import type { Database } from '@/lib/supabase/types'
 
@@ -53,6 +54,7 @@ export default function TransactionForm({
     to_account_id: string
     category: string
     counterparty: string
+    note: string
     datetime: string
     ref_code: string
     bank_code: string
@@ -98,6 +100,8 @@ export default function TransactionForm({
   const [accountTouched, setAccountTouched] = useState(false)
   const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
   const [category, setCategory] = useState(defaultValues?.category ?? '')
+  const [counterparty, setCounterparty] = useState(defaultValues?.counterparty ?? '')
+  const [note, setNote] = useState(defaultValues?.note ?? '')
   const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
   const selectedAccount = accounts.find((account) => account.id === accountId)
   const categoryDefault =
@@ -170,7 +174,8 @@ export default function TransactionForm({
         account_id: accountId,
         to_account_id: type === 'transfer' ? toAccountId : undefined,
         category: category || undefined,
-        counterparty: (fd.get('counterparty') as string) || undefined,
+        counterparty: counterparty || undefined,
+        note: note || undefined,
         datetime: toDatetimeLocal(fd.get('datetime') as string),
       }
 
@@ -192,7 +197,8 @@ export default function TransactionForm({
           type,
           amountSatang,
           label:
-            (fd.get('counterparty') as string) ||
+            note ||
+            counterparty ||
             (type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
           category: category || null,
         }
@@ -348,10 +354,18 @@ export default function TransactionForm({
             id={`${idPrefix}-counterparty`}
             name="counterparty"
             placeholder={t('counterpartyPlaceholder')}
-            defaultValue={defaultValues?.counterparty}
+            value={counterparty}
+            onChange={(event) => setCounterparty(event.target.value)}
           />
         </div>
       )}
+
+      <DisplayNameField
+        id={`${idPrefix}-note`}
+        payee={counterparty}
+        value={note}
+        onChange={setNote}
+      />
 
       {/* Datetime */}
       <div className="space-y-1">

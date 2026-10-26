@@ -22,6 +22,7 @@ export async function createTransaction(_prev: { error: string }, formData: Form
     to_account_id: formData.get('to_account_id') || undefined,
     category: formData.get('category') || undefined,
     counterparty: formData.get('counterparty') || undefined,
+    note: (formData.get('note') as string | null)?.trim() || undefined,
     datetime: formData.get('datetime'),
     ref_code: formData.get('ref_code') || undefined,
     bank_code: formData.get('bank_code') || undefined,
@@ -84,6 +85,7 @@ export async function updateTransaction(_prev: { error: string }, formData: Form
     to_account_id: formData.get('to_account_id') || undefined,
     category: formData.get('category') || undefined,
     counterparty: formData.get('counterparty') || undefined,
+    note: (formData.get('note') as string | null)?.trim() || undefined,
     datetime: formData.get('datetime'),
     group_id: formData.get('group_id') || undefined,
   }
@@ -97,6 +99,7 @@ export async function updateTransaction(_prev: { error: string }, formData: Form
     account_id: parsed.data.account_id,
     datetime: parsed.data.datetime,
     group_id: parsed.data.group_id ?? null,
+    note: parsed.data.note ?? null,
   }
   const payload =
     parsed.data.type === 'transfer'

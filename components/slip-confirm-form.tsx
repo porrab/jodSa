@@ -27,6 +27,7 @@ import { resolveAccountDefault, reapplyAccountDefault, type LastAccountMap } fro
 import { buildFingerprint, hasFingerprintSignal, matchAccountByNumberHint, matchAccountByAppSignature } from '@/lib/account-map'
 import InlineCreateAccount from '@/components/inline-create-account'
 import AccountGrid from '@/components/account-grid'
+import DisplayNameField from '@/components/display-name-field'
 import { useAccountBalances } from '@/lib/use-account-balances'
 import type { ParsedSlip } from '@/lib/slip/types'
 
@@ -127,6 +128,8 @@ export default function SlipConfirmForm({
   const [accountTouched, setAccountTouched] = useState(false)
   const accountTouchedRef = useRef(false)
   const [category, setCategory] = useState('')
+  const [counterparty, setCounterparty] = useState(slip.counterparty.value ?? '')
+  const [note, setNote] = useState('')
   const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
 
   useEffect(() => {
@@ -461,11 +464,19 @@ export default function SlipConfirmForm({
           </Label>
           <Input
             name="counterparty"
-            defaultValue={slip.counterparty.value ?? ''}
+            value={counterparty}
+            onChange={(event) => setCounterparty(event.target.value)}
             placeholder={t('counterpartyPlaceholder')}
             className={slip.counterparty.confidence < LOW_CONFIDENCE && slip.counterparty.value ? 'border-warn' : ''}
           />
         </div>
+
+        <DisplayNameField
+          id="slip-note"
+          payee={counterparty}
+          value={note}
+          onChange={setNote}
+        />
 
         {/* Datetime */}
         <div className="space-y-1.5">

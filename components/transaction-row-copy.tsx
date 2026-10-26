@@ -7,15 +7,38 @@ import type { Database } from '@/lib/supabase/types'
 
 type Transaction = Pick<
   Database['public']['Tables']['transactions']['Row'],
-  'type' | 'counterparty' | 'category'
+  'type' | 'counterparty' | 'category' | 'note'
 >
+
+export function resolveTransactionRowCopy({
+  tx,
+  toAccountName,
+  displayName,
+}: {
+  tx: Transaction
+  toAccountName?: string | null
+  displayName?: string | null
+}) {
+  const explicitName = displayName?.trim() || tx.note?.trim() || null
+  const payee = tx.counterparty?.trim() || null
+  const payeeIsTitle = !explicitName && !!payee
+  const categoryIsTitle = !explicitName && !payee && tx.type !== 'transfer' && !!tx.category
+
+  return {
+    explicitName,
+    payee,
+    categoryIsTitle,
+    showCategory: !!tx.category && !categoryIsTitle,
+    showPayee: !!payee && !payeeIsTitle && payee !== explicitName,
+    textTitle: explicitName || payee || (tx.type === 'transfer' && toAccountName ? `→ ${toAccountName}` : null),
+  }
+}
 
 /**
  * Shared Tx Row copy rule from design v6:
  *   title = display name ?? payee ?? category
  *   meta  = time · account · category · payee, omitting category/payee when used as title
  *
- * `displayName` is intentionally optional until A3 adds its persisted field.
  * Transfer rows have no category, so their destination remains the title while
  * the source account appears exactly once in meta.
  */
@@ -38,18 +61,15 @@ export default function TransactionRowCopy({
   titleClassName?: string
   metaClassName?: string
 }) {
-  const explicitName = displayName?.trim() || null
-  const payee = tx.counterparty?.trim() || null
-  const payeeIsTitle = !explicitName && !!payee
-  const categoryIsTitle = !explicitName && !payee && tx.type !== 'transfer' && !!tx.category
-  const showCategory = !!tx.category && !categoryIsTitle
-  const showPayee = !!payee && !payeeIsTitle && payee !== explicitName
+  const { payee, categoryIsTitle, showCategory, showPayee, textTitle } = resolveTransactionRowCopy({
+    tx,
+    toAccountName,
+    displayName,
+  })
 
   let title: ReactNode = '—'
-  if (explicitName) title = explicitName
-  else if (payee) title = payee
-  else if (tx.type === 'transfer' && toAccountName) title = `→ ${toAccountName}`
-  else if (tx.category) title = <CategoryLabel value={tx.category} />
+  if (textTitle) title = textTitle
+  else if (categoryIsTitle && tx.category) title = <CategoryLabel value={tx.category} />
 
   return (
     <div data-testid={testId} className="min-w-0 flex-1">
