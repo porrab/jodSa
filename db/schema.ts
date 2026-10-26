@@ -31,6 +31,8 @@ export const accounts = pgTable('accounts', {
   // Disambiguates same-bank accounts (e.g. 3 KTB accounts) via
   // lib/account-map.ts matchAccountByNumberHint() against a slip's sender mask.
   numberHint: text('number_hint'),
+  // OWNER-FB migration 0011: last successful bank-balance reconciliation.
+  reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -45,6 +47,8 @@ export const transactions = pgTable('transactions', {
   refCode: text('ref_code'),
   bankCode: text('bank_code'),
   counterparty: text('counterparty'),
+  // OWNER-FB A3: optional owner-authored display name; counterparty remains payee evidence.
+  note: text('note'),
   datetime: timestamp('datetime', { withTimezone: true }).notNull(),
   groupId: uuid('group_id'),
   recurringRuleId: uuid('recurring_rule_id'),

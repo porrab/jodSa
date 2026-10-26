@@ -32,6 +32,7 @@ export interface Database {
           qr_image_path: string | null
           opening_balance_satang: number
           number_hint: string | null
+          reconciled_at: string | null
           created_at: string
         }
         Insert: {
@@ -42,6 +43,7 @@ export interface Database {
           qr_image_path?: string | null
           opening_balance_satang?: number
           number_hint?: string | null
+          reconciled_at?: string | null
           created_at?: string
         }
         Update: {
@@ -50,6 +52,7 @@ export interface Database {
           qr_image_path?: string | null
           opening_balance_satang?: number
           number_hint?: string | null
+          reconciled_at?: string | null
         }
         Relationships: []
       }
@@ -65,6 +68,7 @@ export interface Database {
           ref_code: string | null
           bank_code: string | null
           counterparty: string | null
+          note: string | null
           datetime: string
           group_id: string | null
           recurring_rule_id: string | null
@@ -82,6 +86,7 @@ export interface Database {
           ref_code?: string | null
           bank_code?: string | null
           counterparty?: string | null
+          note?: string | null
           datetime: string
           group_id?: string | null
           recurring_rule_id?: string | null
@@ -97,6 +102,7 @@ export interface Database {
           ref_code?: string | null
           bank_code?: string | null
           counterparty?: string | null
+          note?: string | null
           datetime?: string
           group_id?: string | null
         }
