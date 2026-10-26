@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Plus, QrCode, ChevronRight } from 'lucide-react'
+import { Plus, QrCode, ChevronRight, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +26,7 @@ import TransactionRowCopy from '@/components/transaction-row-copy'
 import { TransactionTypeBadge, transactionAmountPrefix, TRANSACTION_TYPE_STYLE } from '@/components/transaction-type-indicator'
 import { format } from 'date-fns'
 import type { Database } from '@/lib/supabase/types'
+import ReconcileAccountSheet from '@/components/reconcile-account-sheet'
 
 type Account = {
   id: string
@@ -35,6 +36,7 @@ type Account = {
   opening_balance_satang: number
   number_hint: string | null
   qr_image_path: string | null
+  reconciled_at: string | null
   qrUrl: string | null
 }
 type RecentTransaction = Database['public']['Tables']['transactions']['Row']
@@ -212,6 +214,7 @@ function AccountDetailSheet({
   const t = useTranslations('account')
   const [editing, setEditing] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
+  const [reconcileOpen, setReconcileOpen] = useState(false)
 
   function close() {
     setEditing(false)
@@ -266,6 +269,31 @@ function AccountDetailSheet({
                 {formatTHB(account.balance)}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setReconcileOpen(true)}
+              className="flex min-h-14 w-full items-center gap-3 rounded-md bg-honey-soft px-4 text-left transition-colors hover:bg-primary/20"
+            >
+              <Scale className="size-5 shrink-0 text-honey-text" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">ปรับยอดให้ตรงธนาคาร</span>
+                <span className="block text-sm text-muted-foreground">
+                  {account.reconciled_at
+                    ? `เช็กล่าสุด ${new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date(account.reconciled_at))}`
+                    : 'ยังไม่เคยตรวจยอด'}
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </button>
+
+            <ReconcileAccountSheet
+              account={account}
+              accounts={accounts}
+              recentTransactions={recentTransactions}
+              open={reconcileOpen}
+              onOpenChange={setReconcileOpen}
+            />
 
             {recent.length > 0 && <div className="divide-y divide-border">
               {recent.map((tx) => {

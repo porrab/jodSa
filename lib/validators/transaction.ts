@@ -5,6 +5,11 @@ export const CATEGORIES = [
   'utilities', 'salary', 'freelance', 'other',
 ] as const
 
+// Stored/rendered like ordinary categories but never offered by category pickers.
+// TODO(C2/0012): invest/divest belong to transaction types after migration 0012;
+// do not add them to this C1 system-category list.
+export const SYSTEM_CATEGORIES = ['adjustment'] as const
+
 export const INCOME_CATEGORIES: readonly string[] = ['salary', 'freelance', 'other']
 export const EXPENSE_CATEGORIES: readonly string[] = [
   'food', 'transport', 'shopping', 'health', 'entertainment', 'utilities', 'other',

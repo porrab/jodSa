@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { buildLastAccountMap } from '@/lib/last-account'
+import { findRecentTransactionGaps } from '@/lib/reconcile'
 import TransactionsClient from './transactions-client'
 
 export default async function TransactionsPage() {
@@ -50,6 +51,7 @@ export default async function TransactionsPage() {
 
   const lastByCategory = buildLastAccountMap(history ?? [])
   const globalLastAccountId = history?.[0]?.account_id ?? null
+  const dateGaps = findRecentTransactionGaps((transactions ?? []).map((tx) => tx.datetime))
 
   return (
     <div className="space-y-6">
@@ -58,6 +60,7 @@ export default async function TransactionsPage() {
         lastDayMayBePartial={(transactions?.length ?? 0) === 200}
         accounts={accounts ?? []}
         groups={groups ?? []}
+        dateGaps={dateGaps}
         lastByCategory={lastByCategory}
         globalLastAccountId={globalLastAccountId}
       />

@@ -18,6 +18,9 @@ import { openQuickAdd } from '@/lib/quick-add'
 import TransactionRowCopy from '@/components/transaction-row-copy'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatAppDayHeading } from '@/lib/date-display'
+import { formatAppDate } from '@/lib/date-display'
+import type { TransactionDateGap } from '@/lib/reconcile'
+import BackfillGapSheet from '@/components/backfill-gap-sheet'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
@@ -31,6 +34,7 @@ export default function TransactionsClient({
   lastDayMayBePartial,
   accounts,
   groups = [],
+  dateGaps,
   lastByCategory,
   globalLastAccountId,
 }: {
@@ -38,6 +42,7 @@ export default function TransactionsClient({
   lastDayMayBePartial: boolean
   accounts: Account[]
   groups?: Group[]
+  dateGaps: TransactionDateGap[]
   lastByCategory: LastAccountMap
   globalLastAccountId: string | null
 }) {
@@ -45,6 +50,7 @@ export default function TransactionsClient({
   const locale = useLocale()
   const dateLocale = locale === 'th' ? th : enUS
   const [detailTx, setDetailTx] = useState<Transaction | null>(null)
+  const [gapDate, setGapDate] = useState<string | null>(null)
   // M3 "groups" left the nav in the design v3 reset (J5) — existing grouped
   // data stays reachable as a filter chip here instead of its own nav item.
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
@@ -109,6 +115,23 @@ export default function TransactionsClient({
           ))}
         </div>
       )}
+
+      {activeGroup === null && dateGaps.map((gap) => {
+        const dateLocale = locale === 'th' ? 'th' : 'en'
+        const from = formatAppDate(`${gap.from}T12:00:00+07:00`, { locale: dateLocale, includeYear: false })
+        const to = formatAppDate(`${gap.to}T12:00:00+07:00`, { locale: dateLocale, includeYear: false })
+        const label = gap.from === gap.to
+          ? t('gapHintSingle', { date: from })
+          : t('gapHintRange', { from, to })
+        return (
+          <div key={`${gap.from}-${gap.to}`} className="flex items-center justify-between gap-3 rounded-xl border border-dashed px-3 py-2.5">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setGapDate(gap.from)}>
+              {t('backfill')}
+            </Button>
+          </div>
+        )
+      })}
 
       {filteredTransactions.length === 0 ? (
         <div className="rounded-xl border border-dashed p-10 text-center text-muted-foreground">
@@ -184,6 +207,14 @@ export default function TransactionsClient({
         globalLastAccountId={globalLastAccountId}
         open={detailTx !== null}
         onOpenChange={(o) => { if (!o) setDetailTx(null) }}
+      />
+      <BackfillGapSheet
+        open={gapDate !== null}
+        presetDate={gapDate ?? dateGaps[0]?.from ?? todayKey}
+        accounts={accounts}
+        lastByCategory={lastByCategory}
+        globalLastAccountId={globalLastAccountId}
+        onOpenChange={(open) => { if (!open) setGapDate(null) }}
       />
     </div>
   )

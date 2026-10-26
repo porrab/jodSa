@@ -447,6 +447,21 @@ One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C 
   `transactions.note IS NULL`, and repeats create/edit/clear for a transfer back to its destination fallback.
   A 121-character name is rejected by the validator and the database row count does not change. The run resets
   and seeds only user A; result: 4/4 passed (global setup + 3 A3 cases), no skips. Implementation/test commit follows.
+
+**C1 implementation sync 2026-10-27 — READY FOR INDEPENDENT RE-CHECK:** the account-detail entry now opens
+the three-step `ตามเก็บรายการที่ลืม` flow. It calculates the satang gap, keeps the account locked while normal
+transactions save non-optimistically, re-reads `account_balances()` before moving the live Gap Bar, offers frequent
+30-day combinations, and lists only server-confirmed rows. The last-resort action re-reads the balance server-side,
+returns `stale` without writing when it changed, otherwise inserts a normal income/expense with system category
+`adjustment` and stamps `accounts.reconciled_at`; a failed stamp rolls the inserted adjustment back. `category` is
+free text, so no enum/CHECK or migration was needed. Migration 0012 was not run; invest/divest are deliberately absent
+with a `TODO(C2/0012)` at the form seam. `/transactions` also finds missing Bangkok-day runs in the latest 14 days
+(never before the first transaction), and opens a continuous backfill sheet with that date preset. Production-build E2E
+resets/seeds only test user A and passes 2/2 (setup + C1 flow): two real backfill rows shrink the gap ฿412→฿352→฿305,
+the remainder reaches ฿12,552, then the date-gap entry saves another real row on its preset date. DB assertions verify
+`adjustment` + `reconciled_at`; no skips. Unit coverage for gap math, date-gap detection, and the remainder action service passes 8/8.
+Figma/app pairs for `29:2211`, `30:2231`, `30:2258`, and `30:2390` are under
+`tests/e2e/evidence/c1-2026-10-26/pairs/`. Implementation/test commit follows.
 - **0011 APPLIED to live 2026-10-26** under the owner's chat authorization ("อนุญาตให้รัน migration 0011 กับ Supabase จริง"). It ran through `scripts/apply-0011-approved.cjs --apply-owner-approved-0011`, which needs that explicit flag and pins SQL sha256 `53553d03...3708`; exit 0. Verified after the run: `transactions.note text NULL`, `accounts.reconciled_at timestamptz NULL`, and `transactions_note_length` validated. Row counts did not change (175 transactions, 11 accounts) and both new columns are all NULL. PostgREST returns both columns with HTTP 200. The deploy-order gate is cleared and `306b12b..` was pushed. **Still open:** the persistence E2E above.
 
 Phasing (2026-10-20):

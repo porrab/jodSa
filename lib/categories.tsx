@@ -1,7 +1,8 @@
 import { useTranslations } from 'next-intl'
-import { CATEGORIES } from '@/lib/validators/transaction'
+import { Scale } from 'lucide-react'
+import { CATEGORIES, SYSTEM_CATEGORIES } from '@/lib/validators/transaction'
 
-const KNOWN = new Set<string>(CATEGORIES)
+const KNOWN = new Set<string>([...CATEGORIES, ...SYSTEM_CATEGORIES])
 
 /**
  * Renders a stored category key ('food', 'transport', …) as its localized label.
@@ -14,5 +15,6 @@ const KNOWN = new Set<string>(CATEGORIES)
 export function CategoryLabel({ value }: { value?: string | null }) {
   const t = useTranslations('categories')
   if (!value) return null
+  if (value === 'adjustment') return <span className="inline-flex items-center gap-1"><Scale aria-hidden="true" className="size-3.5" />{t(value)}</span>
   return <>{KNOWN.has(value) ? t(value) : value}</>
 }

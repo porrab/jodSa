@@ -44,6 +44,9 @@ export default function TransactionForm({
   optimistic = false,
   stickySubmit = false,
   idPrefix = 'transaction',
+  lockedAccountId,
+  transferLockedSide = 'source',
+  submitLabel,
 }: {
   accounts: Account[]
   onSuccess?: () => void
@@ -80,13 +83,16 @@ export default function TransactionForm({
   optimistic?: boolean
   stickySubmit?: boolean
   idPrefix?: string
+  lockedAccountId?: string
+  transferLockedSide?: 'source' | 'destination'
+  submitLabel?: string
 }) {
   const t = useTranslations('transaction')
   const pendingTx = usePendingTx()
   const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
   const fallbackAccountId = accounts[0]?.id ?? null
   const [accountId, setAccountId] = useState(() =>
-    defaultValues?.account_id ??
+    lockedAccountId ?? defaultValues?.account_id ??
     resolveAccountDefault({
       category: defaultValues?.category,
       lastByCategory,
@@ -98,7 +104,11 @@ export default function TransactionForm({
   // Precedence rule #1 — once the user picks an account themselves, no later
   // category change is allowed to overwrite their choice.
   const [accountTouched, setAccountTouched] = useState(false)
-  const [toAccountId, setToAccountId] = useState(defaultValues?.to_account_id ?? '')
+  const [toAccountId, setToAccountId] = useState(
+    transferLockedSide === 'destination' && lockedAccountId
+      ? lockedAccountId
+      : (defaultValues?.to_account_id ?? ''),
+  )
   const [category, setCategory] = useState(defaultValues?.category ?? '')
   const [counterparty, setCounterparty] = useState(defaultValues?.counterparty ?? '')
   const [note, setNote] = useState(defaultValues?.note ?? '')
@@ -107,9 +117,18 @@ export default function TransactionForm({
   const categoryDefault =
     type !== 'transfer' && !accountTouched && !!category && lastByCategory[category] === accountId
   const visibleCategories = type === 'transfer' ? [] : categoriesForType(type)
+  const accountLocked = Boolean(lockedAccountId) && (type !== 'transfer' || transferLockedSide === 'source')
+  const destinationLocked = Boolean(lockedAccountId) && type === 'transfer' && transferLockedSide === 'destination'
 
   function handleTypeChange(nextType: TxType) {
     setType(nextType)
+    if (lockedAccountId) {
+      if (nextType !== 'transfer' || transferLockedSide === 'source') setAccountId(lockedAccountId)
+      if (nextType === 'transfer' && transferLockedSide === 'destination') {
+        setToAccountId(lockedAccountId)
+        if (accountId === lockedAccountId) setAccountId(accounts.find((account) => account.id !== lockedAccountId)?.id ?? '')
+      }
+    }
     if (nextType === 'transfer' || (category && !categoriesForType(nextType).includes(category))) {
       setCategory('')
     }
@@ -290,7 +309,12 @@ export default function TransactionForm({
             </span>
           )}
         </div>
-        {accounts.length === 0 ? (
+        {accountLocked ? (
+          <div className="flex min-h-12 items-center justify-between rounded-md border border-honey-edge bg-honey-soft px-3 text-sm">
+            <span className="font-medium">{selectedAccount?.name ?? '—'}</span>
+            <span className="text-muted-foreground">{t('accountLocked')}</span>
+          </div>
+        ) : accounts.length === 0 ? (
           <InlineCreateAccount
             hint={t('noAccountsInlineHint')}
             onCreated={(id) => { setAccountId(id); setAccountTouched(true) }}
@@ -303,6 +327,7 @@ export default function TransactionForm({
             balances={balances}
             balancesLoading={balancesLoading}
             label={type === 'transfer' ? t('fromAccount') : t('account')}
+            disabledAccountId={destinationLocked ? lockedAccountId : undefined}
           />
         )}
       </div>
@@ -317,7 +342,7 @@ export default function TransactionForm({
               variant="outline"
               size="sm"
               onClick={swapAccounts}
-              disabled={!accountId || !toAccountId}
+              disabled={!accountId || !toAccountId || Boolean(lockedAccountId)}
               className="rounded-full bg-card px-3 shadow-none"
             >
               <ArrowUpDown aria-hidden="true" className="mr-1.5 size-4" />{t('swapAccounts')}
@@ -326,7 +351,12 @@ export default function TransactionForm({
           </div>
           <div className="space-y-1">
             <Label>{t('toAccount')} <RequiredMark /></Label>
-            {accounts.filter((a) => a.id !== accountId).length === 0 ? (
+            {destinationLocked ? (
+              <div className="flex min-h-12 items-center justify-between rounded-md border border-honey-edge bg-honey-soft px-3 text-sm">
+                <span className="font-medium">{accounts.find((account) => account.id === toAccountId)?.name ?? '—'}</span>
+                <span className="text-muted-foreground">{t('accountLocked')}</span>
+              </div>
+            ) : accounts.filter((a) => a.id !== accountId).length === 0 ? (
               <InlineCreateAccount
                 hint={t('transferNeedsSecondAccount')}
                 onCreated={(id) => setToAccountId(id)}
@@ -382,7 +412,7 @@ export default function TransactionForm({
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <Button type="submit" className={cn('w-full', stickySubmit && 'sticky bottom-0 z-10 shadow-lg')} disabled={isPending}>
-        {isPending ? t('saving') : t('save')}
+        {isPending ? t('saving') : (submitLabel ?? t('save'))}
       </Button>
     </form>
   )
