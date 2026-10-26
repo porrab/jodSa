@@ -53,7 +53,7 @@ export default function DisplayNameField({
         id={id}
         name="note"
         value={value}
-        maxLength={120}
+        aria-invalid={value.length > 120}
         onChange={(event) => onChange(event.target.value)}
       />
       <div className="flex items-start justify-between gap-3 text-sm text-muted-foreground">
