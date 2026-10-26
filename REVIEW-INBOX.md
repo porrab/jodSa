@@ -438,6 +438,8 @@ One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C 
 - [x] A1 unified add sheet + multi-slip queue — `6e8d136`; Home and `/transactions` share the manual/slip sheet, `/import` and share target reuse the same sequential queue, and ready slips support per-row bulk save.
 - [ ] Next build slice: migration 0011 (`transactions.note`, `accounts.reconciled_at`) then A3 payee + display name. Requires explicit owner authorization before changing/applying the data model.
 
+**Implementation sync 2026-10-26:** migration 0011 was hand-authored in `306b12b` and validated against an ephemeral PGlite database: both nullable columns had the expected PostgreSQL types, existing data was preserved, 120-character notes passed, and 121-character notes failed the named CHECK. It was **not applied to Supabase/live**. A3 landed separately in `45f8c62`: payee remains `counterparty`, optional `note` becomes the display name for manual/slip/transfer forms, detail fields, optimistic previews, and the brief-v6 Tx Row rule. The read-only A3 E2E passed 3/3 without reset/seed/submit/global setup; Figma `27:1357` pairs are in `tests/e2e/evidence/a3-2026-10-26/`. Full persistence/browser verification remains blocked until the owner explicitly authorizes applying 0011 to live; do not deploy the A3 writer first.
+
 Phasing (2026-10-20):
 - **Phase A — design-studio drafts screens first, then build:** #1, #3, #4, #5, #6, #7, #8, #9, #10, #12 and the
   "ลงทุน" cash-to-holding gap below. Brief target: a dated OWNER-FB revision section in
