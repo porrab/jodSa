@@ -15,8 +15,23 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [RV-C1-1] C1 `ลงแล้ว` list compares the browser clock with the DB clock — 2026-10-27 · from Claude review
+**From:** Claude review of `9b59a9b` · **Status:** OPEN · **Severity:** M (wrong list, no wrong money).
+**Mechanism:**
+- `components/reconcile-account-sheet.tsx:159` sets `sessionStartedAt = new Date().toISOString()` from the **browser** clock.
+- `getAccountReconcileState` (`app/actions/reconcile.ts`) then filters `created_at >= sessionStartedAt`, and `created_at` is stamped by **Postgres**.
+**Effect:**
+- When the device clock is behind the DB, rows created before the sheet opened appear in `ลงแล้ว (n)`. The C1 E2E showed `ลงแล้ว (4)` instead of `(2)` because its fixture seeds rows seconds before the sheet opens. Codex reported this as a "fixture clock race".
+- When the device clock is ahead, rows saved during the session are missing from the list, although the Gap Bar (built from `account_balances()`) still moves.
+**Fix (pick one, no migration):**
+- (a) Return a server timestamp when the session begins (for example `select now()` through an RPC or the existing state read) and use it as `sessionStartedAt`.
+- (b, preferred) Track the ids of rows saved in this session from the create action's result and filter by `id in (...)`. This needs no clock at all.
+**Acceptance:**
+- A unit or E2E test that makes the client clock skew ±2 min (Playwright `page.clock`) still shows exactly the session's rows.
+- The C1 E2E is stable over 5 repeated runs (`--repeat-each 5`).
+
 ## [DS-7] C1 reconcile sheets: Honey fidelity leftovers — 2026-10-27 · from Claude review
-**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** READY FOR RE-CHECK: F1–F4 **APPROVED 2026-10-27 (Claude review)** at `7400aa0`; **F5 fixed in this commit**.
+**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** **APPROVED 2026-10-27 (Claude review)**: F1–F4 at `7400aa0`, F5 at `9b59a9b`. F5: all three links use `text-honey-text` (5.5:1 computed on cream), no token changed, and the new rendered-contrast E2E reads computed colours in both themes and was shown RED at 1.86:1 on the old class. Raw tsc exits 0. Vitest: 352 passed, 34 skipped. The C1 flake Codex saw is a product bug, not a fixture race; see [RV-C1-1].
 **Re-review 2026-10-27 (`aa19efd..7400aa0`):**
 - I checked independently and did not rely on the report.
 - `git diff 2ab8852 HEAD` does not touch `lib/reconcile.ts`, `app/actions/` or `db/`.
