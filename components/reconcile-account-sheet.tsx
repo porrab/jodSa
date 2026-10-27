@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/ui/required-mark'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import TransactionForm from '@/components/transaction-form'
 import { formatTHB } from '@/lib/money'
@@ -33,6 +34,17 @@ function previousMonthEndBangkok() {
   const [year, month] = bangkokDate().split('-').map(Number)
   const date = new Date(Date.UTC(year, month - 1, 0))
   return date.toISOString().slice(0, 10)
+}
+
+function formatBankBalanceInput(value: string): string | null {
+  const cleaned = value.replace(/[฿,\s]/g, '')
+  if (!/^-?\d*(?:\.\d{0,2})?$/.test(cleaned)) return null
+  if (cleaned === '' || cleaned === '-') return cleaned
+  const negative = cleaned.startsWith('-')
+  const unsigned = negative ? cleaned.slice(1) : cleaned
+  const [whole, decimal] = unsigned.split('.')
+  const grouped = (whole || '0').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `${negative ? '-' : ''}${grouped}${cleaned.includes('.') ? `.${decimal ?? ''}` : ''}`
 }
 
 export default function ReconcileAccountSheet({
@@ -189,10 +201,13 @@ export default function ReconcileAccountSheet({
               <strong className="tabular-nums">{formatTHB(liveBalance)}</strong>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="bank-balance">{t('bankBalance')}</Label>
+              <Label htmlFor="bank-balance">{t('bankBalance')} <RequiredMark /></Label>
               <div className="flex min-h-12 items-center rounded-md border border-input bg-card px-3 focus-within:ring-2 focus-within:ring-honey-edge">
                 <span className="mr-2 text-lg font-semibold">฿</span>
-                <Input id="bank-balance" name="bank-balance" value={bankInput} onChange={(event) => setBankInput(event.target.value)} inputMode="decimal" className="border-0 px-0 text-lg tabular-nums shadow-none focus-visible:ring-0" autoFocus />
+                <Input id="bank-balance" name="bank-balance" value={bankInput} onChange={(event) => {
+                  const formatted = formatBankBalanceInput(event.target.value)
+                  if (formatted !== null) setBankInput(formatted)
+                }} inputMode="decimal" className="border-0 px-0 text-lg tabular-nums shadow-none focus-visible:ring-0" autoFocus required />
               </div>
             </div>
             {previewGap !== null && <GapWords gap={previewGap} lastChecked={lastChecked} />}
@@ -277,7 +292,7 @@ export default function ReconcileAccountSheet({
 function GapWords({ gap, lastChecked }: { gap: number; lastChecked: string | null }) {
   const t = useTranslations('reconcile')
   if (gap === 0) return <div className="flex items-center gap-2 rounded-md bg-success-soft p-3 text-sm font-medium"><Check className="size-5" />{t('matched')}</div>
-  return <div className="space-y-2 rounded-md border border-honey-edge bg-honey-soft p-4"><p className="font-semibold tabular-nums">{t(gap > 0 ? 'appHigher' : 'bankHigher', { amount: formatTHB(Math.abs(gap)) })}</p><p className="text-sm">{t(gap > 0 ? 'likelyOut' : 'likelyIn')}</p>{lastChecked && <p className="text-sm text-muted-foreground">{t('lastChecked', { date: lastChecked })}</p>}</div>
+  return <div className="space-y-2 rounded-md border-[1.5px] border-honey-edge bg-secondary p-4"><p className="font-semibold tabular-nums">{t(gap > 0 ? 'appHigher' : 'bankHigher', { amount: formatTHB(Math.abs(gap)) })}</p><p className="text-sm">{t(gap > 0 ? 'likelyOut' : 'likelyIn')}</p>{lastChecked && <p className="text-sm text-muted-foreground">{t('lastChecked', { date: lastChecked })}</p>}</div>
 }
 
 function GapBar({ startGap, gap }: { startGap: number; gap: number }) {
