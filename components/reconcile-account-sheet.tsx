@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { AlertTriangle, Check, Info, Scale } from 'lucide-react'
+import { AlertTriangle, Check, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
@@ -17,6 +17,7 @@ import { CategoryLabel } from '@/lib/categories'
 import { TransactionTypeBadge } from '@/components/transaction-type-indicator'
 import { gapProgress, parseBankBalanceToSatang, reconcileGap } from '@/lib/reconcile'
 import { getAccountReconcileState, reconcileRemainder } from '@/app/actions/reconcile'
+import { formatAppDate } from '@/lib/date-display'
 import type { Database } from '@/lib/supabase/types'
 
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'bank'>
@@ -291,11 +292,11 @@ export default function ReconcileAccountSheet({
               <p className="text-4xl font-bold leading-[1.35] tabular-nums text-focal">{currentGap > 0 ? '−' : '+'}{formatTHB(Math.abs(currentGap))}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Chip pressed={remainderDate === bangkokDate()} onClick={() => setRemainderDate(bangkokDate())}>{t('today')}</Chip>
+              <Chip pressed={remainderDate === bangkokDate()} onClick={() => setRemainderDate(bangkokDate())}>{t('todayWithDate', { date: formatAppDate(`${bangkokDate()}T12:00:00+07:00`, { locale: locale === 'th' ? 'th' : 'en', includeYear: false }) })}</Chip>
               {todayDay <= 7 && <Chip pressed={remainderDate === previousMonthEndBangkok()} onClick={() => setRemainderDate(previousMonthEndBangkok())}>{t('lastMonthEnd')}</Chip>}
             </div>
             <div className="rounded-md bg-warn-soft p-4">
-              <div className="flex items-start gap-3"><Scale className="mt-0.5 size-5 shrink-0" /><p className="text-sm">{t('remainderConsequence')}</p></div>
+              <div className="flex items-start gap-3"><AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-warn" /><p className="text-sm">{t('remainderConsequence', { type: t(currentGap > 0 ? 'expense' : 'income') })}</p></div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button className="w-full" disabled={busy} onClick={() => saveRemainder(`${remainderDate}T23:59:00+07:00`)}>{busy ? t('saving') : t('saveRemainder', { amount: formatTHB(Math.abs(currentGap)) })}</Button>
