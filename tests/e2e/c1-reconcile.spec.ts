@@ -7,7 +7,7 @@ import { env, STORAGE_A } from './helpers/env'
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
 
-const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/c1-2026-10-26/app')
+const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/ds-7-2026-10-27/app')
 let userId = ''
 let accountId = ''
 

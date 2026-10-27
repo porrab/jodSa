@@ -26,17 +26,19 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 **Gap in the A3 evidence:** the slip-confirm display-name E2E was removed in `66473bd`. The slip form's display-name field now has no browser coverage. Re-add a read-only check, or note why it was dropped.
 
 The frames below are Figma (left) vs app (right) in `tests/e2e/evidence/c1-2026-10-26/pairs/`:
-- [ ] **F1 `29:2211` account detail.** The C1 entry is a plain list row. The frame has a honey-soft card with the question `ยอดตรงกับแอปธนาคารไหม?`, `เช็กล่าสุด …` and an outline `ปรับยอดให้ตรงธนาคาร` button.
-- [ ] **F2 `30:2231` step 1.** The gap callout is white with a hairline. The frame uses honey-soft fill with the brown outline. The bank-balance input shows `12552.00` with no thousands separator: use the Amount Input formatter. The required mark `*` is missing.
-- [ ] **F3 `30:2258` step 2.**
+- [x] **F1 `29:2211` account detail.** The C1 entry is a plain list row. The frame has a honey-soft card with the question `ยอดตรงกับแอปธนาคารไหม?`, `เช็กล่าสุด …` and an outline `ปรับยอดให้ตรงธนาคาร` button.
+- [x] **F2 `30:2231` step 1.** The gap callout is white with a hairline. The frame uses honey-soft fill with the brown outline. The bank-balance input shows `12552.00` with no thousands separator: use the Amount Input formatter. The required mark `*` is missing.
+- [x] **F3 `30:2258` step 2.**
   - The Gap Bar card has no honey-soft fill or outline.
   - The date control is shown three times: chips, a native date input and the full datetime field. The frame has chips plus one line `อา. 19 ต.ค. 2569 · 12:00 (ระบุเวลา)`. Keep one date control.
   - The locked account renders as a full-height honey box. The frame has one small lock line: `บัญชี: make (ล็อกไว้ระหว่างปรับยอด)`.
   - In the `ลงแล้ว` list, rows lack the type icon and category meta, and the badges show no ✓/◌ pill state.
   - The remainder offer is an underlined link. The frame makes it an info card with an icon.
-- [ ] **F4 `30:2390` step 3.** The consequence callout uses the `Scale` icon and the generic copy `รายจ่ายหรือรายรับ`. The frame uses a warn icon and copy for the actual type (`นับเป็นรายจ่ายของวันนั้น…`). The date chip `วันนี้` should carry the date (`วันนี้ 27 ต.ค.`). Hiding the `สิ้นเดือนที่แล้ว` chip outside the first week is correct per the brief.
+- [x] **F4 `30:2390` step 3.** The consequence callout uses the `Scale` icon and the generic copy `รายจ่ายหรือรายรับ`. The frame uses a warn icon and copy for the actual type (`นับเป็นรายจ่ายของวันนั้น…`). The date chip `วันนี้` should carry the date (`วันนี้ 27 ต.ค.`). Hiding the `สิ้นเดือนที่แล้ว` chip outside the first week is correct per the brief.
 
 **Acceptance:** new pairs for the four frames at 390×844 with test user A, and the C1 E2E stays green.
+
+**Implementation sync 2026-10-27 — READY FOR INDEPENDENT RE-CHECK:** F1–F4 were kept as presentation-only commits; `reconcileGap`, stale handling, `reconcileRemainder`, and `reconciled_at` writes are unchanged. Production C1 E2E passes 2/2 including setup, and the four inspected Figma-left/app-right pairs are in `tests/e2e/evidence/ds-7-2026-10-27/pairs/`. The read-only A3 slip-confirm display-name check was restored and passed without changing the user-A transaction count. A pre-existing DS-3 animation race was isolated to two sequential `boundingBox()` reads; its visual-order assertion now samples both fields atomically and the production suite passes 4/4. No migration was added and no owner data was touched. Commits: F1 `aa19efd`, F2 `a79d630`, F3 `2ad323a`, F4 `826ab43`, slip coverage `71e357d`, DS-3 test hardening `ac8a391`. Engineering record: `docs/postmortems/DS-7-c1-fidelity-and-test-race.md`.
 
 ## [DS-6] Honey polish leftovers (N2–N5) — 2026-10-26 · from design-studio
 **From:** design-studio · **Status:** **APPROVED 2026-10-26 (Claude review)** at `44265e7` (fix `4e9e9c9`). Raw `rtk proxy npx tsc --noEmit --incremental false` exit 0; vitest 334 passed / 34 skipped. Own 390×844 shots (test user A, no console errors): N3 expense chips list no income categories, N4 anchored swap divider, N7 row meta "time · account" with category omitted when it is the title; N2/N5/N6 checked on the Codex pairs only. Non-blocking note: editing a legacy expense whose stored category is an income one (e.g. `salary`) shows no selected chip — the value is kept on save; revisit only if such rows exist. These were carried out of [DS-5] when it was approved.
