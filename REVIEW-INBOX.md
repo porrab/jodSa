@@ -16,7 +16,17 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-7] C1 reconcile sheets: Honey fidelity leftovers — 2026-10-27 · from Claude review
-**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** OPEN, non-blocking for behaviour.
+**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** OPEN: F1–F4 **APPROVED 2026-10-27 (Claude review)** at `7400aa0`; **F5 open**.
+**Re-review 2026-10-27 (`aa19efd..7400aa0`):**
+- I checked independently and did not rely on the report.
+- `git diff 2ab8852 HEAD` does not touch `lib/reconcile.ts`, `app/actions/` or `db/`.
+- The new `transaction-form.tsx` props (`hideDatetimeField`, the lock line) apply only when the reconcile sheet passes them, so the normal add sheet is unchanged.
+- Raw tsc exits 0. Vitest: 352 passed, 34 skipped.
+- The four `tests/e2e/evidence/ds-7-2026-10-27/pairs/` match their frames: the honey card with the outline button, the honey-soft gap card with the comma-formatted input and `*`, a single date control, the lock line, saved rows with icon and meta and a ✓ badge, the info card, and a type-specific warn callout with `วันนี้ 27 ต.ค.`.
+- The DS-3 race fix is correct: it reads both rects in one `evaluate`, so both come from the same frame.
+- The slip display-name check is restored and read-only (the row count is unchanged).
+- [ ] **F5 [H, a11y] Low-contrast text links.** `text-primary` (honey `oklch(0.802 0.161 82)`) is used as link text on cream in `components/reconcile-account-sheet.tsx:285` (`ไว้ลงต่อทีหลัง`), `:303` (`กลับไปลงต่อ`) and `components/display-name-field.tsx:29` (`+ ตั้งชื่อที่แสดงเอง`). Computed WCAG contrast: **1.75:1 on cream, 1.88:1 on white**, below the 4.5:1 minimum. The frames draw these links in dark honey. Use `text-honey-text` (5.5:1 on cream); dark mode maps it to the light honey. These are the only three `text-primary` text uses in `app/` and `components/`. Add these three links to the contrast E2E, which currently misses them.
+
 **Verdict on the code:** A3 persistence E2E and C1 are **APPROVED for behaviour.** Raw `rtk proxy npx tsc --noEmit --incremental false` exits 0. Vitest: 352 passed, 34 live-RLS skipped. The C1 code matches the brief's "Data/server" block:
 - The gap is app − bank, so a positive gap is entered as an expense.
 - `performReconcileRemainder` re-reads `account_balances()`, returns `stale` and writes nothing when the balance changed, inserts a plain income/expense with category `adjustment` and note `ปรับยอดให้ตรงธนาคาร`, then stamps `reconciled_at`. A failed stamp rolls back the inserted row.
