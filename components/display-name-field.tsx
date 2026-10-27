@@ -26,7 +26,7 @@ export default function DisplayNameField({
       <Button
         type="button"
         variant="ghost"
-        className="min-h-11 justify-start px-0 text-sm text-primary hover:bg-transparent"
+        className="min-h-11 justify-start px-0 text-sm text-honey-text hover:bg-transparent"
         onClick={() => setOpen(true)}
       >
         {t('addDisplayName')}

@@ -282,7 +282,7 @@ export default function ReconcileAccountSheet({
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 py-1 text-xs font-medium text-success"><Check className="size-3.5" />{t('confirmed')}</span>
               </div>)}
             </div>}
-            <button type="button" className="min-h-11 w-full text-sm text-primary" onClick={() => setShowRemainder(true)}>{t('later')}</button>
+            <button type="button" className="min-h-11 w-full text-sm text-honey-text" onClick={() => setShowRemainder(true)}>{t('later')}</button>
             {showRemainder && currentGap !== 0 && <button type="button" className="flex min-h-11 w-full items-start gap-3 rounded-md bg-info-soft p-4 text-left text-sm" onClick={() => setStep(3)}><Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-transfer" /><span>{t('remainderOffer', { amount: formatTHB(Math.abs(currentGap)), type: t(currentGap > 0 ? 'expense' : 'income') })}</span></button>}
           </>}
 
@@ -300,7 +300,7 @@ export default function ReconcileAccountSheet({
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button className="w-full" disabled={busy} onClick={() => saveRemainder(`${remainderDate}T23:59:00+07:00`)}>{busy ? t('saving') : t('saveRemainder', { amount: formatTHB(Math.abs(currentGap)) })}</Button>
-            <button type="button" className="min-h-11 w-full text-sm text-primary" onClick={() => setStep(2)}>{t('back')}</button>
+            <button type="button" className="min-h-11 w-full text-sm text-honey-text" onClick={() => setStep(2)}>{t('back')}</button>
           </>}
         </div>
       </SheetContent>

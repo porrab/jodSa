@@ -1,4 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
+import { adminClient, findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
+import { env, STORAGE_A } from './helpers/env'
 
 /**
  * Visual language v6 R0 — browser-computed Honey token contrast.
@@ -95,6 +97,48 @@ async function contrastTable(page: Page, pairs: Pair[]): Promise<Array<Pair & { 
   }, pairs)
 }
 
+async function renderedContrast(locator: Locator): Promise<{ ratio: number; fg: string; bg: string }> {
+  return locator.evaluate((element) => {
+    const paint = (color: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 1
+      const context = canvas.getContext('2d')!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const [r, g, b] = context.getImageData(0, 0, 1, 1).data
+      return [r, g, b]
+    }
+    const luminance = ([r, g, b]: number[]) => {
+      const channel = (value: number) => {
+        const normalized = value / 255
+        return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4
+      }
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+    }
+    const hex = (rgb: number[]) => `#${rgb.map((value) => value.toString(16).padStart(2, '0')).join('')}`
+    const foreground = paint(getComputedStyle(element).color)
+    let backgroundElement: Element | null = element
+    let backgroundColor = 'rgba(0, 0, 0, 0)'
+    while (backgroundElement) {
+      backgroundColor = getComputedStyle(backgroundElement).backgroundColor
+      if (!/^rgba?\(0(?:, 0, 0, 0| 0 0 \/ 0)\)$/.test(backgroundColor) && backgroundColor !== 'transparent') break
+      backgroundElement = backgroundElement.parentElement
+    }
+    const background = paint(backgroundColor)
+    const foregroundLuminance = luminance(foreground)
+    const backgroundLuminance = luminance(background)
+    const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05)
+      / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+    return { ratio: Math.round(ratio * 100) / 100, fg: hex(foreground), bg: hex(background) }
+  })
+}
+
+async function expectRenderedTextContrast(locator: Locator, label: string): Promise<void> {
+  await expect(locator).toBeVisible()
+  const result = await renderedContrast(locator)
+  expect.soft(result.ratio, `${label}: ${result.fg} on ${result.bg}`).toBeGreaterThanOrEqual(4.5)
+}
+
 for (const theme of ['light', 'dark'] as const) {
   test(`R0 Honey contrast table (${theme})`, async ({ page }) => {
     await setTheme(page, theme)
@@ -122,3 +166,53 @@ for (const theme of ['light', 'dark'] as const) {
     }
   })
 }
+
+test.describe('F5 rendered link contrast', () => {
+  test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
+
+  let userId = ''
+
+  test.beforeAll(async () => {
+    const user = await findUserByEmail(env.userA.email)
+    if (!user) throw new Error(`Test user A is missing: ${env.userA.email}`)
+    userId = user.id
+  })
+
+  for (const theme of ['light', 'dark'] as const) {
+    test(`F5 links use computed 4.5:1 text contrast (${theme})`, async ({ page }) => {
+      await resetAllUserData(userId)
+      const accountId = await seedAccount(userId, 'บัญชี F5', 'กสิกรไทย', '4415')
+      const { error } = await adminClient().from('accounts').update({ opening_balance_satang: 100_000 })
+        .eq('id', accountId).eq('user_id', userId)
+      if (error) throw new Error(`seed F5 opening balance failed: ${error.message}`)
+      await setTheme(page, theme)
+
+      await page.goto('/dashboard')
+      await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+      const addSheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
+      await expectRenderedTextContrast(
+        addSheet.getByRole('button', { name: '+ ตั้งชื่อที่แสดงเอง' }),
+        `${theme} + ตั้งชื่อที่แสดงเอง`,
+      )
+
+      await page.goto('/accounts')
+      await page.getByRole('button', { name: /บัญชี F5.*฿1,000\.00/ }).click()
+      await page.getByRole('button', { name: 'ปรับยอดให้ตรงธนาคาร' }).click()
+      const step1 = page.getByRole('dialog', { name: 'ปรับยอดให้ตรงธนาคาร · บัญชี F5' })
+      await step1.getByLabel('ยอดในแอปธนาคารตอนนี้').fill('500.00')
+      await step1.getByRole('button', { name: 'ลงรายการที่ขาด' }).click()
+
+      const step2 = page.getByRole('dialog', { name: 'ลงรายการที่ขาด · บัญชี F5' })
+      const later = step2.getByRole('button', { name: 'ไว้ลงต่อทีหลัง' })
+      await expectRenderedTextContrast(later, `${theme} ไว้ลงต่อทีหลัง`)
+      await later.click()
+      await step2.getByRole('button', { name: /บันทึกส่วนที่เหลือ/ }).click()
+
+      const step3 = page.getByRole('dialog', { name: 'บันทึกยอดปรับ · บัญชี F5' })
+      await expectRenderedTextContrast(
+        step3.getByRole('button', { name: 'กลับไปลงต่อ' }),
+        `${theme} กลับไปลงต่อ`,
+      )
+    })
+  }
+})

@@ -46,3 +46,25 @@ The first C1 evidence pass compared structure and content but did not catch that
 ## Action items
 
 None. The corrected test covers the animation seam and the four inspected pairs are retained under `tests/e2e/evidence/ds-7-2026-10-27/`.
+
+## F5 addendum: rendered link contrast
+
+### Summary
+
+Three action links in the manual-entry and C1 sheets rendered the Honey fill colour as text and failed WCAG text contrast in light mode. Replacing their `text-primary` utilities with the existing semantic `text-honey-text` mapping fixed the defect without changing tokens or C1 behaviour.
+
+### Root cause and mechanism
+
+`components/display-name-field.tsx` and `components/reconcile-account-sheet.tsx` used `text-primary`. `--primary` is the bright Honey fill intended for filled controls, not text on the cream sheet surface. Chromium resolved that combination to `#f1b219` on `#fffdf7`, producing 1.86:1 contrast. The existing `m9-contrast.spec.ts` checked token pairs in isolation but never inspected these rendered elements, so the misuse was outside its coverage.
+
+### Fix
+
+The three links now use `text-honey-text`, whose light and dark mappings already exist. `tests/e2e/m9-contrast.spec.ts` opens the real user-A forms and measures each element's computed foreground against its nearest painted ancestor with the WCAG relative-luminance formula. It checks both themes and uses no snapshots.
+
+### Validation
+
+With the original classes, all three light-mode checks failed deterministically at 1.86:1; dark mode passed. With `text-honey-text`, the production contrast suite passed in light and dark. One combined production run for contrast, C1 and A3 passed 10/10 including setup. A final repeat passed F5 and A3 but exposed the existing C1 fixture clock race (`ลงแล้ว (4)` instead of `(2)`); the immediate isolated C1 rerun passed 2/2. `pnpm -s tsc --noEmit --incremental false` exited 0; Vitest passed 352 tests and skipped 34 live-RLS tests.
+
+### Action items
+
+None — the rendered-element regression test closes the coverage gap.

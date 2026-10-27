@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [DS-7] C1 reconcile sheets: Honey fidelity leftovers — 2026-10-27 · from Claude review
-**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** OPEN: F1–F4 **APPROVED 2026-10-27 (Claude review)** at `7400aa0`; **F5 open**.
+**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** READY FOR RE-CHECK: F1–F4 **APPROVED 2026-10-27 (Claude review)** at `7400aa0`; **F5 fixed in this commit**.
 **Re-review 2026-10-27 (`aa19efd..7400aa0`):**
 - I checked independently and did not rely on the report.
 - `git diff 2ab8852 HEAD` does not touch `lib/reconcile.ts`, `app/actions/` or `db/`.
@@ -25,7 +25,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 - The four `tests/e2e/evidence/ds-7-2026-10-27/pairs/` match their frames: the honey card with the outline button, the honey-soft gap card with the comma-formatted input and `*`, a single date control, the lock line, saved rows with icon and meta and a ✓ badge, the info card, and a type-specific warn callout with `วันนี้ 27 ต.ค.`.
 - The DS-3 race fix is correct: it reads both rects in one `evaluate`, so both come from the same frame.
 - The slip display-name check is restored and read-only (the row count is unchanged).
-- [ ] **F5 [H, a11y] Low-contrast text links.** `text-primary` (honey `oklch(0.802 0.161 82)`) is used as link text on cream in `components/reconcile-account-sheet.tsx:285` (`ไว้ลงต่อทีหลัง`), `:303` (`กลับไปลงต่อ`) and `components/display-name-field.tsx:29` (`+ ตั้งชื่อที่แสดงเอง`). Computed WCAG contrast: **1.75:1 on cream, 1.88:1 on white**, below the 4.5:1 minimum. The frames draw these links in dark honey. Use `text-honey-text` (5.5:1 on cream); dark mode maps it to the light honey. These are the only three `text-primary` text uses in `app/` and `components/`. Add these three links to the contrast E2E, which currently misses them.
+- [x] **F5 [H, a11y] Low-contrast text links.** `text-primary` (honey `oklch(0.802 0.161 82)`) is used as link text on cream in `components/reconcile-account-sheet.tsx:285` (`ไว้ลงต่อทีหลัง`), `:303` (`กลับไปลงต่อ`) and `components/display-name-field.tsx:29` (`+ ตั้งชื่อที่แสดงเอง`). Computed WCAG contrast: **1.75:1 on cream, 1.88:1 on white**, below the 4.5:1 minimum. The frames draw these links in dark honey. Use `text-honey-text` (5.5:1 on cream); dark mode maps it to the light honey. These are the only three `text-primary` text uses in `app/` and `components/`. Add these three links to the contrast E2E, which currently misses them.
 
 **Verdict on the code:** A3 persistence E2E and C1 are **APPROVED for behaviour.** Raw `rtk proxy npx tsc --noEmit --incremental false` exits 0. Vitest: 352 passed, 34 live-RLS skipped. The C1 code matches the brief's "Data/server" block:
 - The gap is app − bank, so a positive gap is entered as an expense.
@@ -47,6 +47,17 @@ The frames below are Figma (left) vs app (right) in `tests/e2e/evidence/c1-2026-
 - [x] **F4 `30:2390` step 3.** The consequence callout uses the `Scale` icon and the generic copy `รายจ่ายหรือรายรับ`. The frame uses a warn icon and copy for the actual type (`นับเป็นรายจ่ายของวันนั้น…`). The date chip `วันนี้` should carry the date (`วันนี้ 27 ต.ค.`). Hiding the `สิ้นเดือนที่แล้ว` chip outside the first week is correct per the brief.
 
 **Acceptance:** new pairs for the four frames at 390×844 with test user A, and the C1 E2E stays green.
+
+**F5 implementation 2026-10-27 — READY FOR INDEPENDENT RE-CHECK:** The three rendered links now use
+`text-honey-text`; no colour token changed. The existing contrast E2E now opens the real user-A manual-add and C1
+sheets at 390×844, reads each link's browser-computed foreground and nearest painted background, and enforces WCAG
+4.5:1 in light and dark. Before the class fix, all three light assertions failed at **1.86:1** (`#f1b219` on
+`#fffdf7`); after the fix the production suite passed in both themes. One production regression run of contrast + C1
++ A3 passed **10/10** including setup. The final repeat passed F5 and A3 but hit the pre-existing C1 fixture clock race
+(`ลงแล้ว (4)` instead of `(2)`); the immediate isolated C1 rerun passed **2/2**. TypeScript (`--incremental false`)
+exit 0; Vitest **352 passed, 34 live-RLS skipped**.
+Only test user A was reset/seeded, no migration was added, and nothing was pushed. Engineering record updated at
+`docs/postmortems/DS-7-c1-fidelity-and-test-race.md`.
 
 **Implementation sync 2026-10-27 — READY FOR INDEPENDENT RE-CHECK:** F1–F4 were kept as presentation-only commits; `reconcileGap`, stale handling, `reconcileRemainder`, and `reconciled_at` writes are unchanged. Production C1 E2E passes 2/2 including setup, and the four inspected Figma-left/app-right pairs are in `tests/e2e/evidence/ds-7-2026-10-27/pairs/`. The read-only A3 slip-confirm display-name check was restored and passed without changing the user-A transaction count. A pre-existing DS-3 animation race was isolated to two sequential `boundingBox()` reads; its visual-order assertion now samples both fields atomically and the production suite passes 4/4. No migration was added and no owner data was touched. Commits: F1 `aa19efd`, F2 `a79d630`, F3 `2ad323a`, F4 `826ab43`, slip coverage `71e357d`, DS-3 test hardening `ac8a391`. Engineering record: `docs/postmortems/DS-7-c1-fidelity-and-test-race.md`.
 
