@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight, LockKeyhole } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -44,6 +44,7 @@ export default function TransactionForm({
   optimistic = false,
   stickySubmit = false,
   idPrefix = 'transaction',
+  hideDatetimeField = false,
   lockedAccountId,
   transferLockedSide = 'source',
   submitLabel,
@@ -83,6 +84,7 @@ export default function TransactionForm({
   optimistic?: boolean
   stickySubmit?: boolean
   idPrefix?: string
+  hideDatetimeField?: boolean
   lockedAccountId?: string
   transferLockedSide?: 'source' | 'destination'
   submitLabel?: string
@@ -299,7 +301,7 @@ export default function TransactionForm({
           renders an inline "+ สร้าง…" create action, never a disabled/dead
           control (the outside tester's exact zero-account dead end). */}
       <div data-testid="transaction-account-field" className="space-y-1">
-        <div className="flex items-center justify-between gap-3">
+        {!accountLocked && <div className="flex items-center justify-between gap-3">
           <Label>{type === 'transfer' ? t('fromAccount') : t('account')} <RequiredMark /></Label>
           {selectedAccount && (
             <span data-testid="account-selection-hint" className="truncate text-sm text-muted-foreground">
@@ -308,11 +310,11 @@ export default function TransactionForm({
                 : t('selectedAccount', { account: selectedAccount.name })}
             </span>
           )}
-        </div>
+        </div>}
         {accountLocked ? (
-          <div className="flex min-h-12 items-center justify-between rounded-md border border-honey-edge bg-honey-soft px-3 text-sm">
-            <span className="font-medium">{selectedAccount?.name ?? '—'}</span>
-            <span className="text-muted-foreground">{t('accountLocked')}</span>
+          <div className="flex items-center gap-1.5 py-1 text-sm text-muted-foreground">
+            <LockKeyhole aria-hidden="true" className="size-4 shrink-0" />
+            <span>{t('accountLockedDuringReconcile', { account: selectedAccount?.name ?? '—' })}</span>
           </div>
         ) : accounts.length === 0 ? (
           <InlineCreateAccount
@@ -352,9 +354,9 @@ export default function TransactionForm({
           <div className="space-y-1">
             <Label>{t('toAccount')} <RequiredMark /></Label>
             {destinationLocked ? (
-              <div className="flex min-h-12 items-center justify-between rounded-md border border-honey-edge bg-honey-soft px-3 text-sm">
-                <span className="font-medium">{accounts.find((account) => account.id === toAccountId)?.name ?? '—'}</span>
-                <span className="text-muted-foreground">{t('accountLocked')}</span>
+              <div className="flex items-center gap-1.5 py-1 text-sm text-muted-foreground">
+                <LockKeyhole aria-hidden="true" className="size-4 shrink-0" />
+                <span>{t('accountLockedDuringReconcile', { account: accounts.find((account) => account.id === toAccountId)?.name ?? '—' })}</span>
               </div>
             ) : accounts.filter((a) => a.id !== accountId).length === 0 ? (
               <InlineCreateAccount
@@ -398,16 +400,20 @@ export default function TransactionForm({
       />
 
       {/* Datetime */}
-      <div className="space-y-1">
-        <Label htmlFor={`${idPrefix}-datetime`}>{t('date')} <RequiredMark /></Label>
-        <Input
-          id={`${idPrefix}-datetime`}
-          name="datetime"
-          type="datetime-local"
-          defaultValue={defaultValues?.datetime ?? localISO}
-          required
-        />
-      </div>
+      {hideDatetimeField ? (
+        <input type="hidden" name="datetime" value={defaultValues?.datetime ?? localISO} />
+      ) : (
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}-datetime`}>{t('date')} <RequiredMark /></Label>
+          <Input
+            id={`${idPrefix}-datetime`}
+            name="datetime"
+            type="datetime-local"
+            defaultValue={defaultValues?.datetime ?? localISO}
+            required
+          />
+        </div>
+      )}
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 

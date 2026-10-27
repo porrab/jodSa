@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { AlertTriangle, Check, Scale } from 'lucide-react'
+import { AlertTriangle, Check, Info, Scale } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import TransactionForm from '@/components/transaction-form'
 import { formatTHB } from '@/lib/money'
 import { CategoryLabel } from '@/lib/categories'
+import { TransactionTypeBadge } from '@/components/transaction-type-indicator'
 import { gapProgress, parseBankBalanceToSatang, reconcileGap } from '@/lib/reconcile'
 import { getAccountReconcileState, reconcileRemainder } from '@/app/actions/reconcile'
 import type { Database } from '@/lib/supabase/types'
@@ -69,6 +70,7 @@ export default function ReconcileAccountSheet({
   const [liveBalance, setLiveBalance] = useState(account.balance)
   const [startGap, setStartGap] = useState(0)
   const [selectedDate, setSelectedDate] = useState(bangkokDate(-1))
+  const [selectedTime, setSelectedTime] = useState('12:00')
   const [remainderDate, setRemainderDate] = useState(bangkokDate())
   const [savedCount, setSavedCount] = useState(0)
   const [savedRows, setSavedRows] = useState<Array<Pick<Transaction, 'id' | 'type' | 'amount_satang' | 'category' | 'counterparty' | 'note' | 'datetime'>>>([])
@@ -224,8 +226,20 @@ export default function ReconcileAccountSheet({
               <div className="flex flex-wrap gap-2">
                 <Chip pressed={selectedDate === bangkokDate(-1)} onClick={() => setSelectedDate(bangkokDate(-1))}>{t('yesterday')}</Chip>
                 <Chip pressed={selectedDate === bangkokDate(-2)} onClick={() => setSelectedDate(bangkokDate(-2))}>{t('twoDaysAgo')}</Chip>
-                <input aria-label={t('chooseDate')} type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="min-h-11 rounded-full border border-border bg-card px-3 text-sm" />
+                <Chip pressed={selectedDate !== bangkokDate(-1) && selectedDate !== bangkokDate(-2)} onClick={() => (document.getElementById('reconcile-datetime-choice') as HTMLInputElement | null)?.showPicker?.()}>{t('chooseDate')}</Chip>
               </div>
+              <Input
+                id="reconcile-datetime-choice"
+                aria-label={t('chooseDateTime')}
+                type="datetime-local"
+                value={`${selectedDate}T${selectedTime}`}
+                onChange={(event) => {
+                  const [date, time] = event.target.value.split('T')
+                  if (date) setSelectedDate(date)
+                  if (time) setSelectedTime(time)
+                }}
+                className="border-x-0 border-t-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+              />
             </div>
             {frequentItems.length > 0 && <div className="space-y-2">
               <p className="text-sm font-semibold">{t('frequent')}</p>
@@ -249,22 +263,26 @@ export default function ReconcileAccountSheet({
               accounts={accounts}
               lockedAccountId={account.id}
               transferLockedSide={transferLockedSide}
-              defaultValues={{ type: missingType, account_id: account.id, datetime: `${selectedDate}T12:00`, ...frequentPrefill }}
+              defaultValues={{ type: missingType, account_id: account.id, datetime: `${selectedDate}T${selectedTime}`, ...frequentPrefill }}
               onSuccess={refreshAfterSave}
               submitLabel={t('saveAndContinue')}
               idPrefix="reconcile"
+              hideDatetimeField
             />
             {savedCount > 0 && <div className="space-y-1" aria-live="polite">
               <p className="text-sm font-semibold">{t('savedCount', { count: savedCount })} · {formatTHB(savedRows.reduce((sum, row) => sum + row.amount_satang, 0))}</p>
               {savedRows.map((row) => <div key={row.id} className="flex items-center gap-2 border-t border-border py-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{row.note || row.counterparty || <CategoryLabel value={row.category} />}</span>
-                <span className="text-muted-foreground">{new Intl.DateTimeFormat(locale === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' }).format(new Date(row.datetime))}</span>
-                <strong className="tabular-nums text-expense">{row.type === 'income' ? '+' : '−'}{formatTHB(row.amount_satang)}</strong>
-                <span className="inline-flex items-center gap-1 text-success"><Check className="size-4" />{t('confirmed')}</span>
+                <TransactionTypeBadge type={row.type} label={t(row.type === 'income' ? 'income' : 'expense')} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{row.note || row.counterparty || <CategoryLabel value={row.category} />}</span>
+                  <span className="block truncate text-muted-foreground">{new Intl.DateTimeFormat(locale === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' }).format(new Date(row.datetime))} · <CategoryLabel value={row.category} /></span>
+                </span>
+                <strong className={row.type === 'income' ? 'tabular-nums text-income' : 'tabular-nums text-expense'}>{row.type === 'income' ? '+' : '−'}{formatTHB(row.amount_satang)}</strong>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 py-1 text-xs font-medium text-success"><Check className="size-3.5" />{t('confirmed')}</span>
               </div>)}
             </div>}
             <button type="button" className="min-h-11 w-full text-sm text-primary" onClick={() => setShowRemainder(true)}>{t('later')}</button>
-            {showRemainder && currentGap !== 0 && <button type="button" className="min-h-11 w-full text-left text-sm text-muted-foreground underline" onClick={() => setStep(3)}>{t('remainderOffer', { amount: formatTHB(Math.abs(currentGap)), type: t(currentGap > 0 ? 'expense' : 'income') })}</button>}
+            {showRemainder && currentGap !== 0 && <button type="button" className="flex min-h-11 w-full items-start gap-3 rounded-md bg-info-soft p-4 text-left text-sm" onClick={() => setStep(3)}><Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-transfer" /><span>{t('remainderOffer', { amount: formatTHB(Math.abs(currentGap)), type: t(currentGap > 0 ? 'expense' : 'income') })}</span></button>}
           </>}
 
           {step === 3 && bankBalance !== null && <>
@@ -299,7 +317,7 @@ function GapBar({ startGap, gap }: { startGap: number; gap: number }) {
   const t = useTranslations('reconcile')
   const progress = gapProgress(startGap, gap)
   const label = progress.done ? t('matched') : progress.overshoot ? t('overshoot', { amount: formatTHB(progress.current) }) : t('remaining', { amount: formatTHB(progress.current) })
-  return <div className={progress.done ? 'rounded-md bg-success-soft p-3' : progress.overshoot ? 'rounded-md bg-warn-soft p-3' : 'rounded-md bg-honey-soft p-3'} aria-live="polite">
+  return <div className={progress.done ? 'rounded-md bg-success-soft p-3' : progress.overshoot ? 'rounded-md bg-warn-soft p-3' : 'rounded-md border-[1.5px] border-honey-edge bg-secondary p-4'} aria-live="polite">
     <div className="mb-2 flex items-center justify-between gap-2 text-sm font-semibold"><span className="inline-flex items-center gap-1.5">{progress.done ? <Check className="size-4" /> : progress.overshoot ? <AlertTriangle className="size-4" /> : null}{label}</span><span>{t('from', { amount: formatTHB(progress.start) })}</span></div>
     <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={progress.start} aria-valuenow={progress.explained} className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full origin-left rounded-full bg-primary transition-transform motion-reduce:transition-none" style={{ transform: `scaleX(${progress.start === 0 ? 1 : progress.explained / progress.start})` }} /></div>
   </div>
