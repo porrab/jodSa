@@ -16,7 +16,26 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-C1-1] C1 `ลงแล้ว` list compares the browser clock with the DB clock — 2026-10-27 · from Claude review
-**From:** Claude review of `9b59a9b` · **Status:** READY FOR INDEPENDENT RE-CHECK · **Severity:** M (wrong list, no wrong money).
+**From:** Claude review of `9b59a9b` · **Status:** **APPROVED 2026-10-28 (Claude review)** at `d65456f` · **Severity:** M (wrong list, no wrong money).
+**Re-review 2026-10-28:**
+- The fix takes route (b). `createTransaction` returns the inserted `id` (`.select('id').single()`; the owner's SELECT policy covers the returned row). `TransactionForm` passes that id to `onSuccess` only on the non-optimistic path, so existing callers that ignore the argument are unchanged. The sheet queries `.in('id', ids)`.
+- `sessionStartedAt` is gone. A grep of `app/`, `components/` and `lib/` finds no other comparison of the browser clock with `created_at`. `backfill-gap-sheet` counts locally and uses no clock.
+- The new `page.clock` ±2 min tests were RED on the old code (`(11)` at −2 min, empty at +2 min) as reported. C1 `--repeat-each 5` passed 16/16 (Codex run).
+- Raw tsc exits 0. Vitest: 352 passed, 34 skipped.
+- Non-blocking follow-up: see [RV-C1-2].
+
+## [RV-C1-2] C1 backfill form accepts a second tap while the refresh is in flight — 2026-10-28 · from Claude review
+**Status:** OPEN · **Severity:** L. The gap and the money stay correct; this predates `d65456f`.
+- **Mechanism:**
+  - `TransactionForm`'s action calls `onSuccess(id)` and returns without awaiting `refreshAfterSave`.
+  - The form remounts only when `key` changes, which happens on `savedCount`, after the refresh resolves. Until then the filled form stays live.
+  - A second tap of `บันทึก แล้วลงรายการต่อ` therefore saves a duplicate row.
+  - Both refreshes also build their id list from the same closed-over `savedTransactionIds`, so the later one drops the first id from `ลงแล้ว`. The Gap Bar stays right because it reads `account_balances()`.
+- **Fix:**
+  - Keep the ids in a ref, or append them with a functional `setState`.
+  - Keep the submit disabled (`กำลังบันทึก…`) until the refresh resolves, for example by having `onSuccess` return the promise and awaiting it inside the action.
+- **Acceptance:** an E2E that double-clicks the save button creates exactly one row, and `ลงแล้ว (n)` matches the DB.
+
 **Mechanism:**
 - `components/reconcile-account-sheet.tsx:159` sets `sessionStartedAt = new Date().toISOString()` from the **browser** clock.
 - `getAccountReconcileState` (`app/actions/reconcile.ts`) then filters `created_at >= sessionStartedAt`, and `created_at` is stamped by **Postgres**.
