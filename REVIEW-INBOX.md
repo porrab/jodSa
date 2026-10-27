@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-C1-1] C1 `ลงแล้ว` list compares the browser clock with the DB clock — 2026-10-27 · from Claude review
-**From:** Claude review of `9b59a9b` · **Status:** OPEN · **Severity:** M (wrong list, no wrong money).
+**From:** Claude review of `9b59a9b` · **Status:** READY FOR INDEPENDENT RE-CHECK · **Severity:** M (wrong list, no wrong money).
 **Mechanism:**
 - `components/reconcile-account-sheet.tsx:159` sets `sessionStartedAt = new Date().toISOString()` from the **browser** clock.
 - `getAccountReconcileState` (`app/actions/reconcile.ts`) then filters `created_at >= sessionStartedAt`, and `created_at` is stamped by **Postgres**.
@@ -29,6 +29,16 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 **Acceptance:**
 - A unit or E2E test that makes the client clock skew ±2 min (Playwright `page.clock`) still shows exactly the session's rows.
 - The C1 E2E is stable over 5 repeated runs (`--repeat-each 5`).
+
+**Implementation 2026-10-28:** Applied preferred fix (b). `createTransaction` now returns the inserted row id;
+`TransactionForm` passes it to `onSuccess` without changing callers that ignore the optional argument; C1 retains those
+ids and `getAccountReconcileState` fetches only `id in (...)`. The browser timestamp and `created_at` comparison are
+gone. Before the fix, Playwright `page.clock` at −2 minutes produced `ลงแล้ว (11) · ฿593.00`, while +2 minutes
+produced no `ลงแล้ว` summary; both now show only `ลงแล้ว (2) · ฿107.00`. Production C1 with `--repeat-each 5`
+passed **16/16** including setup; A3 + contrast passed **9/9** including setup. TypeScript with
+`--incremental false` exited 0; Vitest passed **352** and skipped **34 live-RLS** tests. No migration was added, only
+test user A was reset/seeded, and `performReconcileRemainder`, gap calculation, stale handling, and `reconciled_at`
+were not changed. Engineering record: `docs/postmortems/DS-7-c1-fidelity-and-test-race.md`.
 
 ## [DS-7] C1 reconcile sheets: Honey fidelity leftovers — 2026-10-27 · from Claude review
 **From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** **APPROVED 2026-10-27 (Claude review)**: F1–F4 at `7400aa0`, F5 at `9b59a9b`. F5: all three links use `text-honey-text` (5.5:1 computed on cream), no token changed, and the new rendered-contrast E2E reads computed colours in both themes and was shown RED at 1.86:1 on the old class. Raw tsc exits 0. Vitest: 352 passed, 34 skipped. The C1 flake Codex saw is a product bug, not a fixture race; see [RV-C1-1].

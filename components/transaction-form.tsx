@@ -50,7 +50,7 @@ export default function TransactionForm({
   submitLabel,
 }: {
   accounts: Account[]
-  onSuccess?: () => void
+  onSuccess?: (transactionId?: string) => void
   defaultValues?: Partial<{
     type: TxType
     amount: string
@@ -243,7 +243,8 @@ export default function TransactionForm({
       const result = editId ? await updateTransaction(prev, fd) : await createTransaction(prev, fd)
       if (!result.error) {
         toast.success(t('saved'))
-        onSuccess?.()
+        const transactionId = 'id' in result && typeof result.id === 'string' ? result.id : undefined
+        onSuccess?.(transactionId)
       } else {
         toast.error(result.error)
       }

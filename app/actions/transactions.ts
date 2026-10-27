@@ -32,10 +32,10 @@ export async function createTransaction(_prev: { error: string }, formData: Form
   const parsed = transactionSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { error } = await supabase.from('transactions').insert({
+  const { data, error } = await supabase.from('transactions').insert({
     user_id: user.id,
     ...parsed.data,
-  })
+  }).select('id').single()
 
   if (error) {
     if (error.code === '23505') return { error: 'รายการนี้มีอยู่แล้ว (ref_code ซ้ำ)' }
@@ -46,7 +46,7 @@ export async function createTransaction(_prev: { error: string }, formData: Form
   revalidatePath('/dashboard')
   revalidatePath('/accounts')
   revalidatePath('/budgets')
-  return { error: '' }
+  return { error: '', id: data.id }
 }
 
 /**

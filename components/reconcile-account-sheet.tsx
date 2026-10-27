@@ -78,7 +78,7 @@ export default function ReconcileAccountSheet({
   const [showRemainder, setShowRemainder] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [sessionStartedAt, setSessionStartedAt] = useState('')
+  const [savedTransactionIds, setSavedTransactionIds] = useState<string[]>([])
   const [prefillVersion, setPrefillVersion] = useState(0)
   const [frequentPrefill, setFrequentPrefill] = useState<Partial<{
     type: 'income' | 'expense'
@@ -115,6 +115,7 @@ export default function ReconcileAccountSheet({
     setStartGap(0)
     setSavedCount(0)
     setSavedRows([])
+    setSavedTransactionIds([])
     setShowRemainder(false)
     setError('')
     onOpenChange(false)
@@ -156,7 +157,6 @@ export default function ReconcileAccountSheet({
     setError('')
     setBankBalance(enteredBankBalance)
     setStartGap(previewGap)
-    setSessionStartedAt(new Date().toISOString())
     if (previewGap === 0) {
       await saveRemainder(new Date().toISOString(), enteredBankBalance)
       return
@@ -164,13 +164,17 @@ export default function ReconcileAccountSheet({
     setStep(2)
   }
 
-  async function refreshAfterSave() {
-    const state = await getAccountReconcileState(account.id, sessionStartedAt)
+  async function refreshAfterSave(transactionId?: string) {
+    const nextSavedTransactionIds = transactionId
+      ? [...savedTransactionIds, transactionId]
+      : savedTransactionIds
+    const state = await getAccountReconcileState(account.id, nextSavedTransactionIds)
     if (state.error || state.balanceSatang === undefined) {
       setError(state.error || t('refreshFailed'))
       return
     }
     setLiveBalance(state.balanceSatang)
+    setSavedTransactionIds(nextSavedTransactionIds)
     setSavedRows(state.savedTransactions ?? [])
     setSavedCount(state.savedTransactions?.length ?? (savedCount + 1))
     setShowRemainder(true)

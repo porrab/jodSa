@@ -63,8 +63,49 @@ The three links now use `text-honey-text`, whose light and dark mappings already
 
 ### Validation
 
-With the original classes, all three light-mode checks failed deterministically at 1.86:1; dark mode passed. With `text-honey-text`, the production contrast suite passed in light and dark. One combined production run for contrast, C1 and A3 passed 10/10 including setup. A final repeat passed F5 and A3 but exposed the existing C1 fixture clock race (`ลงแล้ว (4)` instead of `(2)`); the immediate isolated C1 rerun passed 2/2. `pnpm -s tsc --noEmit --incremental false` exited 0; Vitest passed 352 tests and skipped 34 live-RLS tests.
+With the original classes, all three light-mode checks failed deterministically at 1.86:1; dark mode passed. With `text-honey-text`, the production contrast suite passed in light and dark. One combined production run for contrast, C1 and A3 passed 10/10 including setup. A later repeat exposed a C1 browser/Postgres clock-domain bug (`ลงแล้ว (4)` instead of `(2)`), not a fixture race; the immediate isolated pass did not disprove a clock-dependent defect. RV-C1-1 below records the correction and fix. `pnpm -s tsc --noEmit --incremental false` exited 0; Vitest passed 352 tests and skipped 34 live-RLS tests.
 
 ### Action items
 
 None — the rendered-element regression test closes the coverage gap.
+
+## RV-C1-1 addendum: browser and Postgres clock domains
+
+### Summary
+
+The C1 `ลงแล้ว` list used a browser timestamp to select rows whose `created_at` was stamped by Postgres. Device clock skew therefore added pre-session rows or hid rows saved during the session. The fix removes time from the identity boundary: `createTransaction` returns the inserted id, C1 retains ids from its own saves, and the state read filters by those ids.
+
+### Symptom
+
+With Playwright `page.clock` fixed two minutes behind the server, two C1 saves rendered `ลงแล้ว (11) · ฿593.00`, including nine seeded rows. With the browser fixed two minutes ahead, the Gap Bar moved after both saves but the `ลงแล้ว` summary was absent. The expected result in both cases was `ลงแล้ว (2) · ฿107.00`.
+
+### Root cause
+
+`ReconcileAccountSheet.begin()` stored `new Date().toISOString()` from the browser in `sessionStartedAt`. After each save, `getAccountReconcileState(accountId, sessionStartedAt)` compared that client value with the database-owned `transactions.created_at` using `.gte('created_at', sessionStartedAt)`. The comparison assumed browser and Postgres clocks shared one trustworthy timeline. A slow browser clock widened the query backwards into older rows; a fast browser clock moved the lower bound beyond newly inserted rows.
+
+### Why it produced the symptom
+
+The Gap Bar remained correct because it re-read `account_balances()` and never used `sessionStartedAt`. Only the presentation list used the cross-clock filter, so balance arithmetic could be correct while `ลงแล้ว` showed the wrong count and total. An immediate isolated rerun could pass whenever the two clocks happened to be close enough, which made the first failure look like fixture timing.
+
+### Fix
+
+`createTransaction` now selects and returns the inserted transaction id. `TransactionForm.onSuccess` accepts that optional id; existing callers that ignore callback arguments keep their prior behaviour. C1 appends each returned id to `savedTransactionIds`, and `getAccountReconcileState` filters the account-scoped transaction query with `.in('id', savedTransactionIds)`. No timestamp participates in session membership. The change does not touch `performReconcileRemainder`, gap calculation, stale detection, or `reconciled_at`.
+
+### How it was found
+
+The review traced the value across the browser/server boundary instead of treating the intermittent C1 assertion as a fixture-only race. Fixing `page.clock` at ±2 minutes made both failure directions deterministic: −2 minutes included nine old rows, and +2 minutes excluded both new rows. Those opposing results falsified a generic rendering race and isolated the clock-domain comparison.
+
+### Why it slipped through
+
+The original C1 E2E used an unmodified device clock. Its pass depended on browser and database clocks being close, and an isolated rerun could pass after a combined-run failure. The suite had no skewed-clock coverage at the boundary where browser time was compared with a database timestamp.
+
+### Validation
+
+- The two `page.clock` regressions pass at −2 and +2 minutes and each assert exactly `ลงแล้ว (2) · ฿107.00`.
+- The full production C1 file passed 16/16 with `--repeat-each 5`, including setup.
+- Production A3 and contrast regressions passed 9/9, including setup.
+- `pnpm -s tsc --noEmit --incremental false` exited 0. Vitest passed 352 tests and skipped 34 live-RLS tests.
+
+### Action items
+
+None — id-based session membership removes the clock assumption, and the skew tests guard both failure directions.

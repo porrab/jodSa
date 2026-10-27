@@ -10,7 +10,7 @@ import {
   type ReconcileRepository,
 } from '@/lib/reconcile'
 
-export async function getAccountReconcileState(accountId: string, sessionStartedAt?: string): Promise<{
+export async function getAccountReconcileState(accountId: string, savedTransactionIds: string[] = []): Promise<{
   error: string
   balanceSatang?: number
   reconciledAt?: string | null
@@ -43,12 +43,12 @@ export async function getAccountReconcileState(accountId: string, sessionStarted
     note: string | null
     datetime: string
   }> = []
-  if (sessionStartedAt) {
+  if (savedTransactionIds.length > 0) {
     const { data: rows, error: rowsError } = await supabase
       .from('transactions')
       .select('id, type, amount_satang, category, counterparty, note, datetime')
       .or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`)
-      .gte('created_at', sessionStartedAt)
+      .in('id', savedTransactionIds)
       .order('created_at', { ascending: false })
     if (rowsError) return { error: rowsError.message }
     savedTransactions = rows ?? []

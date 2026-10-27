@@ -5,7 +5,6 @@ import { adminClient, findUserByEmail, resetAllUserData, seedAccount, seedTransa
 import { env, STORAGE_A } from './helpers/env'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
-test.describe.configure({ mode: 'serial' })
 
 const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/ds-7-2026-10-27/app')
 let userId = ''
@@ -35,6 +34,9 @@ test.beforeAll(async () => {
   const user = await findUserByEmail(env.userA.email)
   if (!user) throw new Error(`Test user A is missing: ${env.userA.email}`)
   userId = user.id
+})
+
+async function seedScenario() {
   await resetAllUserData(userId)
   accountId = await seedAccount(userId, 'make', 'กสิกรไทย', '4415')
   await seedAccount(userId, 'Dime! Save', 'เกียรตินาคินภัทร', '9921')
@@ -49,7 +51,42 @@ test.beforeAll(async () => {
     reconciled_at: '2026-10-03T12:00:00.000Z',
   }).eq('id', accountId).eq('user_id', userId)
   if (error) throw new Error(`seed opening balance failed: ${error.message}`)
+}
+
+test.beforeEach(async () => {
+  await seedScenario()
 })
+
+async function openBackfillStep(page: Page) {
+  await page.goto('/accounts')
+  await page.getByRole('button', { name: /make.*฿12,964\.00/ }).click()
+  await page.getByRole('button', { name: /ปรับยอดให้ตรงธนาคาร/ }).click()
+  const step1 = page.getByRole('dialog', { name: 'ปรับยอดให้ตรงธนาคาร · make' })
+  await step1.getByLabel('ยอดในแอปธนาคารตอนนี้').fill('12552.00')
+  await step1.getByRole('button', { name: 'ลงรายการที่ขาด' }).click()
+  return page.getByRole('dialog', { name: 'ลงรายการที่ขาด · make' })
+}
+
+async function saveMissingTransaction(step2: Locator, amount: string, category: string, counterparty: string) {
+  await step2.getByLabel('จำนวนเงิน').fill(amount)
+  await step2.getByTestId('transaction-category-field').getByRole('button', { name: category, exact: true }).click()
+  await step2.getByLabel('ผู้รับ / ผู้จ่าย (ไม่บังคับ)').fill(counterparty)
+  await step2.getByRole('button', { name: 'บันทึก แล้วลงรายการต่อ' }).click()
+}
+
+for (const skewMinutes of [-2, 2]) {
+  test(`C1 ลงแล้ว contains only this session when browser clock is ${skewMinutes > 0 ? '+' : ''}${skewMinutes} minutes`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date(Date.now() + skewMinutes * 60_000))
+    const step2 = await openBackfillStep(page)
+
+    await saveMissingTransaction(step2, '60.00', 'อาหาร', 'ข้าว')
+    await expect(step2.getByRole('progressbar', { name: /ยังขาดอีก ฿352\.00/ })).toBeVisible({ timeout: 20_000 })
+    await saveMissingTransaction(step2, '47.00', 'เดินทาง', 'BTS')
+
+    await expect(step2.getByRole('progressbar', { name: /ยังขาดอีก ฿305\.00/ })).toBeVisible({ timeout: 20_000 })
+    await expect(step2.getByText(/ลงแล้ว \(2\).*฿107\.00/)).toBeVisible()
+  })
+}
 
 test('C1 backfills a missing row, updates the Gap Bar from server truth, and reconciles the remainder', async ({ page }) => {
   const consoleErrors: string[] = []
