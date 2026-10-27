@@ -270,22 +270,22 @@ function AccountDetailSheet({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setReconcileOpen(true)}
-              className="flex min-h-14 w-full items-center gap-3 rounded-md bg-honey-soft px-4 text-left transition-colors hover:bg-primary/20"
-            >
-              <Scale className="size-5 shrink-0 text-honey-text" />
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">ปรับยอดให้ตรงธนาคาร</span>
-                <span className="block text-sm text-muted-foreground">
-                  {account.reconciled_at
-                    ? `เช็กล่าสุด ${new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date(account.reconciled_at))}`
-                    : 'ยังไม่เคยตรวจยอด'}
-                </span>
-              </span>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-            </button>
+            <div className="space-y-3 rounded-lg bg-secondary p-4">
+              <div className="flex items-start gap-3">
+                <Scale className="mt-0.5 size-5 shrink-0 text-honey-text" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">ยอดตรงกับแอปธนาคารไหม?</p>
+                  <p className="text-sm text-muted-foreground">
+                    {account.reconciled_at
+                      ? `เช็กล่าสุด ${new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date(account.reconciled_at))}`
+                      : 'ยังไม่เคยตรวจยอด'}
+                  </p>
+                </div>
+              </div>
+              <Button type="button" variant="outline" className="w-full bg-card" onClick={() => setReconcileOpen(true)}>
+                ปรับยอดให้ตรงธนาคาร
+              </Button>
+            </div>
 
             <ReconcileAccountSheet
               account={account}
