@@ -144,3 +144,23 @@ test('A3 rejects a 121-character display name without persisting it', async ({ p
     return result.count
   }).toBe(before.count)
 })
+
+test('A3 slip confirmation exposes display name without writing a transaction', async ({ page }) => {
+  test.setTimeout(600_000)
+  const before = await adminClient().from('transactions').select('*', { count: 'exact', head: true }).eq('user_id', userId)
+  if (before.error) throw before.error
+
+  await page.goto('/import')
+  await page.locator('input[type="file"]').setInputFiles(path.join(GENERATED_DIR, 'slip-qr-a.png'))
+  await expect(page.getByTestId('slip-category-field')).toBeVisible({ timeout: 480_000 })
+  const payee = page.locator('input[name="counterparty"]')
+  await expect(payee).toBeVisible()
+  await page.getByRole('button', { name: '+ ตั้งชื่อที่แสดงเอง' }).click()
+  await expect(page.getByLabel('ชื่อที่แสดง (ไม่บังคับ)')).toBeVisible()
+  const payeeValue = await payee.inputValue()
+  if (payeeValue) await expect(page.getByText(`ไม่ใส่ = แสดงเป็น "${payeeValue}"`)).toBeVisible()
+
+  const after = await adminClient().from('transactions').select('*', { count: 'exact', head: true }).eq('user_id', userId)
+  if (after.error) throw after.error
+  expect(after.count).toBe(before.count)
+})
