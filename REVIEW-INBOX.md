@@ -15,6 +15,29 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-7] C1 reconcile sheets: Honey fidelity leftovers — 2026-10-27 · from Claude review
+**From:** Claude review of `66473bd` + `3e1e0fe` · **Status:** OPEN, non-blocking for behaviour.
+**Verdict on the code:** A3 persistence E2E and C1 are **APPROVED for behaviour.** Raw `rtk proxy npx tsc --noEmit --incremental false` exits 0. Vitest: 352 passed, 34 live-RLS skipped. The C1 code matches the brief's "Data/server" block:
+- The gap is app − bank, so a positive gap is entered as an expense.
+- `performReconcileRemainder` re-reads `account_balances()`, returns `stale` and writes nothing when the balance changed, inserts a plain income/expense with category `adjustment` and note `ปรับยอดให้ตรงธนาคาร`, then stamps `reconciled_at`. A failed stamp rolls back the inserted row.
+- `adjustment` sits in `SYSTEM_CATEGORIES`, so it is rendered with the `Scale` icon but never offered by a picker. No service-role key, no migration, and no invest/divest (there is a `TODO(C2/0012)`).
+- The `.or(...)` filter in `getAccountReconcileState` interpolates `accountId`, but only after `.eq('id', accountId).single()` has resolved a real row, so a malformed id never reaches the filter.
+
+**Gap in the A3 evidence:** the slip-confirm display-name E2E was removed in `66473bd`. The slip form's display-name field now has no browser coverage. Re-add a read-only check, or note why it was dropped.
+
+The frames below are Figma (left) vs app (right) in `tests/e2e/evidence/c1-2026-10-26/pairs/`:
+- [ ] **F1 `29:2211` account detail.** The C1 entry is a plain list row. The frame has a honey-soft card with the question `ยอดตรงกับแอปธนาคารไหม?`, `เช็กล่าสุด …` and an outline `ปรับยอดให้ตรงธนาคาร` button.
+- [ ] **F2 `30:2231` step 1.** The gap callout is white with a hairline. The frame uses honey-soft fill with the brown outline. The bank-balance input shows `12552.00` with no thousands separator: use the Amount Input formatter. The required mark `*` is missing.
+- [ ] **F3 `30:2258` step 2.**
+  - The Gap Bar card has no honey-soft fill or outline.
+  - The date control is shown three times: chips, a native date input and the full datetime field. The frame has chips plus one line `อา. 19 ต.ค. 2569 · 12:00 (ระบุเวลา)`. Keep one date control.
+  - The locked account renders as a full-height honey box. The frame has one small lock line: `บัญชี: make (ล็อกไว้ระหว่างปรับยอด)`.
+  - In the `ลงแล้ว` list, rows lack the type icon and category meta, and the badges show no ✓/◌ pill state.
+  - The remainder offer is an underlined link. The frame makes it an info card with an icon.
+- [ ] **F4 `30:2390` step 3.** The consequence callout uses the `Scale` icon and the generic copy `รายจ่ายหรือรายรับ`. The frame uses a warn icon and copy for the actual type (`นับเป็นรายจ่ายของวันนั้น…`). The date chip `วันนี้` should carry the date (`วันนี้ 27 ต.ค.`). Hiding the `สิ้นเดือนที่แล้ว` chip outside the first week is correct per the brief.
+
+**Acceptance:** new pairs for the four frames at 390×844 with test user A, and the C1 E2E stays green.
+
 ## [DS-6] Honey polish leftovers (N2–N5) — 2026-10-26 · from design-studio
 **From:** design-studio · **Status:** **APPROVED 2026-10-26 (Claude review)** at `44265e7` (fix `4e9e9c9`). Raw `rtk proxy npx tsc --noEmit --incremental false` exit 0; vitest 334 passed / 34 skipped. Own 390×844 shots (test user A, no console errors): N3 expense chips list no income categories, N4 anchored swap divider, N7 row meta "time · account" with category omitted when it is the title; N2/N5/N6 checked on the Codex pairs only. Non-blocking note: editing a legacy expense whose stored category is an income one (e.g. `salary`) shows no selected chip — the value is kept on save; revisit only if such rows exist. These were carried out of [DS-5] when it was approved.
 **Evidence:** `design-studio/reviews/jodsa/2026-10-26-ds5-final/` (06, 10, 29) and `design-studio/reviews/jodsa/2026-10-26-ds5-round2/`. Figma `85YURQNppODPO2dFxD8O6W`, page `20:1071`.
