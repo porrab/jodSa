@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 import { env, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { findUserByEmail, resetAllUserData, seedAccount, seedTransaction } from './helpers/admin'
 
@@ -60,6 +60,20 @@ async function openManualSheet(page: Page) {
   return page.getByRole('dialog', { name: 'บันทึกรายการ' })
 }
 
+async function expectCategoryBeforeAccount(container: Locator, categoryTestId: string, accountTestId: string) {
+  const positions = await container.evaluate((element, ids) => {
+    const category = element.querySelector<HTMLElement>(`[data-testid="${ids.category}"]`)
+    const account = element.querySelector<HTMLElement>(`[data-testid="${ids.account}"]`)
+    return {
+      categoryY: category?.getBoundingClientRect().y ?? null,
+      accountY: account?.getBoundingClientRect().y ?? null,
+    }
+  }, { category: categoryTestId, account: accountTestId })
+  expect(positions.categoryY).not.toBeNull()
+  expect(positions.accountY).not.toBeNull()
+  expect(positions.categoryY!).toBeLessThan(positions.accountY!)
+}
+
 test('DS-3 category precedes account; category default moves the grid, manual touch keeps precedence', async ({ page }) => {
   await seedScenario()
   const sheet = await openManualSheet(page)
@@ -67,11 +81,7 @@ test('DS-3 category precedes account; category default moves the grid, manual to
   const accountField = sheet.getByTestId('transaction-account-field')
   await expect(categoryField.getByRole('button', { name: 'อาหาร', exact: true })).toBeVisible()
   await expect(accountField.getByRole('radio', { name: /บัญชี A/ })).toBeVisible()
-  const categoryBox = await categoryField.boundingBox()
-  const accountBox = await accountField.boundingBox()
-  expect(categoryBox).not.toBeNull()
-  expect(accountBox).not.toBeNull()
-  expect(categoryBox!.y).toBeLessThan(accountBox!.y)
+  await expectCategoryBeforeAccount(sheet, 'transaction-category-field', 'transaction-account-field')
 
   await categoryField.getByRole('button', { name: 'อาหาร', exact: true }).click()
   const grid = accountField.getByRole('radiogroup', { name: 'บัญชี' })
@@ -131,8 +141,6 @@ test('DS-3 evidence: manual and slip-confirm both render category above account'
   await expect(page.getByTestId('slip-category-field')).toBeVisible({ timeout: 480_000 })
   const slipCategory = page.getByTestId('slip-category-field')
   const slipAccount = page.getByTestId('slip-account-field')
-  const slipCategoryBox = await slipCategory.boundingBox()
-  const slipAccountBox = await slipAccount.boundingBox()
-  expect(slipCategoryBox && slipAccountBox && slipCategoryBox.y < slipAccountBox.y).toBe(true)
+  await expectCategoryBeforeAccount(page.locator('body'), 'slip-category-field', 'slip-account-field')
   await page.screenshot({ path: path.join(EVIDENCE_DIR, 'app-slip-confirm.png'), fullPage: true })
 })
