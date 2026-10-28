@@ -75,15 +75,25 @@ async function main() {
     await assert.rejects(db.exec(`select * from public.record_buy_with_cash(${pairArgs}, 0)`), /Invalid buy amount/)
     assert.equal(await count('transactions'), cashBefore)
     assert.equal(await count('asset_transactions'), buyBefore)
-    await db.exec(`select * from public.record_buy_with_cash(${pairArgs}, 250)`)
+    const linkedPair = (await db.query(`select * from public.record_buy_with_cash(${pairArgs}, 250)`)).rows[0]
     assert.equal(await count('transactions'), cashBefore + 1)
     assert.equal(await count('asset_transactions'), buyBefore + 1)
+    const linkedCash = (await db.query(`select asset_transaction_id::text, holding_id::text from public.transactions where id = '${linkedPair.cash_transaction_id}'`)).rows[0]
+    assert.equal(linkedCash.asset_transaction_id, linkedPair.asset_transaction_id, 'cash must link to the exact buy')
+    assert.equal(linkedCash.holding_id, ids.h, 'holding link remains available')
     // Fail the second insert after the buy insert: PostgreSQL must roll back both.
     await db.exec('alter table public.transactions add constraint cash_limit_for_test check (amount_satang < 1000)')
     await assert.rejects(db.exec(`select * from public.record_buy_with_cash(${pairArgs}, 1000)`), /cash_limit_for_test/)
     assert.equal(await count('transactions'), cashBefore + 1)
     assert.equal(await count('asset_transactions'), buyBefore + 1)
-    console.log('0012 PGlite proof passed: legacy rows/balances/security unchanged; direction, type CHECK and atomic buy+cash rollback verified')
+    const balanceWithBuy = (await balances()).rows
+    await db.exec(`delete from public.asset_transactions where id = '${linkedPair.asset_transaction_id}'`)
+    const retainedCash = (await db.query(`select asset_transaction_id::text, holding_id::text from public.transactions where id = '${linkedPair.cash_transaction_id}'`)).rows[0]
+    assert.equal(retainedCash.asset_transaction_id, null, 'buy deletion must clear only the buy link')
+    assert.equal(retainedCash.holding_id, ids.h, 'buy deletion must retain the holding link')
+    assert.equal(await count('transactions'), cashBefore + 1, 'buy deletion must keep the cash row')
+    assert.deepEqual((await balances()).rows, balanceWithBuy, 'buy deletion must not change cash balance')
+    console.log('0012 PGlite proof passed: legacy rows/balances/security unchanged; direction, type CHECK, atomic buy+cash rollback and buy-delete cash retention verified')
   } finally {
     await db.close()
   }

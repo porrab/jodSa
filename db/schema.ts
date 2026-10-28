@@ -44,6 +44,7 @@ export const transactions = pgTable('transactions', {
   accountId: uuid('account_id').notNull(),
   toAccountId: uuid('to_account_id'),
   holdingId: uuid('holding_id').references(() => holdings.id, { onDelete: 'set null' }),
+  assetTransactionId: uuid('asset_transaction_id').references(() => assetTransactions.id, { onDelete: 'set null' }),
   category: text('category'),
   refCode: text('ref_code'),
   bankCode: text('bank_code'),

@@ -30,6 +30,7 @@ import {
 import { formatMoney, parseMinor, toMajor, minorUnitDecimals } from '@/lib/invest/money'
 import { formatAppDate } from '@/lib/date-display'
 import { formatTHB } from '@/lib/money'
+import { cashLinksForBuy, type CashLink } from '@/lib/invest/cash-links'
 import AccountGrid from '@/components/account-grid'
 import InlineCreateAccount from '@/components/inline-create-account'
 import { useAccountBalances } from '@/lib/use-account-balances'
@@ -76,7 +77,7 @@ export type Holding = {
   current_fx_to_display: string | null
   asset: Asset | null
   transactions: Transaction[]
-  cashLinks: Array<{ id: string; accountName: string; amountSatang: number; datetime: string }>
+  cashLinks: CashLink[]
   costBasis: CostBasis
 }
 
@@ -487,7 +488,7 @@ function HoldingDetailSheet({
   }
 
   async function handleDeleteTx(id: string) {
-    if (!confirm(`${t('deleteTxConfirm')}${selectedTrade?.type === 'buy' && holding?.cashLinks.length ? `\n${t('linkedCashWarning')}` : ''}`)) return
+    if (!confirm(`${t('deleteTxConfirm')}${selectedTrade?.type === 'buy' && holding && cashLinksForBuy(holding.cashLinks, id).length ? `\n${t('linkedCashWarning')}` : ''}`)) return
     try {
       await deleteAssetTransaction(id)
       toast.success(t('txDeleted'))
@@ -545,7 +546,6 @@ function HoldingDetailSheet({
 
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t('transactionsTitle')}</p>
-                {holding.cashLinks.map((cash) => <p key={cash.id} className="rounded-md bg-info-soft px-3 py-2 text-sm text-transfer">{t('cashLinkedLine', { account: cash.accountName, amount: formatTHB(cash.amountSatang) })}</p>)}
                 {holding.transactions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('noTransactions')}</p>
                 ) : (
@@ -556,6 +556,7 @@ function HoldingDetailSheet({
                         <div className="min-w-0 flex-1">
                           <p className="font-medium">{t(`txType.${tx.type}`)}{tx.qty ? ` · ${tx.qty}` : ''}</p>
                           <p className="text-sm text-muted-foreground">{formatAppDate(tx.datetime, { locale: 'th', includeYear: true })}</p>
+                          {tx.type === 'buy' && cashLinksForBuy(holding.cashLinks, tx.id).map((cash) => <p key={cash.id} className="text-sm text-transfer">{t('cashLinkedLine', { account: cash.accountName, amount: formatTHB(cash.amountSatang) })}</p>)}
                         </div>
                         <p className="shrink-0 tabular-nums">{formatMoney(tx.price_minor, tx.currency)}</p>
                         <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />

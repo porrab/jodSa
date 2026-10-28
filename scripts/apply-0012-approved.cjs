@@ -11,7 +11,7 @@ async function main() {
   const root = path.resolve(__dirname, '..')
   const source = fs.readFileSync(path.join(root, 'db/migrations/0012_invest_divest_cash_links.sql'), 'utf8')
   const sha = crypto.createHash('sha256').update(source).digest('hex')
-  assert.equal(sha, 'fb5599868cda2c8ed018866e82264786020bd9dba628af5076717ba372a5522d', 'SQL_SHA_MISMATCH')
+  assert.equal(sha, '5bfafc0891c66bbcc2322263026fa2937b60ab72de7d4f342440e06bb024625b', 'SQL_SHA_MISMATCH')
 
   const env = require('dotenv').parse(fs.readFileSync(path.join(root, '.env.local')))
   const api = new URL(env.NEXT_PUBLIC_SUPABASE_URL)

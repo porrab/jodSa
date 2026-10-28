@@ -5,7 +5,8 @@ alter table public.transactions
   drop constraint transactions_type_check,
   add constraint transactions_type_check
     check (type in ('income', 'expense', 'transfer', 'invest', 'divest')),
-  add column holding_id uuid references public.holdings(id) on delete set null;
+  add column holding_id uuid references public.holdings(id) on delete set null,
+  add column asset_transaction_id uuid references public.asset_transactions(id) on delete set null;
 
 -- CREATE OR REPLACE retains the existing function owner, ACL and SECURITY INVOKER mode.
 -- The only balance change is that divest credits the account; invest uses the old debit branch.
@@ -74,8 +75,8 @@ begin
   returning id into v_asset_transaction_id;
 
   insert into public.transactions
-    (user_id, type, amount_satang, account_id, holding_id, datetime)
-  values (v_user_id, 'invest', p_amount_satang, p_account_id, p_holding_id, p_datetime)
+    (user_id, type, amount_satang, account_id, holding_id, asset_transaction_id, datetime)
+  values (v_user_id, 'invest', p_amount_satang, p_account_id, p_holding_id, v_asset_transaction_id, p_datetime)
   returning id into v_cash_transaction_id;
 
   return query select v_asset_transaction_id, v_cash_transaction_id;

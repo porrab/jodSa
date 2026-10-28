@@ -65,6 +65,7 @@ export interface Database {
           account_id: string
           to_account_id: string | null
           holding_id: string | null
+          asset_transaction_id: string | null
           category: string | null
           ref_code: string | null
           bank_code: string | null
@@ -84,6 +85,7 @@ export interface Database {
           account_id: string
           to_account_id?: string | null
           holding_id?: string | null
+          asset_transaction_id?: string | null
           category?: string | null
           ref_code?: string | null
           bank_code?: string | null
@@ -101,6 +103,7 @@ export interface Database {
           account_id?: string
           to_account_id?: string | null
           holding_id?: string | null
+          asset_transaction_id?: string | null
           category?: string | null
           ref_code?: string | null
           bank_code?: string | null

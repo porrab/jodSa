@@ -9,6 +9,7 @@ import {
   type HoldingInput,
 } from '@/lib/invest/portfolio'
 import type { AssetClass, Sleeve } from '@/lib/validators/invest'
+import type { CashLink } from '@/lib/invest/cash-links'
 import InvestTabs from './invest-tabs'
 
 export default async function InvestPage({ searchParams }: { searchParams: Promise<{ holding?: string }> }) {
@@ -35,17 +36,17 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       // surfaces the DB error via GeneratePlanState 'error').
       supabase.from('plans').select('*').order('created_at', { ascending: false }).limit(20),
       supabase.from('accounts').select('id, name, bank'),
-      supabase.from('transactions').select('id, account_id, holding_id, amount_satang, datetime')
-        .eq('type', 'invest').not('holding_id', 'is', null),
+      supabase.from('transactions').select('id, account_id, holding_id, asset_transaction_id, amount_satang, datetime')
+        .eq('type', 'invest').not('asset_transaction_id', 'is', null),
     ])
 
   const assetById = new Map((assets ?? []).map((a) => [a.id, a]))
   const accountById = new Map((accounts ?? []).map((a) => [a.id, a]))
-  const cashByHolding = new Map<string, Array<{ id: string; accountName: string; amountSatang: number; datetime: string }>>()
+  const cashByHolding = new Map<string, CashLink[]>()
   for (const row of cashRows ?? []) {
-    if (!row.holding_id) continue
+    if (!row.holding_id || !row.asset_transaction_id) continue
     const links = cashByHolding.get(row.holding_id) ?? []
-    links.push({ id: row.id, accountName: accountById.get(row.account_id)?.name ?? '—', amountSatang: row.amount_satang, datetime: row.datetime })
+    links.push({ id: row.id, assetTransactionId: row.asset_transaction_id, accountName: accountById.get(row.account_id)?.name ?? '—', amountSatang: row.amount_satang, datetime: row.datetime })
     cashByHolding.set(row.holding_id, links)
   }
 
