@@ -55,6 +55,16 @@ test('C2 divest tile sits in จากบัญชี and excludes income langua
   await page.screenshot({ path: path.join(evidence, 'app-divest-bottom.png') })
 })
 
+test('C2 one-account transfer offers both portfolio and add-account', async ({ page }) => {
+  await resetAllUserData(userId)
+  accountId = await seedAccount(userId, 'make', 'กสิกรไทย', '4415')
+  const sheet = await openTransfer(page)
+  const destination = sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' })
+  await expect(destination.getByRole('radio', { name: 'พอร์ตลงทุน' })).toBeVisible()
+  await expect(sheet.getByRole('button', { name: '+ สร้างบัญชี' })).toBeVisible()
+  await expect(sheet.getByText('ต้องมีอย่างน้อย 2 บัญชีเพื่อโอนเงินระหว่างกัน')).toBeVisible()
+})
+
 test('C2 invest and divest persist one cash row each with opposite balance effects', async ({ page }) => {
   const probe = await adminClient().from('transactions').select('holding_id').limit(1)
   const missing0012 = !!probe.error && /holding_id|42703/i.test(`${probe.error.code} ${probe.error.message}`)

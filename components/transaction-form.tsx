@@ -395,16 +395,24 @@ export default function TransactionForm({
                 onCreated={(id) => setToAccountId(id)}
               />
             ) : (
-              <AccountGrid
-                accounts={accounts}
-                value={toAccountId}
-                onValueChange={setToAccountId}
-                balances={balances}
-                balancesLoading={balancesLoading}
-                label={t('toAccount')}
-                disabledAccountId={accountId}
-                includePortfolio={accountId !== PORTFOLIO_TILE_ID}
-              />
+              <>
+                <AccountGrid
+                  accounts={accounts}
+                  value={toAccountId}
+                  onValueChange={setToAccountId}
+                  balances={balances}
+                  balancesLoading={balancesLoading}
+                  label={t('toAccount')}
+                  disabledAccountId={accountId}
+                  includePortfolio={accountId !== PORTFOLIO_TILE_ID}
+                />
+                {accounts.every((account) => account.id === accountId) && (
+                  <InlineCreateAccount
+                    hint={t('transferNeedsSecondAccount')}
+                    onCreated={(id) => setToAccountId(id)}
+                  />
+                )}
+              </>
             )}
           </div>
         </>
