@@ -39,10 +39,11 @@ export const accounts = pgTable('accounts', {
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull(),
-  type: text('type', { enum: ['income', 'expense', 'transfer'] }).notNull(),
+  type: text('type', { enum: ['income', 'expense', 'transfer', 'invest', 'divest'] }).notNull(),
   amountSatang: integer('amount_satang').notNull(),
   accountId: uuid('account_id').notNull(),
   toAccountId: uuid('to_account_id'),
+  holdingId: uuid('holding_id').references(() => holdings.id, { onDelete: 'set null' }),
   category: text('category'),
   refCode: text('ref_code'),
   bankCode: text('bank_code'),

@@ -4,7 +4,7 @@
 // counting them would distort what the trip actually cost.
 
 export type GroupMember = {
-  type: 'income' | 'expense' | 'transfer'
+  type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
   amount_satang: number
   category?: string | null
 }

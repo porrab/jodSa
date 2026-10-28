@@ -16,7 +16,7 @@ export async function getAccountReconcileState(accountId: string, savedTransacti
   reconciledAt?: string | null
   savedTransactions?: Array<{
     id: string
-    type: 'income' | 'expense' | 'transfer'
+    type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
     amount_satang: number
     category: string | null
     counterparty: string | null
@@ -36,7 +36,7 @@ export async function getAccountReconcileState(accountId: string, savedTransacti
   const balance = (data ?? []).find((row) => row.account_id === accountId)?.balance_satang
   let savedTransactions: Array<{
     id: string
-    type: 'income' | 'expense' | 'transfer'
+    type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
     amount_satang: number
     category: string | null
     counterparty: string | null

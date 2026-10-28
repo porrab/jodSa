@@ -60,10 +60,11 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          type: 'income' | 'expense' | 'transfer'
+          type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
           amount_satang: number
           account_id: string
           to_account_id: string | null
+          holding_id: string | null
           category: string | null
           ref_code: string | null
           bank_code: string | null
@@ -78,10 +79,11 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
-          type: 'income' | 'expense' | 'transfer'
+          type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
           amount_satang: number
           account_id: string
           to_account_id?: string | null
+          holding_id?: string | null
           category?: string | null
           ref_code?: string | null
           bank_code?: string | null
@@ -94,10 +96,11 @@ export interface Database {
           created_at?: string
         }
         Update: {
-          type?: 'income' | 'expense' | 'transfer'
+          type?: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
           amount_satang?: number
           account_id?: string
           to_account_id?: string | null
+          holding_id?: string | null
           category?: string | null
           ref_code?: string | null
           bank_code?: string | null
@@ -513,6 +516,21 @@ export interface Database {
       account_balances: {
         Args: Record<PropertyKey, never>
         Returns: { account_id: string; balance_satang: number }[]
+      }
+      record_buy_with_cash: {
+        Args: {
+          p_holding_id: string
+          p_qty: number
+          p_price_minor: string
+          p_currency: string
+          p_fees_minor: string
+          p_fx_rate: number | null
+          p_datetime: string
+          p_ref: string | null
+          p_account_id: string
+          p_amount_satang: number
+        }
+        Returns: { asset_transaction_id: string; cash_transaction_id: string }[]
       }
     }
     Enums: { [_ in never]: never }
