@@ -25,7 +25,14 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 - Non-blocking follow-up: see [RV-C1-2].
 
 ## [RV-C1-2] C1 backfill form accepts a second tap while the refresh is in flight — 2026-10-28 · from Claude review
-**Status:** FIXED 2026-10-28 (pending independent review) · **Severity:** L. The gap and the money stay correct; this predates `d65456f`.
+**Status:** **APPROVED 2026-10-28 (Claude review)** at `6d6ed2c` · **Severity:** L.
+**Re-review:**
+- `preventDoubleSubmit` sets `submittingRef` in `onSubmit` and calls `preventDefault` on any repeat. React 19 skips the form action when the event's default is prevented.
+- The ref is cleared in a `finally` that wraps the create call and the now-awaited `onSuccess`, so `กำลังบันทึก…` lasts until `refreshAfterSave` resolves.
+- The ids live in `savedTransactionIdsRef`, so they no longer come from a closure.
+- Only `reconcile-account-sheet.tsx` passes the prop. The other `onSuccess` callers return void, so awaiting them changes nothing.
+- Raw tsc exits 0. Vitest: 352 passed, 34 skipped. Codex reports the new E2E RED on the old code (2 DB rows, UI showing `(1)`) and C1 `--repeat-each 5` at 20/20.
+- Non-blocking: the optimistic branch returns before the `try`. A future caller passing both `optimistic` and `preventDoubleSubmit` would keep `submittingRef` stuck at true. Either reset it on that branch or document the two as mutually exclusive. The gap and the money stay correct; this predates `d65456f`.
 - **Mechanism:**
   - `TransactionForm`'s action calls `onSuccess(id)` and returns without awaiting `refreshAfterSave`.
   - The form remounts only when `key` changes, which happens on `savedCount`, after the refresh resolves. Until then the filled form stays live.
