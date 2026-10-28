@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-C2-1] 0012 links cash to a holding, not to the buy it paid for — 2026-10-28 · from Claude review
-**From:** Claude review of `b3e7cbe` + `09580d7` · **Status:** OPEN · **Severity:** M. **Blocks the live apply of 0012**: fixing it later costs a second migration. 0012 is unapplied, so the fix is cheap now.
+**From:** Claude review of `b3e7cbe` + `09580d7` · **Status:** **APPROVED 2026-10-28 (Claude review)** at `98a1fbd`. Re-review: `asset_transaction_id` FK (on delete set null) added to unapplied 0012 and set by `record_buy_with_cash`; /invest maps cash by buy id; the line and the delete warning are per buy; sha re-pinned `5bfafc08…` and matches on disk; PGlite proof (scratch install) green incl. link set + buy delete keeps cash with NULL link; raw tsc 0; Vitest 364 passed / 34 skipped. 0012 is still NOT applied live. · **Severity:** M. **Blocks the live apply of 0012**: fixing it later costs a second migration. 0012 is unapplied, so the fix is cheap now.
 **Verified on disk:**
 - `tsc --noEmit --incremental false` exits 0. Vitest: 363 passed, 34 skipped.
 - The PGlite proof passes, run with a scratch install via `PGLITE_MODULE_PATH`.
@@ -50,7 +50,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 - Do not run the apply helper.
 
 ## [RV-C2-2] One-account users lose the "add a second account" path on โอน — 2026-10-28 · from Claude review
-**Status:** OPEN · **Severity:** L (non-blocking).
+**Status:** **APPROVED 2026-10-28 (Claude review)** at `5fda0f9`. `InlineCreateAccount` shows under the to-grid when the source is the only real account; 📈 stays; Codex E2E was RED before and GREEN after. Design notes below stay open as non-blocking. · **Severity:** L (non-blocking).
 - `components/transaction-form.tsx` changed the to-grid guard from `accounts.filter((a) => a.id !== accountId).length === 0` to `accounts.length === 0`. The change lets a one-account user pick 📈.
 - Side effect: with exactly one account, a plain transfer now shows a to-grid where the only account is disabled, plus 📈. The `transferNeedsSecondAccount` / `InlineCreateAccount` prompt is gone.
 - **Fix:** keep the grid, but render `InlineCreateAccount` (or an add tile) when there is no other real account.
