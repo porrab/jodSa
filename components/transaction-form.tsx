@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight, LockKeyhole } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
@@ -48,9 +48,10 @@ export default function TransactionForm({
   lockedAccountId,
   transferLockedSide = 'source',
   submitLabel,
+  preventDoubleSubmit = false,
 }: {
   accounts: Account[]
-  onSuccess?: (transactionId?: string) => void
+  onSuccess?: (transactionId?: string) => void | Promise<void>
   defaultValues?: Partial<{
     type: TxType
     amount: string
@@ -88,9 +89,11 @@ export default function TransactionForm({
   lockedAccountId?: string
   transferLockedSide?: 'source' | 'destination'
   submitLabel?: string
+  preventDoubleSubmit?: boolean
 }) {
   const t = useTranslations('transaction')
   const pendingTx = usePendingTx()
+  const submittingRef = useRef(false)
   const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
   const fallbackAccountId = accounts[0]?.id ?? null
   const [accountId, setAccountId] = useState(() =>
@@ -240,21 +243,28 @@ export default function TransactionForm({
         return { error: '' }
       }
 
-      const result = editId ? await updateTransaction(prev, fd) : await createTransaction(prev, fd)
-      if (!result.error) {
-        toast.success(t('saved'))
-        const transactionId = 'id' in result && typeof result.id === 'string' ? result.id : undefined
-        onSuccess?.(transactionId)
-      } else {
-        toast.error(result.error)
+      try {
+        const result = editId ? await updateTransaction(prev, fd) : await createTransaction(prev, fd)
+        if (!result.error) {
+          toast.success(t('saved'))
+          const transactionId = 'id' in result && typeof result.id === 'string' ? result.id : undefined
+          await onSuccess?.(transactionId)
+        } else {
+          toast.error(result.error)
+        }
+        return result
+      } finally {
+        submittingRef.current = false
       }
-      return result
     },
     { error: '' },
   )
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-4" onSubmit={preventDoubleSubmit ? (event) => {
+      if (submittingRef.current) event.preventDefault()
+      else submittingRef.current = true
+    } : undefined}>
       {editId && <input type="hidden" name="id" value={editId} />}
       {/* Type */}
       <div>

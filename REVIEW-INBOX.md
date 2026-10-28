@@ -25,7 +25,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 - Non-blocking follow-up: see [RV-C1-2].
 
 ## [RV-C1-2] C1 backfill form accepts a second tap while the refresh is in flight — 2026-10-28 · from Claude review
-**Status:** OPEN · **Severity:** L. The gap and the money stay correct; this predates `d65456f`.
+**Status:** FIXED 2026-10-28 (pending independent review) · **Severity:** L. The gap and the money stay correct; this predates `d65456f`.
 - **Mechanism:**
   - `TransactionForm`'s action calls `onSuccess(id)` and returns without awaiting `refreshAfterSave`.
   - The form remounts only when `key` changes, which happens on `savedCount`, after the refresh resolves. Until then the filled form stays live.
@@ -35,6 +35,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
   - Keep the ids in a ref, or append them with a functional `setState`.
   - Keep the submit disabled (`กำลังบันทึก…`) until the refresh resolves, for example by having `onSuccess` return the promise and awaiting it inside the action.
 - **Acceptance:** an E2E that double-clicks the save button creates exactly one row, and `ลงแล้ว (n)` matches the DB.
+- **Implementation 2026-10-28:** The E2E dispatched two clicks in one browser task and was RED on the original build (2 database rows versus 1 expected while `ลงแล้ว (1)` was visible). C1 now opts into a synchronous submit guard; the non-optimistic action awaits `onSuccess`, and the sheet retains saved IDs in a ref. C1 passed 20/20 with `--repeat-each 5`; A3 and contrast passed 8/8. TypeScript exited 0, Vitest passed 352 and skipped 34 live-RLS tests, and the production build exited 0. See `project/jodsa/docs/postmortems/RV-C1-2-double-submit.md`. Only test user A was used; no migration or push.
 
 **Mechanism:**
 - `components/reconcile-account-sheet.tsx:159` sets `sessionStartedAt = new Date().toISOString()` from the **browser** clock.

@@ -74,6 +74,29 @@ async function saveMissingTransaction(step2: Locator, amount: string, category: 
   await step2.getByRole('button', { name: 'บันทึก แล้วลงรายการต่อ' }).click()
 }
 
+test('C1 ignores two save taps in one browser task', async ({ page }) => {
+  const step2 = await openBackfillStep(page)
+  await step2.getByLabel('จำนวนเงิน').fill('60.00')
+  await step2.getByTestId('transaction-category-field').getByRole('button', { name: 'อาหาร', exact: true }).click()
+  await step2.getByLabel('ผู้รับ / ผู้จ่าย (ไม่บังคับ)').fill('C1 double tap')
+
+  await step2.getByRole('button', { name: 'บันทึก แล้วลงรายการต่อ' }).evaluate((button: HTMLButtonElement) => {
+    button.click()
+    button.click()
+  })
+
+  await expect(step2.getByText('ลงแล้ว (1)')).toBeVisible({ timeout: 20_000 })
+  await expect.poll(async () => {
+    const { count, error } = await adminClient().from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('account_id', accountId)
+      .eq('counterparty', 'C1 double tap')
+    if (error) throw error
+    return count
+  }).toBe(1)
+})
+
 for (const skewMinutes of [-2, 2]) {
   test(`C1 ลงแล้ว contains only this session when browser clock is ${skewMinutes > 0 ? '+' : ''}${skewMinutes} minutes`, async ({ page }) => {
     await page.clock.setFixedTime(new Date(Date.now() + skewMinutes * 60_000))

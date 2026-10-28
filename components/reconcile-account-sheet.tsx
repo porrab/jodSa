@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { AlertTriangle, Check, Info } from 'lucide-react'
@@ -78,7 +78,7 @@ export default function ReconcileAccountSheet({
   const [showRemainder, setShowRemainder] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [savedTransactionIds, setSavedTransactionIds] = useState<string[]>([])
+  const savedTransactionIdsRef = useRef<string[]>([])
   const [prefillVersion, setPrefillVersion] = useState(0)
   const [frequentPrefill, setFrequentPrefill] = useState<Partial<{
     type: 'income' | 'expense'
@@ -115,7 +115,7 @@ export default function ReconcileAccountSheet({
     setStartGap(0)
     setSavedCount(0)
     setSavedRows([])
-    setSavedTransactionIds([])
+    savedTransactionIdsRef.current = []
     setShowRemainder(false)
     setError('')
     onOpenChange(false)
@@ -166,17 +166,17 @@ export default function ReconcileAccountSheet({
 
   async function refreshAfterSave(transactionId?: string) {
     const nextSavedTransactionIds = transactionId
-      ? [...savedTransactionIds, transactionId]
-      : savedTransactionIds
+      ? [...savedTransactionIdsRef.current, transactionId]
+      : savedTransactionIdsRef.current
+    savedTransactionIdsRef.current = nextSavedTransactionIds
     const state = await getAccountReconcileState(account.id, nextSavedTransactionIds)
     if (state.error || state.balanceSatang === undefined) {
       setError(state.error || t('refreshFailed'))
       return
     }
     setLiveBalance(state.balanceSatang)
-    setSavedTransactionIds(nextSavedTransactionIds)
     setSavedRows(state.savedTransactions ?? [])
-    setSavedCount(state.savedTransactions?.length ?? (savedCount + 1))
+    setSavedCount(state.savedTransactions?.length ?? nextSavedTransactionIds.length)
     setShowRemainder(true)
     if (bankBalance !== null && state.balanceSatang === bankBalance) {
       await reconcileRemainder({
@@ -270,6 +270,7 @@ export default function ReconcileAccountSheet({
               transferLockedSide={transferLockedSide}
               defaultValues={{ type: missingType, account_id: account.id, datetime: `${selectedDate}T${selectedTime}`, ...frequentPrefill }}
               onSuccess={refreshAfterSave}
+              preventDoubleSubmit
               submitLabel={t('saveAndContinue')}
               idPrefix="reconcile"
               hideDatetimeField
