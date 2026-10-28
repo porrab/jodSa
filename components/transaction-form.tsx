@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useRef, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight, LockKeyhole } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
@@ -13,22 +13,23 @@ import { AmountInput } from '@/components/ui/amount-input'
 import { Chip } from '@/components/ui/chip'
 import { Label } from '@/components/ui/label'
 import { RequiredMark } from '@/components/ui/required-mark'
-import { createTransaction, updateTransaction } from '@/app/actions/transactions'
+import { createTransaction, getOwnedHoldingOptions, updateTransaction } from '@/app/actions/transactions'
 import { usePendingTx } from '@/components/pending-tx-provider'
 import { toDatetimeLocal, type TxFormValues } from '@/lib/quick-add'
 import { parseInputToSatang } from '@/lib/money'
 import { categoriesForType } from '@/lib/validators/transaction'
 import { resolveAccountDefault, type LastAccountMap } from '@/lib/last-account'
 import InlineCreateAccount from '@/components/inline-create-account'
-import AccountGrid from '@/components/account-grid'
+import AccountGrid, { PORTFOLIO_TILE_ID } from '@/components/account-grid'
 import DisplayNameField from '@/components/display-name-field'
 import { useAccountBalances } from '@/lib/use-account-balances'
 import type { Database } from '@/lib/supabase/types'
 
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'bank'>
-type TxType = 'income' | 'expense' | 'transfer'
+type TxType = 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
+type FormType = 'income' | 'expense' | 'transfer'
 
-const TYPE_META: Record<TxType, { icon: typeof ArrowDownLeft; cls: string }> = {
+const TYPE_META: Record<FormType, { icon: typeof ArrowDownLeft; cls: string }> = {
   income: { icon: ArrowDownLeft, cls: 'text-income' },
   expense: { icon: ArrowUpRight, cls: 'text-expense' },
   transfer: { icon: ArrowLeftRight, cls: 'text-transfer' },
@@ -57,6 +58,7 @@ export default function TransactionForm({
     amount: string
     account_id: string
     to_account_id: string
+    holding_id: string
     category: string
     counterparty: string
     note: string
@@ -94,10 +96,10 @@ export default function TransactionForm({
   const t = useTranslations('transaction')
   const pendingTx = usePendingTx()
   const submittingRef = useRef(false)
-  const [type, setType] = useState<TxType>(defaultValues?.type ?? 'expense')
+  const [type, setType] = useState<FormType>(defaultValues?.type === 'invest' || defaultValues?.type === 'divest' ? 'transfer' : (defaultValues?.type ?? 'expense'))
   const fallbackAccountId = accounts[0]?.id ?? null
   const [accountId, setAccountId] = useState(() =>
-    lockedAccountId ?? defaultValues?.account_id ??
+    (defaultValues?.type === 'divest' ? PORTFOLIO_TILE_ID : lockedAccountId ?? defaultValues?.account_id) ??
     resolveAccountDefault({
       category: defaultValues?.category,
       lastByCategory,
@@ -110,6 +112,8 @@ export default function TransactionForm({
   // category change is allowed to overwrite their choice.
   const [accountTouched, setAccountTouched] = useState(false)
   const [toAccountId, setToAccountId] = useState(
+    defaultValues?.type === 'invest' ? PORTFOLIO_TILE_ID :
+    defaultValues?.type === 'divest' ? (defaultValues.account_id ?? '') :
     transferLockedSide === 'destination' && lockedAccountId
       ? lockedAccountId
       : (defaultValues?.to_account_id ?? ''),
@@ -117,6 +121,18 @@ export default function TransactionForm({
   const [category, setCategory] = useState(defaultValues?.category ?? '')
   const [counterparty, setCounterparty] = useState(defaultValues?.counterparty ?? '')
   const [note, setNote] = useState(defaultValues?.note ?? '')
+  const [holdingId, setHoldingId] = useState(defaultValues?.holding_id ?? '')
+  const [holdings, setHoldings] = useState<Array<{ id: string; label: string }>>([])
+  const cashType: TxType = type === 'transfer'
+    ? toAccountId === PORTFOLIO_TILE_ID ? 'invest'
+      : accountId === PORTFOLIO_TILE_ID ? 'divest' : 'transfer'
+    : type
+  useEffect(() => {
+    if (cashType !== 'invest' && cashType !== 'divest') return
+    let active = true
+    getOwnedHoldingOptions().then((items) => { if (active) setHoldings(items) })
+    return () => { active = false }
+  }, [cashType])
   const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
   const selectedAccount = accounts.find((account) => account.id === accountId)
   const categoryDefault =
@@ -125,7 +141,7 @@ export default function TransactionForm({
   const accountLocked = Boolean(lockedAccountId) && (type !== 'transfer' || transferLockedSide === 'source')
   const destinationLocked = Boolean(lockedAccountId) && type === 'transfer' && transferLockedSide === 'destination'
 
-  function handleTypeChange(nextType: TxType) {
+  function handleTypeChange(nextType: FormType) {
     setType(nextType)
     if (lockedAccountId) {
       if (nextType !== 'transfer' || transferLockedSide === 'source') setAccountId(lockedAccountId)
@@ -172,9 +188,11 @@ export default function TransactionForm({
 
   /** Shared field normalisation — both submit paths must build the SAME payload. */
   const fillFormData = (fd: FormData) => {
-    fd.set('type', type)
-    fd.set('account_id', accountId)
-    if (type === 'transfer') fd.set('to_account_id', toAccountId)
+    fd.set('type', cashType)
+    fd.set('account_id', cashType === 'divest' ? toAccountId : accountId)
+    if (cashType === 'transfer') fd.set('to_account_id', toAccountId)
+    else fd.delete('to_account_id')
+    if ((cashType === 'invest' || cashType === 'divest') && holdingId) fd.set('holding_id', holdingId)
     if (category) fd.set('category', category)
     // Convert local datetime to offset-aware ISO
     const dtLocal = fd.get('datetime') as string
@@ -193,10 +211,11 @@ export default function TransactionForm({
       // returned with the required date field blank. The restore payload and the
       // server payload are two different contracts — build the restore one first.
       const restoreValues: TxFormValues = {
-        type,
+        type: cashType,
         amount: (fd.get('amount') as string) || undefined,
-        account_id: accountId,
+        account_id: cashType === 'divest' ? toAccountId : accountId,
         to_account_id: type === 'transfer' ? toAccountId : undefined,
+        holding_id: holdingId || undefined,
         category: category || undefined,
         counterparty: counterparty || undefined,
         note: note || undefined,
@@ -218,12 +237,12 @@ export default function TransactionForm({
         const account = accounts.find((a) => a.id === accountId)
         const toAccount = accounts.find((a) => a.id === toAccountId)
         const preview = {
-          type,
+          type: cashType,
           amountSatang,
           label:
             note ||
             counterparty ||
-            (type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
+            (cashType === 'invest' ? t('investFallback') : cashType === 'divest' ? t('divestFallback') : type === 'transfer' && toAccount ? `→ ${toAccount.name}` : (account?.name ?? '—')),
           category: category || null,
         }
         // Defer ALL optimistic side effects out of useActionState's transition.
@@ -340,7 +359,8 @@ export default function TransactionForm({
             balances={balances}
             balancesLoading={balancesLoading}
             label={type === 'transfer' ? t('fromAccount') : t('account')}
-            disabledAccountId={destinationLocked ? lockedAccountId : undefined}
+            disabledAccountId={destinationLocked ? lockedAccountId : toAccountId === PORTFOLIO_TILE_ID ? PORTFOLIO_TILE_ID : undefined}
+            includePortfolio={type === 'transfer' && toAccountId !== PORTFOLIO_TILE_ID}
           />
         )}
       </div>
@@ -369,7 +389,7 @@ export default function TransactionForm({
                 <LockKeyhole aria-hidden="true" className="size-4 shrink-0" />
                 <span>{t('accountLockedDuringReconcile', { account: accounts.find((account) => account.id === toAccountId)?.name ?? '—' })}</span>
               </div>
-            ) : accounts.filter((a) => a.id !== accountId).length === 0 ? (
+            ) : accounts.length === 0 ? (
               <InlineCreateAccount
                 hint={t('transferNeedsSecondAccount')}
                 onCreated={(id) => setToAccountId(id)}
@@ -383,11 +403,23 @@ export default function TransactionForm({
                 balancesLoading={balancesLoading}
                 label={t('toAccount')}
                 disabledAccountId={accountId}
+                includePortfolio={accountId !== PORTFOLIO_TILE_ID}
               />
             )}
           </div>
         </>
       )}
+
+      {(cashType === 'invest' || cashType === 'divest') && <>
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}-holding`}>{t('holdingOptional')}</Label>
+          <select id={`${idPrefix}-holding`} name="holding_id" value={holdingId} onChange={(event) => setHoldingId(event.target.value)} className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm">
+            <option value="">{t('holdingNone')}</option>
+            {holdings.map((holding) => <option key={holding.id} value={holding.id}>{holding.label}</option>)}
+          </select>
+        </div>
+        <p className="rounded-md bg-info-soft px-3 py-2 text-sm text-transfer">{t(cashType === 'invest' ? 'investConsequence' : 'divestConsequence')}</p>
+      </>}
 
       {/* Counterparty (non-transfer) */}
       {type !== 'transfer' && (
@@ -429,7 +461,7 @@ export default function TransactionForm({
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <Button type="submit" className={cn('w-full', stickySubmit && 'sticky bottom-0 z-10 shadow-lg')} disabled={isPending}>
-        {isPending ? t('saving') : (submitLabel ?? t('save'))}
+        {isPending ? t('saving') : (submitLabel ?? (cashType === 'invest' ? t('saveInvest') : cashType === 'divest' ? t('saveDivest') : t('save')))}
       </Button>
     </form>
   )

@@ -202,16 +202,19 @@ function AccountDetailSheet({
   account,
   accounts,
   recentTransactions,
+  holdingSymbols,
   open,
   onOpenChange,
 }: {
   account: Account | null
   accounts: Account[]
   recentTransactions: RecentTransaction[]
+  holdingSymbols: Record<string, string>
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const t = useTranslations('account')
+  const tt = useTranslations('transaction')
   const [editing, setEditing] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
   const [reconcileOpen, setReconcileOpen] = useState(false)
@@ -299,8 +302,8 @@ function AccountDetailSheet({
               {recent.map((tx) => {
                 const style = TRANSACTION_TYPE_STYLE[tx.type] ?? TRANSACTION_TYPE_STYLE.expense
                 return <div key={tx.id} className="flex items-center gap-3 py-3">
-                  <TransactionTypeBadge type={tx.type} label={tx.type} />
-                  <TransactionRowCopy tx={tx} toAccountName={tx.to_account_id ? accountMap[tx.to_account_id]?.name : null} time={format(new Date(tx.datetime), 'HH:mm')} />
+                  <TransactionTypeBadge type={tx.type} label={tx.type === 'invest' ? tt('invest') : tx.type === 'divest' ? tt('divest') : tx.type} />
+                  <TransactionRowCopy tx={tx} holdingSymbol={tx.holding_id ? holdingSymbols[tx.holding_id] : null} toAccountName={tx.to_account_id ? accountMap[tx.to_account_id]?.name : null} time={format(new Date(tx.datetime), 'HH:mm')} />
                   <span className={`shrink-0 font-semibold tabular-nums ${style.text}`}>{transactionAmountPrefix(tx.type)}{formatTHB(tx.amount_satang)}</span>
                 </div>
               })}
@@ -344,10 +347,12 @@ function AccountDetailSheet({
 export default function AccountsClient({
   accounts,
   recentTransactions,
+  holdingSymbols,
   initialAccountId,
 }: {
   accounts: Account[]
   recentTransactions: RecentTransaction[]
+  holdingSymbols: Record<string, string>
   initialAccountId: string | null
 }) {
   const t = useTranslations('account')
@@ -410,6 +415,7 @@ export default function AccountsClient({
         account={detailAccount}
         accounts={accounts}
         recentTransactions={recentTransactions}
+        holdingSymbols={holdingSymbols}
         open={detailId !== null}
         onOpenChange={(o) => { if (!o) setDetailId(null) }}
       />

@@ -1,4 +1,4 @@
-export type TxType = 'income' | 'expense' | 'transfer'
+export type TxType = 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
 
 /**
  * Every field `TransactionForm` can be seeded with. Widened from `{type, amount}`
@@ -11,6 +11,7 @@ export type TxFormValues = Partial<{
   amount: string
   account_id: string
   to_account_id: string
+  holding_id: string
   category: string
   counterparty: string
   note: string

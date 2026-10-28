@@ -23,7 +23,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
   // Joined client-side (Map lookups), not via a PostgREST embed — matches this
   // repo's existing convention (see app/(app)/transactions/page.tsx) and sidesteps
   // supabase-js needing typed `Relationships` metadata for an embed to type-check.
-  const [{ data: holdingsRaw }, { data: assets }, { data: txRaw }, { data: snapshotsRaw }, { data: plansRaw }] =
+  const [{ data: holdingsRaw }, { data: assets }, { data: txRaw }, { data: snapshotsRaw }, { data: plansRaw }, { data: accounts }, { data: cashRows }] =
     await Promise.all([
       supabase.from('holdings').select('*').order('created_at'),
       supabase.from('assets').select('*').order('is_system', { ascending: false }).order('name'),
@@ -34,9 +34,20 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       // "not applied yet" fallback (empty history, generate still attempts and
       // surfaces the DB error via GeneratePlanState 'error').
       supabase.from('plans').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('accounts').select('id, name, bank'),
+      supabase.from('transactions').select('id, account_id, holding_id, amount_satang, datetime')
+        .eq('type', 'invest').not('holding_id', 'is', null),
     ])
 
   const assetById = new Map((assets ?? []).map((a) => [a.id, a]))
+  const accountById = new Map((accounts ?? []).map((a) => [a.id, a]))
+  const cashByHolding = new Map<string, Array<{ id: string; accountName: string; amountSatang: number; datetime: string }>>()
+  for (const row of cashRows ?? []) {
+    if (!row.holding_id) continue
+    const links = cashByHolding.get(row.holding_id) ?? []
+    links.push({ id: row.id, accountName: accountById.get(row.account_id)?.name ?? '—', amountSatang: row.amount_satang, datetime: row.datetime })
+    cashByHolding.set(row.holding_id, links)
+  }
 
   const txByHolding = new Map<string, NonNullable<typeof txRaw>>()
   for (const tx of txRaw ?? []) {
@@ -59,6 +70,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     return {
       ...h,
       asset: assetById.get(h.asset_id) ?? null,
+      cashLinks: cashByHolding.get(h.id) ?? [],
       transactions,
       // bigint isn't RSC-serializable — cross the server/client boundary as strings
       // (lib/invest/money.ts formatMoney() accepts string | number | bigint).
@@ -145,6 +157,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     <InvestTabs
       holdings={holdings}
       assets={assets ?? []}
+      accounts={accounts ?? []}
       dashboard={dashboard}
       snapshots={snapshotsRaw ?? []}
       plans={plansRaw ?? []}

@@ -33,11 +33,14 @@ const TYPE_STYLE: Record<string, { textCls: string }> = {
   income: { textCls: 'text-income' },
   expense: { textCls: 'text-expense' },
   transfer: { textCls: 'text-transfer' },
+  invest: { textCls: 'text-transfer' },
+  divest: { textCls: 'text-transfer' },
 }
 
 function TxRow({
   tx,
   accountMap,
+  holdingSymbols,
   action,
   actionIcon,
   actionLabel,
@@ -45,12 +48,14 @@ function TxRow({
 }: {
   tx: Transaction
   accountMap: Record<string, Account>
+  holdingSymbols: Record<string, string>
   action: () => Promise<void>
   actionIcon: React.ReactNode
   actionLabel: string
   onDone: () => void
 }) {
   const t = useTranslations('group')
+  const tt = useTranslations('transaction')
   const locale = useLocale()
   const [busy, setBusy] = useState(false)
   const [open, setOpen] = useState(false)
@@ -72,10 +77,11 @@ function TxRow({
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 p-3 text-left hover:bg-accent/40">
-        <TransactionTypeBadge type={tx.type} label={tx.type} />
+        <TransactionTypeBadge type={tx.type} label={tx.type === 'invest' ? tt('invest') : tx.type === 'divest' ? tt('divest') : tx.type} />
         <div className="min-w-0 flex-1">
           <TransactionRowCopy
             tx={tx}
+            holdingSymbol={tx.holding_id ? holdingSymbols[tx.holding_id] : null}
             accountName={acct?.name}
             time={format(new Date(tx.datetime), 'HH:mm', { locale: locale === 'th' ? th : enUS })}
           />
@@ -103,11 +109,13 @@ export default function GroupDetailClient({
   accounts,
   members,
   candidates,
+  holdingSymbols,
 }: {
   group: Group
   accounts: Account[]
   members: Transaction[]
   candidates: Transaction[]
+  holdingSymbols: Record<string, string>
 }) {
   const t = useTranslations('group')
   const router = useRouter()
@@ -181,6 +189,7 @@ export default function GroupDetailClient({
                       key={tx.id}
                       tx={tx}
                       accountMap={accountMap}
+                      holdingSymbols={holdingSymbols}
                       action={() => setTransactionGroup(tx.id, group.id)}
                       actionIcon={<Plus className="size-3.5" />}
                       actionLabel={t('addMember')}
@@ -205,6 +214,7 @@ export default function GroupDetailClient({
                 key={tx.id}
                 tx={tx}
                 accountMap={accountMap}
+                holdingSymbols={holdingSymbols}
                 action={() => setTransactionGroup(tx.id, null)}
                 actionIcon={null}
                 actionLabel={t('removeFromGroup')}

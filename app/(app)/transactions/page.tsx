@@ -4,6 +4,7 @@ import { currentMonthRange } from '@/lib/recurrence/range'
 import { buildLastAccountMap } from '@/lib/last-account'
 import { findRecentTransactionGaps } from '@/lib/reconcile'
 import TransactionsClient from './transactions-client'
+import { holdingSymbolsForRows } from '@/lib/holding-symbols'
 
 export default async function TransactionsPage() {
   const supabase = await createClient()
@@ -52,11 +53,13 @@ export default async function TransactionsPage() {
   const lastByCategory = buildLastAccountMap(history ?? [])
   const globalLastAccountId = history?.[0]?.account_id ?? null
   const dateGaps = findRecentTransactionGaps((transactions ?? []).map((tx) => tx.datetime))
+  const holdingSymbols = await holdingSymbolsForRows(supabase, transactions ?? [])
 
   return (
     <div className="space-y-6">
       <TransactionsClient
         transactions={transactions ?? []}
+        holdingSymbols={holdingSymbols}
         lastDayMayBePartial={(transactions?.length ?? 0) === 200}
         accounts={accounts ?? []}
         groups={groups ?? []}

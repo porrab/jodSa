@@ -6,8 +6,7 @@ export const CATEGORIES = [
 ] as const
 
 // Stored/rendered like ordinary categories but never offered by category pickers.
-// TODO(C2/0012): invest/divest belong to transaction types after migration 0012;
-// do not add them to this C1 system-category list.
+// Invest/divest are transaction types, not categories.
 export const SYSTEM_CATEGORIES = ['adjustment'] as const
 
 export const INCOME_CATEGORIES: readonly string[] = ['salary', 'freelance', 'other']
@@ -53,6 +52,22 @@ export const transactionSchema = z.discriminatedUnion('type', [
     datetime: z.string().datetime({ offset: true }),
     group_id: z.string().uuid().optional(),
   }),
+  z.object({
+    type: z.literal('invest'),
+    amount_satang: z.number().int().positive(),
+    account_id: z.string().uuid(),
+    holding_id: z.string().uuid().optional(),
+    note: z.string().max(120).optional(),
+    datetime: z.string().datetime({ offset: true }),
+  }),
+  z.object({
+    type: z.literal('divest'),
+    amount_satang: z.number().int().positive(),
+    account_id: z.string().uuid(),
+    holding_id: z.string().uuid().optional(),
+    note: z.string().max(120).optional(),
+    datetime: z.string().datetime({ offset: true }),
+  }),
 ])
 
 export type TransactionInput = z.infer<typeof transactionSchema>
@@ -90,6 +105,22 @@ export const transactionUpdateSchema = z.discriminatedUnion('type', [
     note: z.string().max(120).optional(),
     datetime: z.string().datetime({ offset: true }),
     group_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal('invest'),
+    amount_satang: z.number().int().positive(),
+    account_id: z.string().uuid(),
+    holding_id: z.string().uuid().optional(),
+    note: z.string().max(120).optional(),
+    datetime: z.string().datetime({ offset: true }),
+  }),
+  z.object({
+    type: z.literal('divest'),
+    amount_satang: z.number().int().positive(),
+    account_id: z.string().uuid(),
+    holding_id: z.string().uuid().optional(),
+    note: z.string().max(120).optional(),
+    datetime: z.string().datetime({ offset: true }),
   }),
 ])
 

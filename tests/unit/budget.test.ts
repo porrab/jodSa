@@ -45,6 +45,15 @@ describe('budget vs actual (expense only)', () => {
     expect(status.remaining).toBe(950_000)
   })
 
+  it('excludes invest and divest cash from spending', () => {
+    const rows = [
+      transaction('expense', 500, '2026-06-03T10:00:00+07:00'),
+      transaction('invest', 2000, '2026-06-03T11:00:00+07:00'),
+      transaction('divest', 1000, '2026-06-04T10:00:00+07:00'),
+    ]
+    expect(spentForBudget(monthOverall, rows, NOW)).toBe(50_000)
+  })
+
   it('counts only the current Bangkok month', () => {
     const expenses = [
       expense(2000, '2026-06-01T10:00:00+07:00'), // in

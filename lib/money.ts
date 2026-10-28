@@ -37,14 +37,14 @@ export function parseInputToSatang(input: string): number | null {
 }
 
 export type TxForBalance = {
-  type: 'income' | 'expense' | 'transfer'
+  type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
   amount_satang: number
   account_id: string
   to_account_id: string | null
 }
 
 /**
- * Balance = openingBalance + Σ income(into acct) − Σ expense(from acct) − Σ transfer_out(from acct) + Σ transfer_in(into acct)
+ * Balance = openingBalance + Σ income + Σ divest − Σ expense − Σ invest − Σ transfer_out + Σ transfer_in
  * `openingBalance` (satang) is the account's starting amount — not a transaction, so it never
  * appears in income/expense/budget analysis; it only shifts the account's running balance.
  */
@@ -55,9 +55,9 @@ export function computeAccountBalance(
 ): number {
   let balance = openingBalance
   for (const tx of transactions) {
-    if (tx.type === 'income' && tx.account_id === accountId) {
+    if ((tx.type === 'income' || tx.type === 'divest') && tx.account_id === accountId) {
       balance += tx.amount_satang
-    } else if (tx.type === 'expense' && tx.account_id === accountId) {
+    } else if ((tx.type === 'expense' || tx.type === 'invest') && tx.account_id === accountId) {
       balance -= tx.amount_satang
     } else if (tx.type === 'transfer') {
       if (tx.account_id === accountId) balance -= tx.amount_satang

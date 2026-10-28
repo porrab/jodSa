@@ -53,7 +53,6 @@ export default function BackfillGapSheet({
           <input aria-label={t('chooseDate')} type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-h-11 rounded-full border border-border bg-card px-3 text-sm" />
           <Chip pressed={false} onClick={() => setDate(shiftDay(date, 1))}>{t('nextDay')}</Chip>
         </div>
-        {/* TODO(C2/0012): add invest/divest only after migration 0012 is live. */}
         <TransactionForm
           key={`${date}-${savedCount}`}
           accounts={accounts}

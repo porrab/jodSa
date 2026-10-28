@@ -29,6 +29,12 @@ import {
 } from '@/lib/validators/invest'
 import { formatMoney, parseMinor, toMajor, minorUnitDecimals } from '@/lib/invest/money'
 import { formatAppDate } from '@/lib/date-display'
+import { formatTHB } from '@/lib/money'
+import AccountGrid from '@/components/account-grid'
+import InlineCreateAccount from '@/components/inline-create-account'
+import { useAccountBalances } from '@/lib/use-account-balances'
+
+type CashAccount = { id: string; name: string; bank: string }
 
 export type Asset = {
   id: string
@@ -70,6 +76,7 @@ export type Holding = {
   current_fx_to_display: string | null
   asset: Asset | null
   transactions: Transaction[]
+  cashLinks: Array<{ id: string; accountName: string; amountSatang: number; datetime: string }>
   costBasis: CostBasis
 }
 
@@ -282,18 +289,34 @@ function AddHoldingDialog({ assets, onClose }: { assets: Asset[]; onClose: () =>
   )
 }
 
-function AddTransactionForm({ holding, onDone }: { holding: Holding; onDone: () => void }) {
+function AddTransactionForm({ holding, accounts, onDone }: { holding: Holding; accounts: CashAccount[]; onDone: () => void }) {
   const t = useTranslations('invest')
   const tc = useTranslations('common')
   const [type, setType] = useState<AssetTxType>('buy')
   const currency = holding.asset?.currency ?? 'THB'
   const needsQty = type === 'buy' || type === 'sell'
+  const [cashOpen, setCashOpen] = useState(false)
+  const [cashAccountId, setCashAccountId] = useState('')
+  const [qty, setQty] = useState('')
+  const [price, setPrice] = useState('')
+  const [fees, setFees] = useState('')
+  const [cashAmount, setCashAmount] = useState('')
+  const [cashAmountTouched, setCashAmountTouched] = useState(false)
+  const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
+  const thbPrefill = Number(qty) > 0 && Number(price) > 0
+    ? (Number(qty) * Number(price) + (Number(fees) || 0)).toFixed(2) : ''
+  const shownCashAmount = cashAmountTouched ? cashAmount : currency === 'THB' ? thbPrefill : ''
 
   const [state, formAction, isPending] = useActionState(
     async (prev: { error: string }, fd: FormData) => {
       fd.set('holding_id', holding.id)
       fd.set('type', type)
       fd.set('currency', currency)
+      if (cashOpen && type === 'buy') {
+        fd.set('cash_enabled', 'true')
+        fd.set('cash_account_id', cashAccountId)
+        fd.set('cash_amount', shownCashAmount)
+      }
       const result = await addAssetTransaction(prev, fd)
       if (!result.error) {
         toast.success(t('txSaved'))
@@ -319,25 +342,37 @@ function AddTransactionForm({ holding, onDone }: { holding: Holding; onDone: () 
       {needsQty && (
         <div className="space-y-1">
           <Label htmlFor="tx-qty">{t('qtyLabel')} <RequiredMark /></Label>
-          <Input id="tx-qty" name="qty" type="text" inputMode="decimal" required className="tabular-nums" />
+        <Input id="tx-qty" name="qty" type="text" inputMode="decimal" required className="tabular-nums" value={qty} onChange={(event) => setQty(event.target.value)} />
         </div>
       )}
       <div className="space-y-1">
         <Label htmlFor="tx-amount">
           {needsQty ? t('priceLabel', { currency }) : t('amountLabel', { currency })} <RequiredMark />
         </Label>
-        <Input id="tx-amount" name="amount" type="text" inputMode="decimal" required className="tabular-nums" />
+        <Input id="tx-amount" name="amount" type="text" inputMode="decimal" required className="tabular-nums" value={price} onChange={(event) => setPrice(event.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor="tx-fees">{t('feesLabel')}</Label>
-          <Input id="tx-fees" name="fees" type="text" inputMode="decimal" placeholder="0" className="tabular-nums" />
+          <Input id="tx-fees" name="fees" type="text" inputMode="decimal" placeholder="0" className="tabular-nums" value={fees} onChange={(event) => setFees(event.target.value)} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="tx-datetime">{t('dateLabel')} <RequiredMark /></Label>
           <Input id="tx-datetime" name="datetime" type="datetime-local" required />
         </div>
       </div>
+      {type === 'buy' && <div className="rounded-md border border-border bg-secondary p-3">
+        <button type="button" className="flex min-h-11 w-full items-center justify-between text-left text-sm font-medium" aria-expanded={cashOpen} onClick={() => setCashOpen((open) => !open)}>
+          {t('cashFromJodsa')} <span aria-hidden="true">{cashOpen ? '−' : '+'}</span>
+        </button>
+        {cashOpen && <div className="space-y-3 pt-2">
+          <Label>{t('cashAccount')} <RequiredMark /></Label>
+          {accounts.length === 0 ? <InlineCreateAccount hint={t('cashAccount')} onCreated={setCashAccountId} /> :
+            <AccountGrid accounts={accounts} value={cashAccountId} onValueChange={setCashAccountId} balances={balances} balancesLoading={balancesLoading} label={t('cashAccount')} compact />}
+          <Label htmlFor="tx-cash-amount">{t('cashAmountTHB')} <RequiredMark /></Label>
+          <Input id="tx-cash-amount" name="cash_amount" type="text" inputMode="decimal" required value={shownCashAmount} onChange={(event) => { setCashAmountTouched(true); setCashAmount(event.target.value) }} className="tabular-nums" />
+        </div>}
+      </div>}
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" size="sm" className="w-full" disabled={isPending}>
         {isPending ? tc('saving') : t('addTransaction')}
@@ -418,10 +453,12 @@ function HoldingEditForm({ holding, onDone }: { holding: Holding; onDone: () => 
 /** J3-style detail sheet (design v3): row tap opens this instead of always-on row actions. */
 function HoldingDetailSheet({
   holding,
+  accounts,
   open,
   onOpenChange,
 }: {
   holding: Holding | null
+  accounts: CashAccount[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -450,7 +487,7 @@ function HoldingDetailSheet({
   }
 
   async function handleDeleteTx(id: string) {
-    if (!confirm(t('deleteTxConfirm'))) return
+    if (!confirm(`${t('deleteTxConfirm')}${selectedTrade?.type === 'buy' && holding?.cashLinks.length ? `\n${t('linkedCashWarning')}` : ''}`)) return
     try {
       await deleteAssetTransaction(id)
       toast.success(t('txDeleted'))
@@ -508,6 +545,7 @@ function HoldingDetailSheet({
 
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t('transactionsTitle')}</p>
+                {holding.cashLinks.map((cash) => <p key={cash.id} className="rounded-md bg-info-soft px-3 py-2 text-sm text-transfer">{t('cashLinkedLine', { account: cash.accountName, amount: formatTHB(cash.amountSatang) })}</p>)}
                 {holding.transactions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('noTransactions')}</p>
                 ) : (
@@ -545,7 +583,7 @@ function HoldingDetailSheet({
         <Sheet open={tradeOpen} onOpenChange={setTradeOpen}>
           <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
             <SheetHeader><SheetTitle>{t('addTransaction')}</SheetTitle></SheetHeader>
-            <div className="px-4 pb-6"><AddTransactionForm holding={holding} onDone={() => setTradeOpen(false)} /></div>
+            <div className="px-4 pb-6"><AddTransactionForm holding={holding} accounts={accounts} onDone={() => setTradeOpen(false)} /></div>
           </SheetContent>
         </Sheet>
         <Sheet open={selectedTrade !== null} onOpenChange={(next) => { if (!next) setSelectedTradeId(null) }}>
@@ -563,7 +601,7 @@ function HoldingDetailSheet({
   )
 }
 
-export default function InvestClient({ holdings, assets, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; initialHoldingId: string | null }) {
+export default function InvestClient({ holdings, assets, accounts, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; accounts: CashAccount[]; initialHoldingId: string | null }) {
   const t = useTranslations('invest')
   const [addOpen, setAddOpen] = useState(false)
   useEffect(() => {
@@ -641,6 +679,7 @@ export default function InvestClient({ holdings, assets, initialHoldingId }: { h
 
       <HoldingDetailSheet
         holding={detailHolding}
+        accounts={accounts}
         open={detailId !== null}
         onOpenChange={(o) => { if (!o) setDetailId(null) }}
       />

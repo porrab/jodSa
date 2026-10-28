@@ -12,7 +12,7 @@ export type BudgetRow = {
 }
 
 export type ExpenseRow = {
-  type: 'income' | 'expense' | 'transfer'
+  type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
   amount_satang: number
   category: string | null
   datetime: string // ISO timestamptz

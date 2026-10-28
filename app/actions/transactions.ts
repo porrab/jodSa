@@ -20,6 +20,7 @@ export async function createTransaction(_prev: { error: string }, formData: Form
     amount_satang,
     account_id: formData.get('account_id'),
     to_account_id: formData.get('to_account_id') || undefined,
+    holding_id: formData.get('holding_id') || undefined,
     category: formData.get('category') || undefined,
     counterparty: formData.get('counterparty') || undefined,
     note: (formData.get('note') as string | null)?.trim() || undefined,
@@ -31,6 +32,16 @@ export async function createTransaction(_prev: { error: string }, formData: Form
 
   const parsed = transactionSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (parsed.data.type === 'invest' || parsed.data.type === 'divest') {
+    if (parsed.data.holding_id) {
+      const { data: holding } = await supabase.from('holdings').select('id')
+        .eq('id', parsed.data.holding_id).eq('user_id', user.id).maybeSingle()
+      if (!holding) return { error: 'ไม่พบสินทรัพย์ของคุณ' }
+    }
+    const { data: account } = await supabase.from('accounts').select('id')
+      .eq('id', parsed.data.account_id).eq('user_id', user.id).maybeSingle()
+    if (!account) return { error: 'ไม่พบบัญชีของคุณ' }
+  }
 
   const { data, error } = await supabase.from('transactions').insert({
     user_id: user.id,
@@ -83,6 +94,7 @@ export async function updateTransaction(_prev: { error: string }, formData: Form
     amount_satang,
     account_id: formData.get('account_id'),
     to_account_id: formData.get('to_account_id') || undefined,
+    holding_id: formData.get('holding_id') || undefined,
     category: formData.get('category') || undefined,
     counterparty: formData.get('counterparty') || undefined,
     note: (formData.get('note') as string | null)?.trim() || undefined,
@@ -92,21 +104,39 @@ export async function updateTransaction(_prev: { error: string }, formData: Form
 
   const parsed = transactionUpdateSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (parsed.data.type === 'invest' || parsed.data.type === 'divest') {
+    if (parsed.data.holding_id) {
+      const { data: holding } = await supabase.from('holdings').select('id')
+        .eq('id', parsed.data.holding_id).eq('user_id', user.id).maybeSingle()
+      if (!holding) return { error: 'ไม่พบสินทรัพย์ของคุณ' }
+    }
+    const { data: account } = await supabase.from('accounts').select('id')
+      .eq('id', parsed.data.account_id).eq('user_id', user.id).maybeSingle()
+    if (!account) return { error: 'ไม่พบบัญชีของคุณ' }
+  }
 
   const base = {
     type: parsed.data.type,
     amount_satang: parsed.data.amount_satang,
     account_id: parsed.data.account_id,
     datetime: parsed.data.datetime,
-    group_id: parsed.data.group_id ?? null,
+    group_id: 'group_id' in parsed.data ? parsed.data.group_id ?? null : null,
     note: parsed.data.note ?? null,
   }
+  // Legacy edits do not address the 0012 column before rollout. When moving an
+  // investment cash row back to a legacy type, clear its link explicitly.
+  const { data: previous } = await supabase.from('transactions').select('type')
+    .eq('id', id).eq('user_id', user.id).maybeSingle()
+  const clearHolding = previous?.type === 'invest' || previous?.type === 'divest'
   const payload =
     parsed.data.type === 'transfer'
-      ? { ...base, to_account_id: parsed.data.to_account_id, category: null, counterparty: null }
-      : {
+      ? { ...base, to_account_id: parsed.data.to_account_id, ...(clearHolding ? { holding_id: null } : {}), category: null, counterparty: null }
+      : parsed.data.type === 'invest' || parsed.data.type === 'divest'
+        ? { ...base, to_account_id: null, holding_id: parsed.data.holding_id ?? null, category: null, counterparty: null }
+        : {
           ...base,
           to_account_id: null,
+          ...(clearHolding ? { holding_id: null } : {}),
           category: parsed.data.category ?? null,
           counterparty: parsed.data.counterparty ?? null,
         }
@@ -188,4 +218,19 @@ export async function checkNullRefDedup(
     .lte('datetime', to)
 
   return { duplicates: data ?? [] }
+}
+
+export async function getOwnedHoldingOptions() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const [{ data: holdings }, { data: assets }] = await Promise.all([
+    supabase.from('holdings').select('id, asset_id').eq('user_id', user.id),
+    supabase.from('assets').select('id, symbol, name'),
+  ])
+  const assetById = new Map((assets ?? []).map((asset) => [asset.id, asset]))
+  return (holdings ?? []).map((holding) => ({
+    id: holding.id,
+    label: assetById.get(holding.asset_id)?.symbol || assetById.get(holding.asset_id)?.name || '—',
+  }))
 }

@@ -4,6 +4,27 @@
 // all), not just by the edit form omitting an input for it.
 import { describe, it, expect } from 'vitest'
 import { transactionSchema, transactionUpdateSchema } from '@/lib/validators/transaction'
+import { recurringRuleSchema } from '@/lib/validators/recurring'
+
+describe('C2 cash type validation', () => {
+  const base = {
+    amount_satang: 12_345,
+    account_id: '11111111-1111-1111-1111-111111111111',
+    datetime: '2026-07-07T20:31:00+07:00',
+  }
+
+  it.each(['invest', 'divest'] as const)('accepts %s with optional holding', (type) => {
+    const withHolding = transactionSchema.safeParse({ ...base, type, holding_id: '22222222-2222-2222-2222-222222222222' })
+    expect(withHolding.success).toBe(true)
+    expect(transactionSchema.safeParse({ ...base, type }).success).toBe(true)
+  })
+
+  it.each(['invest', 'divest'] as const)('rejects %s as a recurring rule', (type) => {
+    expect(recurringRuleSchema.safeParse({
+      ...base, type, freq: 'monthly', interval: 1, start_date: '2026-07-01',
+    }).success).toBe(false)
+  })
+})
 
 describe('transactionUpdateSchema', () => {
   it('accepts a valid expense edit', () => {

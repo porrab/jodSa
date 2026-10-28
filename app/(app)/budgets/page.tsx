@@ -4,6 +4,7 @@ import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
 import BudgetsOverviewTabs from './budgets-overview-tabs'
 import type { MonthlyPoint } from '@/components/charts/income-expense-chart'
 import type { BudgetItem } from './budgets-client'
+import { addToIncomeExpensePoint } from '@/lib/transaction-totals'
 
 export default async function BudgetsPage() {
   const supabase = await createClient()
@@ -51,8 +52,7 @@ export default async function BudgetsPage() {
   for (const tx of sixMoTx ?? []) {
     const point = byMonth.get(format(new Date(tx.datetime), 'yyyy-MM'))
     if (!point) continue
-    if (tx.type === 'income') point.income += tx.amount_satang
-    else point.expense += tx.amount_satang
+    addToIncomeExpensePoint(point, tx)
   }
 
   return (

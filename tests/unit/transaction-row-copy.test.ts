@@ -63,4 +63,15 @@ describe('resolveTransactionRowCopy — brief v6 A3', () => {
       showPayee: false,
     })
   })
+
+  it('shows the portfolio and holding symbol for unnamed investment cash', () => {
+    expect(resolveTransactionRowCopy({
+      tx: { type: 'invest', note: null, counterparty: null, category: null },
+      holdingSymbol: 'VT',
+    }).textTitle).toBe('→ พอร์ตลงทุน · VT')
+    expect(resolveTransactionRowCopy({
+      tx: { type: 'divest', note: null, counterparty: null, category: null },
+      holdingSymbol: 'SGOV',
+    }).textTitle).toBe('← พอร์ตลงทุน · SGOV')
+  })
 })

@@ -20,6 +20,7 @@ import { Plus } from 'lucide-react'
 export default function InvestTabs({
   holdings,
   assets,
+  accounts,
   dashboard,
   snapshots,
   plans,
@@ -27,6 +28,7 @@ export default function InvestTabs({
 }: {
   holdings: Holding[]
   assets: Asset[]
+  accounts: Array<{ id: string; name: string; bank: string }>
   dashboard: DashboardData
   snapshots: SnapshotRow[]
   plans: PlanRow[]
@@ -54,7 +56,7 @@ export default function InvestTabs({
       </PageTabs>
 
       {tab === 'holdings' ? (
-        <InvestClient holdings={holdings} assets={assets} initialHoldingId={initialHoldingId} />
+        <InvestClient holdings={holdings} assets={assets} accounts={accounts} initialHoldingId={initialHoldingId} />
       ) : tab === 'overview' ? (
         <PortfolioDashboard dashboard={dashboard} snapshots={snapshots} />
       ) : (

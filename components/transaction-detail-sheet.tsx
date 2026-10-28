@@ -31,6 +31,8 @@ const TYPE_TEXT: Record<string, string> = {
   income: 'text-income',
   expense: 'text-expense',
   transfer: 'text-transfer',
+  invest: 'text-transfer',
+  divest: 'text-transfer',
 }
 
 /**
@@ -46,6 +48,7 @@ export default function TransactionDetailSheet({
   globalLastAccountId,
   open,
   onOpenChange,
+  holdingSymbol,
 }: {
   tx: Transaction | null
   accounts: Account[]
@@ -53,6 +56,7 @@ export default function TransactionDetailSheet({
   globalLastAccountId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  holdingSymbol?: string | null
 }) {
   const t = useTranslations('transaction')
   const locale = useLocale()
@@ -93,6 +97,8 @@ export default function TransactionDetailSheet({
       ? tx.counterparty
       : tx.type === 'transfer' && toAcct
         ? `→ ${toAcct.name}`
+        : tx.type === 'invest' || tx.type === 'divest'
+          ? `${tx.type === 'invest' ? '→' : '←'} พอร์ตลงทุน${holdingSymbol ? ` · ${holdingSymbol}` : ''}`
         : tx.category
           ? <CategoryLabel value={tx.category} />
           : '—'
@@ -113,10 +119,11 @@ export default function TransactionDetailSheet({
               globalLastAccountId={globalLastAccountId}
               onSuccess={close}
               defaultValues={{
-                type: tx.type as 'income' | 'expense' | 'transfer',
+                type: tx.type,
                 amount: (tx.amount_satang / 100).toFixed(2),
                 account_id: tx.account_id,
                 to_account_id: tx.to_account_id ?? undefined,
+                holding_id: tx.holding_id ?? undefined,
                 category: tx.category ?? undefined,
                 counterparty: tx.counterparty ?? undefined,
                 note: tx.note ?? undefined,
@@ -135,13 +142,13 @@ export default function TransactionDetailSheet({
             <div className="divide-y divide-border border-y border-border">
               {tx.note && <DetailField label={t('shownNameLabel')} value={tx.note} />}
               {tx.counterparty && <DetailField label={tx.type === 'income' ? t('payerLabel') : t('payeeLabel')} value={tx.counterparty} />}
-              <DetailField label={t('account')} value={tx.type === 'transfer' && toAcct ? `${acct?.name ?? '—'} → ${toAcct.name}` : acct?.name ?? '—'} />
+              <DetailField label={t('account')} value={tx.type === 'transfer' && toAcct ? `${acct?.name ?? '—'} → ${toAcct.name}` : tx.type === 'invest' ? `${acct?.name ?? '—'} → ${t('portfolioTile')}` : tx.type === 'divest' ? `${t('portfolioTile')} → ${acct?.name ?? '—'}` : acct?.name ?? '—'} />
               <DetailField label={t('dateTimeLabel')} value={formatAppDateTime(tx.datetime, locale === 'th' ? 'th' : 'en')} />
               <DetailField label={t('groupLabel')} value={tx.group_id ? t('groupAssigned') : '—'} />
               <DetailField label={t('sourceLabel')} value={tx.recurring_rule_id ? t('sourceRecurring') : tx.ref_code ? t('sourceSlip') : t('sourceManual')} />
             </div>
             <div className="sr-only">
-              <TransactionRowCopy tx={tx} accountName={acct?.name} toAccountName={toAcct?.name} time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })} testId="transaction-detail-copy" />
+              <TransactionRowCopy tx={tx} accountName={acct?.name} toAccountName={toAcct?.name} holdingSymbol={holdingSymbol} time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })} testId="transaction-detail-copy" />
             </div>
 
             <Button variant="outline" className="w-full" onClick={() => setEditing(true)}>

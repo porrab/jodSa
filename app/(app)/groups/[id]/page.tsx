@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import GroupDetailClient from './group-detail-client'
+import { holdingSymbolsForRows } from '@/lib/holding-symbols'
 
 export default async function GroupDetailPage({
   params,
@@ -23,6 +24,7 @@ export default async function GroupDetailPage({
       .order('datetime', { ascending: false })
       .limit(100),
   ])
+  const holdingSymbols = await holdingSymbolsForRows(supabase, [...(members ?? []), ...(candidates ?? [])])
 
   return (
     <GroupDetailClient
@@ -30,6 +32,7 @@ export default async function GroupDetailPage({
       accounts={accounts ?? []}
       members={members ?? []}
       candidates={candidates ?? []}
+      holdingSymbols={holdingSymbols}
     />
   )
 }

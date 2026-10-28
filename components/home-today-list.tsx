@@ -22,6 +22,8 @@ const TYPE_TEXT: Record<string, string> = {
   income: 'text-income',
   expense: 'text-expense',
   transfer: 'text-transfer',
+  invest: 'text-transfer',
+  divest: 'text-transfer',
 }
 
 /**
@@ -31,16 +33,19 @@ const TYPE_TEXT: Record<string, string> = {
  */
 export default function HomeTodayList({
   transactions,
+  holdingSymbols,
   accounts,
   lastByCategory,
   globalLastAccountId,
 }: {
   transactions: Transaction[]
+  holdingSymbols: Record<string, string>
   accounts: Account[]
   lastByCategory: LastAccountMap
   globalLastAccountId: string | null
 }) {
   const t = useTranslations('dashboard')
+  const tt = useTranslations('transaction')
   const locale = useLocale()
   const dateLocale = locale === 'th' ? th : enUS
   const [detailTx, setDetailTx] = useState<Transaction | null>(null)
@@ -85,7 +90,7 @@ export default function HomeTodayList({
               key={p.tempId}
               className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left opacity-60"
             >
-              <TransactionTypeBadge type={p.type} label={p.type} />
+              <TransactionTypeBadge type={p.type} label={p.type === 'invest' ? tt('invest') : p.type === 'divest' ? tt('divest') : p.type} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base">
                   {p.label}
@@ -115,9 +120,10 @@ export default function HomeTodayList({
                 onClick={() => setDetailTx(tx)}
                 className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left transition-colors hover:bg-accent/50"
               >
-                <TransactionTypeBadge type={tx.type} label={tx.type} />
+                <TransactionTypeBadge type={tx.type} label={tx.type === 'invest' ? tt('invest') : tx.type === 'divest' ? tt('divest') : tx.type} />
                 <TransactionRowCopy
                   tx={tx}
+                  holdingSymbol={tx.holding_id ? holdingSymbols[tx.holding_id] : null}
                   accountName={acct?.name}
                   toAccountName={toAcct?.name}
                   time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
@@ -134,6 +140,7 @@ export default function HomeTodayList({
 
       <TransactionDetailSheet
         tx={detailTx}
+        holdingSymbol={detailTx?.holding_id ? holdingSymbols[detailTx.holding_id] : null}
         accounts={accounts}
         lastByCategory={lastByCategory}
         globalLastAccountId={globalLastAccountId}

@@ -57,6 +57,14 @@ describe('computeAccountBalance', () => {
     expect(computeAccountBalance(txs, B)).toBe(10000) // 100 THB in satang
   })
 
+  it('invest debits and divest credits the source account', () => {
+    const flows: TxForBalance[] = [
+      { type: 'invest', amount_satang: 30000, account_id: A, to_account_id: null },
+      { type: 'divest', amount_satang: 12000, account_id: A, to_account_id: null },
+    ]
+    expect(computeAccountBalance(flows, A, 50000)).toBe(32000)
+  })
+
   it('transfer is NOT counted in income/expense totals for A', () => {
     const incomeOnly = txs.filter((t) => t.type === 'income')
     expect(computeAccountBalance(incomeOnly, A)).toBe(100000)

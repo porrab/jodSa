@@ -4,6 +4,7 @@ import { currentMonthRange } from '@/lib/recurrence/range'
 import { buildLastAccountMap } from '@/lib/last-account'
 import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import HomeTodayList from '@/components/home-today-list'
+import { holdingSymbolsForRows } from '@/lib/holding-symbols'
 import HomeBudgetStrip from '@/components/home-budget-strip'
 import HomeMoneyHeader from '@/components/home-money-header'
 import { valueCurrentHolding } from '@/lib/invest/portfolio'
@@ -161,6 +162,7 @@ export default async function DashboardPage() {
       <section data-testid="home-today" className="min-h-[281px] flex-1 px-5 pb-6 pt-4 md:p-0">
         <HomeTodayList
           transactions={todayTx ?? []}
+          holdingSymbols={await holdingSymbolsForRows(supabase, todayTx ?? [])}
           accounts={accounts ?? []}
           lastByCategory={lastByCategory}
           globalLastAccountId={globalLastAccountId}

@@ -21,16 +21,18 @@ import { formatAppDayHeading } from '@/lib/date-display'
 import { formatAppDate } from '@/lib/date-display'
 import type { TransactionDateGap } from '@/lib/reconcile'
 import BackfillGapSheet from '@/components/backfill-gap-sheet'
+import { dayExpenseTotal } from '@/lib/transaction-totals'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Account = Database['public']['Tables']['accounts']['Row']
 
-const TYPE_KEY: Record<string, string> = { income: 'income', expense: 'expense', transfer: 'transfer' }
+const TYPE_KEY: Record<string, string> = { income: 'income', expense: 'expense', transfer: 'transfer', invest: 'invest', divest: 'divest' }
 
 type Group = { id: string; title: string }
 
 export default function TransactionsClient({
   transactions,
+  holdingSymbols,
   lastDayMayBePartial,
   accounts,
   groups = [],
@@ -39,6 +41,7 @@ export default function TransactionsClient({
   globalLastAccountId,
 }: {
   transactions: Transaction[]
+  holdingSymbols: Record<string, string>
   lastDayMayBePartial: boolean
   accounts: Account[]
   groups?: Group[]
@@ -81,13 +84,13 @@ export default function TransactionsClient({
     const last = dayGroups[dayGroups.length - 1]
     if (last && last.key === key) {
       last.items.push(tx)
-      if (tx.type === 'expense') last.expenseTotal += tx.amount_satang
+      last.expenseTotal += dayExpenseTotal([tx])
     } else {
       dayGroups.push({
         key,
         label: dayLabel(key, tx.datetime),
         items: [tx],
-        expenseTotal: tx.type === 'expense' ? tx.amount_satang : 0,
+        expenseTotal: dayExpenseTotal([tx]),
       })
     }
   }
@@ -175,6 +178,7 @@ export default function TransactionsClient({
                       <div className="min-w-0 flex-1">
                         <TransactionRowCopy
                           tx={tx}
+                          holdingSymbol={tx.holding_id ? holdingSymbols[tx.holding_id] : null}
                           accountName={acct?.name}
                           toAccountName={toAcct?.name}
                           time={format(new Date(tx.datetime), 'HH:mm', { locale: dateLocale })}
@@ -202,6 +206,7 @@ export default function TransactionsClient({
 
       <TransactionDetailSheet
         tx={detailTx}
+        holdingSymbol={detailTx?.holding_id ? holdingSymbols[detailTx.holding_id] : null}
         accounts={accounts}
         lastByCategory={lastByCategory}
         globalLastAccountId={globalLastAccountId}

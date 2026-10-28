@@ -15,6 +15,7 @@ import TransactionForm from '@/components/transaction-form'
 import { formatTHB } from '@/lib/money'
 import { CategoryLabel } from '@/lib/categories'
 import { TransactionTypeBadge } from '@/components/transaction-type-indicator'
+import { transactionAmountPrefix, TRANSACTION_TYPE_STYLE } from '@/components/transaction-type-indicator'
 import { gapProgress, parseBankBalanceToSatang, reconcileGap } from '@/lib/reconcile'
 import { getAccountReconcileState, reconcileRemainder } from '@/app/actions/reconcile'
 import { formatAppDate } from '@/lib/date-display'
@@ -63,6 +64,7 @@ export default function ReconcileAccountSheet({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useTranslations('reconcile')
+  const tt = useTranslations('transaction')
   const locale = useLocale()
   const router = useRouter()
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -262,7 +264,6 @@ export default function ReconcileAccountSheet({
               </div>
             </div>}
             {error && <p className="text-sm text-destructive">{error}</p>}
-            {/* TODO(C2/0012): add invest/divest only after migration 0012 is live. */}
             <TransactionForm
               key={`${selectedDate}-${savedCount}-${prefillVersion}`}
               accounts={accounts}
@@ -278,12 +279,12 @@ export default function ReconcileAccountSheet({
             {savedCount > 0 && <div className="space-y-1" aria-live="polite">
               <p className="text-sm font-semibold">{t('savedCount', { count: savedCount })} · {formatTHB(savedRows.reduce((sum, row) => sum + row.amount_satang, 0))}</p>
               {savedRows.map((row) => <div key={row.id} className="flex items-center gap-2 border-t border-border py-2 text-sm">
-                <TransactionTypeBadge type={row.type} label={t(row.type === 'income' ? 'income' : 'expense')} />
+                <TransactionTypeBadge type={row.type} label={tt(row.type)} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate">{row.note || row.counterparty || <CategoryLabel value={row.category} />}</span>
-                  <span className="block truncate text-muted-foreground">{new Intl.DateTimeFormat(locale === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' }).format(new Date(row.datetime))} · <CategoryLabel value={row.category} /></span>
+                  <span className="block truncate">{row.note || row.counterparty || (row.type === 'invest' || row.type === 'divest' ? tt(row.type) : <CategoryLabel value={row.category} />)}</span>
+                  <span className="block truncate text-muted-foreground">{new Intl.DateTimeFormat(locale === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' }).format(new Date(row.datetime))}{row.category && <> · <CategoryLabel value={row.category} /></>}</span>
                 </span>
-                <strong className={row.type === 'income' ? 'tabular-nums text-income' : 'tabular-nums text-expense'}>{row.type === 'income' ? '+' : '−'}{formatTHB(row.amount_satang)}</strong>
+                <strong className={`tabular-nums ${TRANSACTION_TYPE_STYLE[row.type].text}`}>{transactionAmountPrefix(row.type)}{formatTHB(row.amount_satang)}</strong>
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 py-1 text-xs font-medium text-success"><Check className="size-3.5" />{t('confirmed')}</span>
               </div>)}
             </div>}

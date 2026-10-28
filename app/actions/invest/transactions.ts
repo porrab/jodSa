@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { assetTransactionSchema } from '@/lib/validators/invest'
 import { toMinor, minorToApi, parseFormNumber } from '@/lib/invest/money'
 import { investDatetimeToISO } from '@/lib/invest/datetime'
+import { parseInputToSatang } from '@/lib/money'
 
 /** Record a buy/sell/dividend/fee against an existing holding. */
 export async function addAssetTransaction(_prev: { error: string }, formData: FormData) {
@@ -28,6 +29,30 @@ export async function addAssetTransaction(_prev: { error: string }, formData: Fo
   })
   if (!parsed.success) return { error: parsed.error.errors[0].message }
   const v = parsed.data
+  if (formData.get('cash_enabled') === 'true') {
+    if (v.type !== 'buy') return { error: 'ตัดเงินจากบัญชีใช้ได้เฉพาะรายการซื้อ' }
+    const accountId = formData.get('cash_account_id') as string
+    const amountSatang = parseInputToSatang((formData.get('cash_amount') as string) ?? '')
+    if (!accountId || !amountSatang) return { error: 'เลือกบัญชีและจำนวนเงินบาทที่ออกจากบัญชี' }
+    const { error } = await supabase.rpc('record_buy_with_cash', {
+      p_holding_id: v.holdingId,
+      p_qty: v.qty!,
+      p_price_minor: minorToApi(toMinor(v.amount, v.currency)),
+      p_currency: v.currency,
+      p_fees_minor: minorToApi(toMinor(v.fees, v.currency)),
+      p_fx_rate: v.fxRate ?? null,
+      p_datetime: investDatetimeToISO(v.datetime),
+      p_ref: v.ref ?? null,
+      p_account_id: accountId,
+      p_amount_satang: amountSatang,
+    })
+    if (error) return { error: error.message }
+    revalidatePath('/invest')
+    revalidatePath('/transactions')
+    revalidatePath('/accounts')
+    revalidatePath('/dashboard')
+    return { error: '' }
+  }
 
   const { error } = await supabase.from('asset_transactions').insert({
     user_id: user.id,

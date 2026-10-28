@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import AccountsClient from './accounts-client'
+import { holdingSymbolsForRows } from '@/lib/holding-symbols'
 
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
   const { account: initialAccountId } = await searchParams
@@ -32,10 +33,11 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
     balance: balanceByAccount.get(acct.id) ?? acct.opening_balance_satang ?? 0,
     qrUrl: acct.qr_image_path ? (qrUrls.get(acct.qr_image_path) ?? null) : null,
   }))
+  const holdingSymbols = await holdingSymbolsForRows(supabase, recentTransactions ?? [])
 
   return (
     <div className="space-y-6">
-      <AccountsClient accounts={accountsWithBalance} recentTransactions={recentTransactions ?? []} initialAccountId={initialAccountId ?? null} />
+      <AccountsClient accounts={accountsWithBalance} recentTransactions={recentTransactions ?? []} holdingSymbols={holdingSymbols} initialAccountId={initialAccountId ?? null} />
     </div>
   )
 }

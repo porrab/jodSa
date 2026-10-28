@@ -14,10 +14,12 @@ export function resolveTransactionRowCopy({
   tx,
   toAccountName,
   displayName,
+  holdingSymbol,
 }: {
   tx: Transaction
   toAccountName?: string | null
   displayName?: string | null
+  holdingSymbol?: string | null
 }) {
   const explicitName = displayName?.trim() || tx.note?.trim() || null
   const payee = tx.counterparty?.trim() || null
@@ -30,7 +32,10 @@ export function resolveTransactionRowCopy({
     categoryIsTitle,
     showCategory: !!tx.category && !categoryIsTitle,
     showPayee: !!payee && !payeeIsTitle && payee !== explicitName,
-    textTitle: explicitName || payee || (tx.type === 'transfer' && toAccountName ? `→ ${toAccountName}` : null),
+    textTitle: explicitName || payee ||
+      (tx.type === 'invest' ? `→ พอร์ตลงทุน${holdingSymbol ? ` · ${holdingSymbol}` : ''}` :
+        tx.type === 'divest' ? `← พอร์ตลงทุน${holdingSymbol ? ` · ${holdingSymbol}` : ''}` :
+          tx.type === 'transfer' && toAccountName ? `→ ${toAccountName}` : null),
   }
 }
 
@@ -48,6 +53,7 @@ export default function TransactionRowCopy({
   toAccountName,
   time,
   displayName,
+  holdingSymbol,
   testId,
   titleClassName,
   metaClassName,
@@ -57,6 +63,7 @@ export default function TransactionRowCopy({
   toAccountName?: string | null
   time: string
   displayName?: string | null
+  holdingSymbol?: string | null
   testId?: string
   titleClassName?: string
   metaClassName?: string
@@ -65,6 +72,7 @@ export default function TransactionRowCopy({
     tx,
     toAccountName,
     displayName,
+    holdingSymbol,
   })
 
   let title: ReactNode = '—'

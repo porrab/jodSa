@@ -12,7 +12,7 @@
 
 export type PendingTx = {
   tempId: string
-  type: 'income' | 'expense' | 'transfer'
+  type: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
   amountSatang: number
   label: string
   category: string | null
