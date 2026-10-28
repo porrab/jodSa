@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight, LockKeyhole } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpDown, ArrowUpRight, Info, LockKeyhole } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -123,6 +123,7 @@ export default function TransactionForm({
   const [note, setNote] = useState(defaultValues?.note ?? '')
   const [holdingId, setHoldingId] = useState(defaultValues?.holding_id ?? '')
   const [holdings, setHoldings] = useState<Array<{ id: string; label: string }>>([])
+  const [portfolioValueMinor, setPortfolioValueMinor] = useState<string | null>(null)
   const cashType: TxType = type === 'transfer'
     ? toAccountId === PORTFOLIO_TILE_ID ? 'invest'
       : accountId === PORTFOLIO_TILE_ID ? 'divest' : 'transfer'
@@ -130,7 +131,12 @@ export default function TransactionForm({
   useEffect(() => {
     if (cashType !== 'invest' && cashType !== 'divest') return
     let active = true
-    getOwnedHoldingOptions().then((items) => { if (active) setHoldings(items) })
+    getOwnedHoldingOptions().then((result) => {
+      if (active) {
+        setHoldings(result.holdings)
+        setPortfolioValueMinor(result.portfolioValueMinor)
+      }
+    })
     return () => { active = false }
   }, [cashType])
   const { balances, loading: balancesLoading } = useAccountBalances(accounts.length > 0)
@@ -361,6 +367,7 @@ export default function TransactionForm({
             label={type === 'transfer' ? t('fromAccount') : t('account')}
             disabledAccountId={destinationLocked ? lockedAccountId : toAccountId === PORTFOLIO_TILE_ID ? PORTFOLIO_TILE_ID : undefined}
             includePortfolio={type === 'transfer' && toAccountId !== PORTFOLIO_TILE_ID}
+            portfolioValueMinor={portfolioValueMinor}
           />
         )}
       </div>
@@ -405,6 +412,7 @@ export default function TransactionForm({
                   label={t('toAccount')}
                   disabledAccountId={accountId}
                   includePortfolio={accountId !== PORTFOLIO_TILE_ID}
+                  portfolioValueMinor={portfolioValueMinor}
                 />
                 {accounts.every((account) => account.id === accountId) && (
                   <InlineCreateAccount
@@ -420,13 +428,13 @@ export default function TransactionForm({
 
       {(cashType === 'invest' || cashType === 'divest') && <>
         <div className="space-y-1">
-          <Label htmlFor={`${idPrefix}-holding`}>{t('holdingOptional')}</Label>
-          <select id={`${idPrefix}-holding`} name="holding_id" value={holdingId} onChange={(event) => setHoldingId(event.target.value)} className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm">
-            <option value="">{t('holdingNone')}</option>
-            {holdings.map((holding) => <option key={holding.id} value={holding.id}>{holding.label}</option>)}
-          </select>
+          <Label>{t('holdingOptional')}</Label>
+          <div role="group" aria-label={t('holdingOptional')} className="flex flex-wrap gap-2">
+            <Chip pressed={holdingId === ''} onClick={() => setHoldingId('')} className="min-h-11">{t('holdingNone')}</Chip>
+            {holdings.map((holding) => <Chip key={holding.id} pressed={holdingId === holding.id} onClick={() => setHoldingId(holding.id)} className="min-h-11">{holding.label}</Chip>)}
+          </div>
         </div>
-        <p className="rounded-md bg-info-soft px-3 py-2 text-sm text-transfer">{t(cashType === 'invest' ? 'investConsequence' : 'divestConsequence')}</p>
+        <p className="flex items-start gap-2 rounded-md bg-info-soft px-3 py-2 text-sm text-transfer"><Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" /><span>{cashType === 'invest' ? t('investConsequence', { account: selectedAccount?.name ?? '—' }) : t('divestConsequence')}</span></p>
       </>}
 
       {/* Counterparty (non-transfer) */}

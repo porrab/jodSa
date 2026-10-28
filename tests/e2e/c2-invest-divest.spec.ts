@@ -6,7 +6,7 @@ import { env, STORAGE_A } from './helpers/env'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
-const evidence = path.resolve('tests/e2e/evidence/c2-2026-10-28')
+const evidence = path.resolve('tests/e2e/evidence/c2-2026-10-29')
 let userId = ''
 let accountId = ''
 
@@ -36,9 +36,9 @@ async function balanceFor(account: string): Promise<number> {
 }
 
 async function selectHolding(sheet: import('@playwright/test').Locator, id: string, symbol: string) {
-  const nativeSelect = sheet.getByLabel('สินทรัพย์ (ไม่บังคับ)')
+  const nativeSelect = sheet.locator('select[name="holding_id"]')
   if (await nativeSelect.count()) await nativeSelect.selectOption(id)
-  else await sheet.getByRole('radiogroup', { name: 'สินทรัพย์ (ไม่บังคับ)' }).getByRole('radio', { name: symbol }).click()
+  else await sheet.getByRole('group', { name: 'สินทรัพย์ (ไม่บังคับ)' }).getByRole('button', { name: symbol }).click()
 }
 
 async function openTransfer(page: import('@playwright/test').Page) {
@@ -50,24 +50,32 @@ async function openTransfer(page: import('@playwright/test').Page) {
 }
 
 test('C2 invest tile sits in ไปที่ and excludes expense language', async ({ page }) => {
+  const holdingId = await seedInvestHolding(userId, { symbol: 'PTT', currentValueMinor: '2127900', ledger: [{ type: 'buy', qty: '1', priceMinor: '100000', datetime: '2026-10-01T07:00:00Z' }] })
   const sheet = await openTransfer(page)
   await sheet.getByRole('radiogroup', { name: 'บัญชีต้นทาง' }).getByRole('radio', { name: /make/ }).click()
   await sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' }).click()
+  await selectHolding(sheet, holdingId, 'PTT')
   await expect(sheet.getByRole('radiogroup', { name: 'บัญชีต้นทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' })).toHaveCount(0)
-  await expect(sheet.getByText('ไม่นับเป็นรายจ่าย · ยอดบัญชีจะลดลง')).toBeVisible()
+  await expect(sheet.getByText('ไม่นับเป็นรายจ่าย · ยอด make จะลดลง')).toBeVisible()
+  await expect(sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' })).toContainText('≈ ฿21,279.00')
   await expect(sheet.getByRole('button', { name: 'บันทึกการลงทุน' })).toBeVisible()
+  await expect(sheet.getByRole('radiogroup', { name: 'บัญชีต้นทาง' }).getByRole('radio', { name: /make/ })).toContainText('฿0')
   await page.screenshot({ path: path.join(evidence, 'app-invest-top.png') })
   await sheet.evaluate((element) => { element.scrollTop = element.scrollHeight })
   await page.screenshot({ path: path.join(evidence, 'app-invest-bottom.png') })
 })
 
 test('C2 divest tile sits in จากบัญชี and excludes income language', async ({ page }) => {
+  const holdingId = await seedInvestHolding(userId, { symbol: 'PTT', currentValueMinor: '2127900', ledger: [{ type: 'buy', qty: '1', priceMinor: '100000', datetime: '2026-10-01T07:00:00Z' }] })
   const sheet = await openTransfer(page)
   await sheet.getByRole('radiogroup', { name: 'บัญชีต้นทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' }).click()
   await expect(sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' })).toHaveCount(0)
   await sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: /make/ }).click()
-  await expect(sheet.getByText('ไม่นับเป็นรายรับ · ยอดบัญชีจะเพิ่มขึ้น')).toBeVisible()
+  await selectHolding(sheet, holdingId, 'PTT')
+  await expect(sheet.getByText('ไม่นับเป็นรายรับ · เงินเดิมของคุณย้ายกลับเข้าบัญชี')).toBeVisible()
+  await expect(sheet.getByRole('radiogroup', { name: 'บัญชีต้นทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' })).toContainText('≈ ฿21,279.00')
   await expect(sheet.getByRole('button', { name: 'บันทึกการถอนจากพอร์ต' })).toBeVisible()
+  await expect(sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: /make/ })).toContainText('฿0')
   await page.screenshot({ path: path.join(evidence, 'app-divest-top.png') })
   await sheet.evaluate((element) => { element.scrollTop = element.scrollHeight })
   await page.screenshot({ path: path.join(evidence, 'app-divest-bottom.png') })

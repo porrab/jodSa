@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
-import { adminClient, findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
+import { adminClient, findUserByEmail, resetAllUserData, resetInvestData, seedAccount, seedInvestHolding } from './helpers/admin'
 import { env, STORAGE_A } from './helpers/env'
 
 /**
@@ -213,6 +213,49 @@ test.describe('F5 rendered link contrast', () => {
         step3.getByRole('button', { name: 'กลับไปลงต่อ' }),
         `${theme} กลับไปลงต่อ`,
       )
+    })
+  }
+})
+
+test.describe('C2 rendered consequence and holding chips', () => {
+  test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
+  let userId = ''
+
+  test.beforeAll(async () => {
+    const user = await findUserByEmail(env.userA.email)
+    if (!user) throw new Error(`Test user A is missing: ${env.userA.email}`)
+    userId = user.id
+  })
+
+  test.afterEach(async () => {
+    await resetAllUserData(userId)
+    await resetInvestData(userId)
+  })
+
+  for (const theme of ['light', 'dark'] as const) {
+    test(`C2 chips and consequence clear 4.5:1 in ${theme}`, async ({ page }) => {
+      await resetInvestData(userId)
+      await resetAllUserData(userId)
+      await seedAccount(userId, 'make', 'กสิกรไทย', '4415')
+      await seedInvestHolding(userId, { symbol: 'PTT', currentValueMinor: '2127900', ledger: [{ type: 'buy', qty: '1', priceMinor: '100000', datetime: '2026-10-01T07:00:00Z' }] })
+      await setTheme(page, theme)
+      await page.goto('/transactions')
+      await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+      const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
+      await sheet.getByRole('button', { name: 'โอนเงิน', exact: true }).click()
+      await sheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' }).click()
+      await expectRenderedTextContrast(sheet.getByText('ไม่นับเป็นรายจ่าย · ยอด make จะลดลง'), `${theme} invest consequence`)
+      const picker = sheet.getByRole('group', { name: 'สินทรัพย์ (ไม่บังคับ)' })
+      await expectRenderedTextContrast(picker.getByRole('button', { name: 'ไม่ระบุ' }), `${theme} unselected chip`)
+      await picker.getByRole('button', { name: 'PTT' }).click()
+      await expectRenderedTextContrast(picker.getByRole('button', { name: 'PTT' }), `${theme} selected chip`)
+      await page.goto('/transactions')
+      await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
+      const divestSheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
+      await divestSheet.getByRole('button', { name: 'โอนเงิน', exact: true }).click()
+      await divestSheet.getByRole('radiogroup', { name: 'บัญชีต้นทาง' }).getByRole('radio', { name: 'พอร์ตลงทุน' }).click()
+      await divestSheet.getByRole('radiogroup', { name: 'บัญชีปลายทาง' }).getByRole('radio', { name: /make/ }).click()
+      await expectRenderedTextContrast(divestSheet.getByText('ไม่นับเป็นรายรับ · เงินเดิมของคุณย้ายกลับเข้าบัญชี'), `${theme} divest consequence`)
     })
   }
 })

@@ -5,6 +5,7 @@ import { Check, ChevronDown, TrendingUp } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/supabase/types'
+import { formatMoney } from '@/lib/invest/money'
 
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'bank'>
 export const PORTFOLIO_TILE_ID = '__portfolio__'
@@ -18,6 +19,7 @@ export default function AccountGrid({
   label,
   disabledAccountId,
   includePortfolio = false,
+  portfolioValueMinor = null,
   compact = false,
 }: {
   accounts: Account[]
@@ -28,6 +30,7 @@ export default function AccountGrid({
   label: string
   disabledAccountId?: string
   includePortfolio?: boolean
+  portfolioValueMinor?: string | null
   compact?: boolean
 }) {
   const t = useTranslations('transaction')
@@ -129,6 +132,7 @@ export default function AccountGrid({
         className={cn('relative flex min-w-0 flex-col justify-center rounded-md border px-2.5 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey-edge', compact ? 'h-14' : 'h-[72px]', value === PORTFOLIO_TILE_ID ? 'border-2 border-honey-edge bg-primary text-primary-foreground' : 'border-border bg-card text-transfer hover:bg-secondary', disabledAccountId === PORTFOLIO_TILE_ID && 'opacity-40')}
       >
         <span className="flex items-center gap-1.5 font-semibold"><TrendingUp aria-hidden="true" className="size-4 shrink-0" />{t('portfolioTile')}{value === PORTFOLIO_TILE_ID && <Check aria-hidden="true" className="ml-auto size-4 shrink-0" />}</span>
+        {portfolioValueMinor !== null && <span className={cn('mt-1 block text-sm tabular-nums', value === PORTFOLIO_TILE_ID ? 'text-primary-foreground/80' : 'text-muted-foreground')}>≈ {formatMoney(portfolioValueMinor, 'THB', locale)}</span>}
       </button>}
 
       {accounts.length > 9 && !expanded && (

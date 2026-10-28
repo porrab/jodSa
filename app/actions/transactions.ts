@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { transactionSchema, transactionUpdateSchema } from '@/lib/validators/transaction'
 import { parseInputToSatang } from '@/lib/money'
+import { valueCurrentHolding } from '@/lib/invest/portfolio'
 
 export async function createTransaction(_prev: { error: string }, formData: FormData) {
   const supabase = await createClient()
@@ -223,14 +224,38 @@ export async function checkNullRefDedup(
 export async function getOwnedHoldingOptions() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-  const [{ data: holdings }, { data: assets }] = await Promise.all([
-    supabase.from('holdings').select('id, asset_id').eq('user_id', user.id),
+  if (!user) return { holdings: [], portfolioValueMinor: null }
+  const [{ data: holdings }, { data: assets }, { data: trades }] = await Promise.all([
+    supabase.from('holdings').select('id, asset_id, current_value_minor, current_value_currency, current_fx_to_display').eq('user_id', user.id),
     supabase.from('assets').select('id, symbol, name'),
+    supabase.from('asset_transactions').select('holding_id, type, qty, price_minor, fees_minor, datetime').eq('user_id', user.id),
   ])
   const assetById = new Map((assets ?? []).map((asset) => [asset.id, asset]))
-  return (holdings ?? []).map((holding) => ({
-    id: holding.id,
-    label: assetById.get(holding.asset_id)?.symbol || assetById.get(holding.asset_id)?.name || '—',
-  }))
+  const tradesByHolding = new Map<string, NonNullable<typeof trades>>()
+  for (const trade of trades ?? []) {
+    const list = tradesByHolding.get(trade.holding_id) ?? []
+    list.push(trade)
+    tradesByHolding.set(trade.holding_id, list)
+  }
+  let valuedCount = 0
+  let valueMinor = 0n
+  const options = (holdings ?? []).map((holding) => {
+    const valuation = valueCurrentHolding({
+      currentValueMinor: holding.current_value_minor,
+      currentValueCurrency: holding.current_value_currency,
+      currentFxToDisplay: holding.current_fx_to_display,
+    }, (tradesByHolding.get(holding.id) ?? []).map((trade) => ({
+      type: trade.type, qty: trade.qty, priceMinor: trade.price_minor,
+      feesMinor: trade.fees_minor, datetime: trade.datetime,
+    })))
+    if (valuation.qty > 0 && valuation.valueMinor !== null) {
+      valuedCount += 1
+      valueMinor += valuation.valueMinor
+    }
+    return {
+      id: holding.id,
+      label: assetById.get(holding.asset_id)?.symbol || assetById.get(holding.asset_id)?.name || '—',
+    }
+  })
+  return { holdings: options, portfolioValueMinor: valuedCount > 0 ? valueMinor.toString() : null }
 }
