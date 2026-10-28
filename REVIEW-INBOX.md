@@ -15,6 +15,51 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [RV-C2-1] 0012 links cash to a holding, not to the buy it paid for — 2026-10-28 · from Claude review
+**From:** Claude review of `b3e7cbe` + `09580d7` · **Status:** OPEN · **Severity:** M. **Blocks the live apply of 0012**: fixing it later costs a second migration. 0012 is unapplied, so the fix is cheap now.
+**Verified on disk:**
+- `tsc --noEmit --incremental false` exits 0. Vitest: 363 passed, 34 skipped.
+- The PGlite proof passes, run with a scratch install via `PGLITE_MODULE_PATH`.
+- The SQL sha matches the pin `fb559986…`.
+- `account_balances()` differs from 0006 only by the `divest` credit branch.
+- The apply helper snapshots every balance inside its own transaction and rolls back on a mismatch.
+- The type audit holds:
+  - `/dashboard`, `/budgets`, `/transactions` and the layout already query `.in('type', ['income','expense'])`.
+  - `dayExpenseTotal` and `spentForBudget` count expense only.
+  - Recurring stays `z.enum(['income','expense'])`.
+- C1: `gap >= 0` locks the source, so the to-grid offers invest. `gap < 0` locks the destination, so the from-grid offers divest. Both directions work.
+**Mechanism:**
+- The only link column is `transactions.holding_id`.
+- `app/(app)/invest/page.tsx` builds `cashLinks` from every `type='invest'` row with that `holding_id`. That includes rows from the add sheet, which paid for no particular buy.
+- `HoldingDetailSheet` lists all of them in one block above the trades. `handleDeleteTx` shows `linkedCashWarning` for any buy whenever the holding has any cash link.
+**Effect:**
+- With 2+ buys on VT, the sheet cannot show which buy was `ตัดจาก Dime! Save ฿X`, but the brief (07-design.md line 1047) attaches that line to the buy.
+- Deleting a buy that had no cash warns that a linked cash row remains.
+**Fix:**
+- In 0012, add `transactions.asset_transaction_id uuid null references public.asset_transactions(id) on delete set null`.
+- Have `record_buy_with_cash` set it on the cash row.
+- Render `ตัดจาก <account> ฿X` under the matching buy, and warn on delete only when that buy has a linked row.
+- Keep `holding_id` for the add-sheet path.
+- Re-pin the sha, and extend the PGlite proof:
+  - the link is set on the cash row;
+  - deleting the buy keeps the cash row with a NULL link;
+  - the balance is unchanged after the delete.
+**Acceptance:**
+- The PGlite proof is green with these cases.
+- A unit or E2E test with two buys on one holding, one of them cash-linked, shows the line on that buy only and the warning on that buy only.
+- Do not run the apply helper.
+
+## [RV-C2-2] One-account users lose the "add a second account" path on โอน — 2026-10-28 · from Claude review
+**Status:** OPEN · **Severity:** L (non-blocking).
+- `components/transaction-form.tsx` changed the to-grid guard from `accounts.filter((a) => a.id !== accountId).length === 0` to `accounts.length === 0`. The change lets a one-account user pick 📈.
+- Side effect: with exactly one account, a plain transfer now shows a to-grid where the only account is disabled, plus 📈. The `transferNeedsSecondAccount` / `InlineCreateAccount` prompt is gone.
+- **Fix:** keep the grid, but render `InlineCreateAccount` (or an add tile) when there is no other real account.
+- **Acceptance:** a unit or E2E test with one account offers both 📈 and add-account under โอน.
+- **Design notes, not blocking (Figma `27:1654`/`27:1816` vs the pairs):**
+  - The 📈 tile lacks the `≈ ฿21,279` portfolio value.
+  - The holding picker is a native `<select>` where Figma has chips. The brief prose (line 1036) shows a `▾` select, so either is defensible. Pick one and align the other source.
+  - The invest consequence line does not name the account (`ยอด Dime! Save จะลดลง` in Figma).
+
 ## [RV-C1-1] C1 `ลงแล้ว` list compares the browser clock with the DB clock — 2026-10-27 · from Claude review
 **From:** Claude review of `9b59a9b` · **Status:** **APPROVED 2026-10-28 (Claude review)** at `d65456f` · **Severity:** M (wrong list, no wrong money).
 **Re-review 2026-10-28:**
