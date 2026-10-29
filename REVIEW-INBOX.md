@@ -15,6 +15,19 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [QA-C2-REG-1] E2E harness cannot honor an A-only, no-owner-read regression boundary — 2026-10-30
+**From:** qa-lab
+**Status:** OPEN
+**Severity:** blocker for restricted production regression runs
+
+**Mechanism:** `project/jodsa/tests/e2e/global.setup.ts` provisions and signs in test user B even when the selected specs only need A. `project/jodsa/tests/e2e/helpers/admin.ts` implements `findUserByEmail` through unfiltered `auth.admin.listUsers({ page: 1, perPage: 1000 })`, so an A lookup retrieves other users' authentication records before filtering. `project/jodsa/tests/e2e/c2-invest-divest.spec.ts` also calls `account_balances()` through the service-role client without a user filter; the RPC result can include balances beyond A. These paths prevent the checked-in full suite and focused C1/A3/contrast/C2 repeats from being run under an explicit “test user A only; never read owner data” boundary.
+
+**Evidence / reproduction:** On commit `41c1433`, inspect those three paths and run the C2 spec with `--project=chromium --no-deps` against a production build. Its `beforeAll` invokes the unfiltered A lookup; its persistence cases invoke the service-role balance RPC. The initial local C2 run passed 6/6 but exercised those reads before the harness issue was discovered; the wider A-only run was stopped. A separate, uncommitted A-scoped production smoke script used direct A sign-in, A-session balance RPC, and exact-ID cleanup; its final run passed 8/8. No owner rows were changed.
+
+**Suggested fix:** Resolve A's ID from A's own authenticated session; run balance RPC with that session; provide an A-only setup/project that never provisions, signs in, or queries B. Keep two-user isolation specs in a separately selected suite. Scope all teardown to IDs created by the test run.
+
+**Acceptance:** Instrument an A-only full regression and C1/A3/contrast/C2 `--repeat-each=3` run so every auth call and data query is demonstrably A-scoped, with no `listUsers`, service-role balance read, or B setup on that path. Confirm all selected tests execute, report per-spec pass/fail/skip/flaky counts, and prove cleanup with A-session count queries.
+
 ## [RV-C2-1] 0012 links cash to a holding, not to the buy it paid for — 2026-10-28 · from Claude review
 **From:** Claude review of `b3e7cbe` + `09580d7` · **Status:** **APPROVED 2026-10-28 (Claude review)** at `98a1fbd`. Re-review: `asset_transaction_id` FK (on delete set null) added to unapplied 0012 and set by `record_buy_with_cash`; /invest maps cash by buy id; the line and the delete warning are per buy; sha re-pinned `5bfafc08…` and matches on disk; PGlite proof (scratch install) green incl. link set + buy delete keeps cash with NULL link; raw tsc 0; Vitest 364 passed / 34 skipped. 0012 is still NOT applied live. · **Severity:** M. **Blocks the live apply of 0012**: fixing it later costs a second migration. 0012 is unapplied, so the fix is cheap now.
 **Verified on disk:**
