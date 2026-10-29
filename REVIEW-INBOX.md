@@ -17,8 +17,17 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [QA-C2-REG-1] E2E harness cannot honor an A-only, no-owner-read regression boundary — 2026-10-30
 **From:** qa-lab
-**Status:** OPEN
-**Severity:** blocker for restricted production regression runs
+**Status:** OPEN · **Claude review 2026-10-30:** mechanism confirmed on disk:
+- `helpers/admin.ts:23` calls `listUsers({ perPage: 1000 })`, and `m5-settings.spec.ts:88` does the same.
+- `c1-reconcile.spec.ts:175` and `c2-invest-divest.spec.ts:33` call `account_balances()` through the service role.
+
+These reads were also on the path of every earlier C1/C2 run, including Claude's own 2026-10-29 re-run. They are read-only on the owner's own project, and no owner rows were changed.
+
+**Scope clarification:** test user B (`test-b@jodsa.test`) is a test account, and the isolation specs need it. The real boundary is **no owner reads or writes**. "Test user A only" in the brief was worded too narrowly.
+
+**Severity:** M (test-harness hygiene; not a product bug). It blocks only a claim that a run read no owner data.
+
+Production smoke 8/8 on `jod-sa.vercel.app` (GitHub Production deployment = `41c1433`) is accepted. The `≈ ฿21,279` in the screenshots is seeded test-A data (`currentValueMinor: '2127900'`), not owner data. Evidence `tests/e2e/evidence/c2-prod-2026-10-30/` is committed, and the 3 overwritten `c2-2026-10-29` images were restored to `c7d0b83`.
 
 **Mechanism:** `project/jodsa/tests/e2e/global.setup.ts` provisions and signs in test user B even when the selected specs only need A. `project/jodsa/tests/e2e/helpers/admin.ts` implements `findUserByEmail` through unfiltered `auth.admin.listUsers({ page: 1, perPage: 1000 })`, so an A lookup retrieves other users' authentication records before filtering. `project/jodsa/tests/e2e/c2-invest-divest.spec.ts` also calls `account_balances()` through the service-role client without a user filter; the RPC result can include balances beyond A. These paths prevent the checked-in full suite and focused C1/A3/contrast/C2 repeats from being run under an explicit “test user A only; never read owner data” boundary.
 

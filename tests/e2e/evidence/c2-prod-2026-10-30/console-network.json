@@ -1,0 +1,11 @@
+{
+  "consoleErrors": [],
+  "networkErrors": [],
+  "canceledPrefetches": [
+    "GET https://jod-sa.vercel.app/transactions?_rsc=skeWG7NtMazuEXLq: net::ERR_ABORTED",
+    "GET https://jod-sa.vercel.app/more?_rsc=skeWG7NtMazuEXLq: net::ERR_ABORTED",
+    "GET https://jod-sa.vercel.app/transactions?_rsc=E3gT6IOfKCfa0-W2: net::ERR_ABORTED",
+    "GET https://jod-sa.vercel.app/budgets?_rsc=QrN73pa6L4LBJ-7r: net::ERR_ABORTED",
+    "GET https://jod-sa.vercel.app/transactions?_rsc=vcTSK8u_Ofa3uRR_: net::ERR_ABORTED"
+  ]
+}
