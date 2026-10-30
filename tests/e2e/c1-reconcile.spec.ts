@@ -1,12 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { adminClient, findUserByEmail, resetAllUserData, seedAccount, seedTransaction } from './helpers/admin'
-import { env, STORAGE_A } from './helpers/env'
+import { adminClient, findUserByEmail, resetAllUserData, seedAccount, seedTransaction, testUserClient } from './helpers/admin'
+import { env, evidenceDir, STORAGE_A } from './helpers/env'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
-const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/ds-7-2026-10-27/app')
+const EVIDENCE_DIR = evidenceDir('c1-reconcile', 'tests/e2e/evidence/ds-7-2026-10-27/app')
 let userId = ''
 let accountId = ''
 
@@ -172,7 +172,8 @@ test('C1 backfills a missing row, updates the Gap Bar from server truth, and rec
   const { data: account, error: accountError } = await adminClient().from('accounts').select('reconciled_at').eq('id', accountId).eq('user_id', userId).single()
   if (accountError) throw accountError
   expect(account.reconciled_at).not.toBeNull()
-  const { data: balances, error: balanceError } = await adminClient().rpc('account_balances')
+  const userClient = await testUserClient(userId)
+  const { data: balances, error: balanceError } = await userClient.rpc('account_balances')
   if (balanceError) throw balanceError
   expect(balances?.find((row: { account_id: string; balance_satang: number }) => row.account_id === accountId)?.balance_satang).toBe(1_255_200)
 

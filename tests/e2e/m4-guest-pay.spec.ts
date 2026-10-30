@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { test, expect, request as pwRequest, type Page } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
-import { env, STORAGE_A, GENERATED_DIR } from './helpers/env'
+import { env, e2eBaseUrl, STORAGE_A, GENERATED_DIR } from './helpers/env'
 import { findUserByEmail, resetUserData, seedAccount } from './helpers/admin'
 
 /**
@@ -102,7 +102,7 @@ test('M4-S1 host creates session; logged-out guest sees QR and submits a slip; h
 test('M4-S2 guest POST past the rate limit is throttled (429)', async () => {
   expect(payToken, 'M4-S1 must run first').not.toBe('')
   const api = await pwRequest.newContext({
-    baseURL: 'http://localhost:3000',
+    baseURL: e2eBaseUrl,
     extraHTTPHeaders: { 'x-forwarded-for': '203.0.113.50' }, // own rate bucket
   })
 
@@ -147,7 +147,7 @@ test('M4-S3 closed session: guest POST rejected and page shows unavailable', asy
 
   // Fresh rate bucket so we measure RLS, not the limiter
   const api = await pwRequest.newContext({
-    baseURL: 'http://localhost:3000',
+    baseURL: e2eBaseUrl,
     extraHTTPHeaders: { 'x-forwarded-for': '203.0.113.51' },
   })
   const res = await api.post(`/api/sessions/${payToken}/slips`, {

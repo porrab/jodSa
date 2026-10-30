@@ -32,7 +32,7 @@ async function importSlip(page: Page, fixture: string): Promise<void> {
   await page.goto('/import')
   await page.locator('input[type="file"]').setInputFiles(fixture)
   // parse pipeline: preprocess → QR → OCR (model download on cold cache) → extract
-  await expect(page.getByRole('heading', { name: 'ยืนยันรายการ' })).toBeVisible({ timeout: 240_000 })
+  await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
 }
 
 const confirmButton = (page: Page) => page.getByRole('button', { name: 'ยืนยันและบันทึก' })
@@ -42,7 +42,7 @@ test('M2-S1 parsed slip pre-fills confirm form; nothing saves until confirmed', 
   await importSlip(page, SLIP_A)
 
   await expect(page.locator('input[name="amount"]')).toHaveValue('1250.00')
-  await expect(page.getByText('Ref (จาก QR)')).toBeVisible() // QR decoded → ref_code present
+  await expect(page.getByText(/เลขอ้างอิง QA/)).toBeVisible() // QR decoded → reference summary present
 
   // mandatory confirmation: the parse alone must not have created a row
   const check = await page.context().newPage()
@@ -99,7 +99,7 @@ test('M2-S4 null-ref near-duplicate triggers soft warning (cancel and proceed)',
 
   // first import of the QR-less slip saves cleanly
   await importSlip(page, SLIP_NOQR)
-  await expect(page.getByText('Ref (จาก QR)')).toHaveCount(0) // no QR → no ref field
+  await expect(page.getByText(/เลขอ้างอิง QA/)).toHaveCount(0) // no QR → no reference summary
   await confirmButton(page).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
   await expect(page.getByText('฿777.25').first()).toBeVisible()

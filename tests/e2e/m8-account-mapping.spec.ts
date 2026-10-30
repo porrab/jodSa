@@ -72,7 +72,7 @@ async function importSlip(page: Page, fixture: string): Promise<void> {
       .catch(() => false)
     if (leftIdle) break
   }
-  await expect(page.getByRole('heading', { name: 'ยืนยันรายการ' })).toBeVisible({ timeout: 240_000 })
+  await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
 }
 
 // DS-3 moved category before the AccountGrid. Target the accessible grid by

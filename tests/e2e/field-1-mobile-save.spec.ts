@@ -52,7 +52,7 @@ async function importSlip(page: Page, fixture: string): Promise<void> {
   await page.goto('/import')
   await page.locator('input[type="file"]').setInputFiles(fixture)
   // preprocess → QR → OCR (model download on cold cache) → extract → confirm form
-  await expect(page.getByRole('heading', { name: 'ยืนยันรายการ' })).toBeVisible({ timeout: 240_000 })
+  await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
 }
 
 type Box = { x: number; y: number; width: number; height: number }
@@ -90,13 +90,13 @@ test('QA-FIELD-1 readable-QR slip: Save button clears the mobile nav and saves e
   test.setTimeout(360_000)
   await importSlip(page, SLIP_QR)
 
-  // The QR path renders the extra read-only Ref field — the height that triggered the bug.
-  await expect(page.getByText('Ref (จาก QR)')).toBeVisible()
+  // The current import UI shows the QR reference in its parsed-slip summary.
+  await expect(page.getByText(/เลขอ้างอิง QA/)).toBeVisible()
 
   // FIELD-3 bonus (already pm-desk-APPROVED): account auto-selected by the slip's
   // detected bank (SCB), not the accounts[0] default (KTB). Logged as evidence, not
   // asserted — keeps this nav-occlusion guard from depending on bank-name OCR.
-  const acctText = (await page.getByRole('combobox').nth(1).textContent())?.trim()
+  const acctText = (await page.getByRole('radiogroup', { name: 'บัญชี' }).getByRole('radio', { checked: true }).textContent({ timeout: 5_000 }))?.trim()
   console.log(`[FIELD-3 bonus] slip bank=SCB → auto-selected account: ${acctText ?? '(unread)'}`)
 
   const button = confirmButton(page)
@@ -113,6 +113,6 @@ test('QA-FIELD-1 non-QR control: shorter form (no Ref field) also clears the nav
   test.setTimeout(360_000)
   await importSlip(page, SLIP_NOQR)
 
-  await expect(page.getByText('Ref (จาก QR)')).toHaveCount(0) // no QR → no Ref field → shorter form
+  await expect(page.getByText(/เลขอ้างอิง QA/)).toHaveCount(0) // no QR → no reference summary
   await assertButtonClearsNav(page, confirmButton(page))
 })

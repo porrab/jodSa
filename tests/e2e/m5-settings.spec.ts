@@ -30,15 +30,13 @@ test.describe('M5-S1/S2 settings preferences + dashboard chart', () => {
     await expect(page.getByRole('heading', { name: 'ตั้งค่า' })).toBeVisible()
 
     // Theme: ตามระบบ → มืด — <html> gains the dark class and it survives reload
-    await page.getByRole('combobox').nth(1).click()
-    await page.getByRole('option', { name: 'มืด' }).click()
+    await page.getByRole('button', { name: 'มืด', exact: true }).click()
     await expect(page.locator('html')).toHaveClass(/dark/)
     await page.reload()
     await expect(page.locator('html')).toHaveClass(/dark/)
 
     // Language: ไทย → English — nav, settings, and other screens re-render in English
-    await page.getByRole('combobox').first().click()
-    await page.getByRole('option', { name: 'English' }).click()
+    await page.getByRole('button', { name: 'English', exact: true }).click()
     await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
 
@@ -48,8 +46,7 @@ test.describe('M5-S1/S2 settings preferences + dashboard chart', () => {
 
     // Switch back to Thai for good measure (cookie-based, same tab)
     await page.goto('/settings')
-    await page.getByRole('combobox').first().click()
-    await page.getByRole('option', { name: 'ไทย' }).click()
+    await page.getByRole('button', { name: 'ไทย', exact: true }).click()
     await expect(page.getByRole('link', { name: 'ภาพรวม' })).toBeVisible({ timeout: 15_000 })
   })
 
@@ -85,8 +82,9 @@ test.describe('M5-S3 account deletion cascades and signs out', () => {
     // to query through the UI. Admin client is sanctioned for test assertions
     // of destructive teardown like this.
     const a = adminClient()
-    const { data: users } = await a.auth.admin.listUsers({ page: 1, perPage: 1000 })
-    expect(users.users.find((u) => u.email === email)).toBeUndefined()
+    const { data: deletedUser, error: deletedUserError } = await a.auth.admin.getUserById(userId)
+    expect(deletedUser.user).toBeNull()
+    expect(deletedUserError).not.toBeNull()
 
     for (const table of ['accounts', 'transactions', 'budgets', 'groups', 'recurring_rules'] as const) {
       const { count, error } = await a

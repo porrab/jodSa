@@ -1,12 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test } from '@playwright/test'
-import { adminClient, findUserByEmail, resetAllUserData, resetInvestData, seedAccount, seedInvestHolding, seedTransaction } from './helpers/admin'
-import { env, STORAGE_A } from './helpers/env'
+import { adminClient, findUserByEmail, resetAllUserData, resetInvestData, seedAccount, seedInvestHolding, seedTransaction, testUserClient } from './helpers/admin'
+import { env, evidenceDir, STORAGE_A } from './helpers/env'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
-const evidence = path.resolve('tests/e2e/evidence/c2-2026-10-29')
+const evidence = evidenceDir('c2-invest-divest', 'tests/e2e/evidence/c2-2026-10-29')
 let userId = ''
 let accountId = ''
 
@@ -30,7 +30,8 @@ test.afterEach(async () => {
 })
 
 async function balanceFor(account: string): Promise<number> {
-  const { data, error } = await adminClient().rpc('account_balances')
+  const userClient = await testUserClient(userId)
+  const { data, error } = await userClient.rpc('account_balances')
   if (error) throw error
   return (data as { account_id: string; balance_satang: number }[]).find((row) => row.account_id === account)?.balance_satang ?? 0
 }
@@ -185,7 +186,7 @@ test('C2 funded buy links only its buy; deletion preserves the cash debit', asyn
   await buyRows.filter({ hasText: 'ตัดจาก make ฿100.00' }).click()
   await page.getByRole('dialog').last().getByRole('button', { name: 'ลบ', exact: true }).click()
   await expect.poll(async () => {
-    const { data, error } = await adminClient().from('transactions').select('asset_transaction_id').eq('id', cashRows![0].id).single()
+    const { data, error } = await adminClient().from('transactions').select('asset_transaction_id').eq('user_id', userId).eq('id', cashRows![0].id).single()
     if (error) throw error
     return data.asset_transaction_id
   }).toBeNull()

@@ -139,7 +139,7 @@ test('M9-onboard-4 slip-confirm with zero accounts → inline "+ สร้าง
   await resetAllUserData(userId)
   await importSlip(page, path.join(GENERATED_DIR, 'slip-qr-a.png'))
 
-  await expect(page.getByRole('heading', { name: 'ยืนยันรายการ' })).toBeVisible({ timeout: 240_000 })
+  await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
   // The account slot is the inline create (hint slip.noAccounts), not an empty/
   // disabled Select — the exact tester complaint the M9 reset fixed.
   await expect(page.getByRole('button', { name: CREATE })).toBeVisible()

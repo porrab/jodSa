@@ -33,7 +33,7 @@ test.beforeAll(async () => {
   await api.dispose()
 })
 
-test.afterAll(async () => { if (trip) await deleteTripSession(trip.token) })
+test.afterAll(async () => { if (trip) await deleteTripSession(trip) })
 
 test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reopen, delete', async ({ browser }) => {
   const ctx = await browser.newContext({ storageState: STORAGE_A })
@@ -72,7 +72,7 @@ test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reo
   await expect(confirmSwitch).not.toBeChecked()
   await ensureSwitchOn(confirmSwitch) // defeat a swallowed first click (prod hydration)
   // Persisted server-side.
-  const ownedSlips = await adminSlipsForExpense(trip.token, ownerExp!.id)
+  const ownedSlips = await adminSlipsForExpense(trip, ownerExp!.id)
   expect(ownedSlips[0]?.confirmed).toBe(true)
 
   // Owner sends a slip toward B's expense (manual mode → no OCR, ref null).

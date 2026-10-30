@@ -34,7 +34,7 @@ test.beforeAll(async () => {
   await api.dispose()
 })
 
-test.afterAll(async () => { if (trip) await deleteTripSession(trip.token) })
+test.afterAll(async () => { if (trip) await deleteTripSession(trip) })
 
 test('TRIP-4 ower sends slip (read + manual), payer confirms, no image on the wire', async ({ browser }) => {
   test.setTimeout(600_000)

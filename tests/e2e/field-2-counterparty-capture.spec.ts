@@ -95,7 +95,7 @@ test('QA-FIELD-2 counterparty: transfers/merchants pre-fill, bills stay empty (n
     await page.locator('input[type="file"]').setInputFiles(filePath)
 
     const parsed = await page
-      .getByRole('heading', { name: 'ยืนยันรายการ' })
+      .getByRole('button', { name: 'ยืนยันและบันทึก' })
       .waitFor({ timeout: 240_000 })
       .then(() => true)
       .catch(() => false)

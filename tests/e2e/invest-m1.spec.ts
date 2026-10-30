@@ -153,8 +153,7 @@ test('QA-M1-5 /invest renders in dark theme and in English', async ({ page }) =>
   // Switch language to English via settings; the settings heading itself flips to
   // confirm the app-wide re-render, then /invest renders in English.
   await page.goto('/settings')
-  await page.getByRole('combobox').first().click()
-  await page.getByRole('option', { name: 'English' }).click()
+  await page.getByRole('button', { name: 'English', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 15_000 })
   await page.goto('/invest')
   await expect(page.getByRole('heading', { name: 'Investing' })).toBeVisible()
@@ -163,8 +162,7 @@ test('QA-M1-5 /invest renders in dark theme and in English', async ({ page }) =>
 
   // Restore Thai for the rest of the suite (cookie-based, same storage state).
   await page.goto('/settings')
-  await page.getByRole('combobox').first().click()
-  await page.getByRole('option', { name: 'ไทย' }).click()
+  await page.getByRole('button', { name: 'ไทย', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'ตั้งค่า' })).toBeVisible({ timeout: 15_000 })
 })
 

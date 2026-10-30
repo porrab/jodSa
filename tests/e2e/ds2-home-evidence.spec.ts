@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import path from 'node:path'
-import { env, STORAGE_A } from './helpers/env'
+import { env, evidenceDir, STORAGE_A } from './helpers/env'
 import {
   findUserByEmail,
   resetAllUserData,
@@ -14,7 +14,7 @@ import {
 test.describe.configure({ mode: 'serial' })
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
-const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/ds-2')
+const EVIDENCE_DIR = evidenceDir('ds2-home-evidence', 'tests/e2e/evidence/ds-2')
 let userId: string
 
 test.beforeAll(async () => {

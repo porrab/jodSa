@@ -400,8 +400,7 @@ test('QA-M5-8 the Plan tab renders in English and in dark theme, disclaimer inta
 
   // Switch to English; confirm the app-wide re-render first, then the Plan tab.
   await page.goto('/settings')
-  await page.getByRole('combobox').first().click()
-  await page.getByRole('option', { name: 'English' }).click()
+  await page.getByRole('button', { name: 'English', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 15_000 })
 
   await page.goto('/invest')
@@ -421,8 +420,7 @@ test('QA-M5-8 the Plan tab renders in English and in dark theme, disclaimer inta
 
   // Restore Thai for the rest of the suite (cookie-based, same storage state).
   await page.goto('/settings')
-  await page.getByRole('combobox').first().click()
-  await page.getByRole('option', { name: 'ไทย' }).click()
+  await page.getByRole('button', { name: 'ไทย', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'ตั้งค่า' })).toBeVisible({ timeout: 15_000 })
   await page.evaluate(() => localStorage.setItem('theme', 'light'))
 })

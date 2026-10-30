@@ -49,7 +49,7 @@ async function importSlip(page: Page, fixture: string): Promise<void> {
       .catch(() => false)
     if (leftIdle) break
   }
-  await expect(page.getByRole('heading', { name: 'ยืนยันรายการ' })).toBeVisible({ timeout: 240_000 })
+  await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
 }
 
 const confirmButton = (page: Page) => page.getByRole('button', { name: 'ยืนยันและบันทึก' })
@@ -60,7 +60,7 @@ test('QA-M7B-1 duplicate ref_code → J2 override saves a new row (not a hard bl
   // First import saves cleanly (฿1,250.00, QR ref present).
   await importSlip(page, SLIP_A)
   await expect(page.locator('input[name="amount"]')).toHaveValue('1250.00')
-  await expect(page.getByText('Ref (จาก QR)')).toBeVisible()
+  await expect(page.getByText(/เลขอ้างอิง QA/)).toBeVisible()
   await confirmButton(page).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
   await expect(page.getByText(/1,250\.00/)).toHaveCount(1)

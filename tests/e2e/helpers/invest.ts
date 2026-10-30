@@ -57,7 +57,7 @@ export async function addHolding(page: Page, opts: AddHoldingOpts): Promise<void
 /** Switch to the Overview (ภาพรวม) dashboard tab, waiting for the total-value surface. */
 export async function openOverview(page: Page): Promise<void> {
   await page.goto('/invest')
-  await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
+  await page.getByRole('tab', { name: 'ภาพรวม', exact: true }).click()
 }
 
 export type CustomHoldingOpts = {
@@ -115,7 +115,7 @@ export async function addCustomHolding(page: Page, opts: CustomHoldingOpts): Pro
 /** Switch to the Plan (แผนรายเดือน) tab — the M5 planner. */
 export async function openPlanTab(page: Page): Promise<void> {
   await page.goto('/invest')
-  await page.getByRole('button', { name: 'แผนรายเดือน', exact: true }).click()
+  await page.getByRole('tab', { name: 'แผนรายเดือน', exact: true }).click()
   await expect(page.getByText('สัดส่วนเป้าหมาย')).toBeVisible()
 }
 

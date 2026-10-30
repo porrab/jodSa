@@ -114,7 +114,7 @@ test('QA-INVEST-1 partial, closed missing-FX/null-proxy, and reopened positions 
   await openOverview(page)
   await updatePrice(page, { asset: assetName, value: '50', fx: '' })
   await page.reload()
-  await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
+  await page.getByRole('tab', { name: 'ภาพรวม', exact: true }).click()
   await expect(page.locator('.text-4xl').first()).toContainText('1,000.00')
   await expect(page.getByText(/ต้องระบุอัตราแลกเปลี่ยน/)).toHaveCount(0)
   await openPlanTab(page)

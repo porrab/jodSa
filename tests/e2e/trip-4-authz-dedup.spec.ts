@@ -35,7 +35,7 @@ test.beforeAll(async () => {
   await api.dispose()
 })
 
-test.afterAll(async () => { if (trip) await deleteTripSession(trip.token) })
+test.afterAll(async () => { if (trip) await deleteTripSession(trip) })
 
 test('TRIP-4 re-sending the same ref_code is rejected as duplicate (409); manual null-ref is allowed', async () => {
   const api = await apiCtx('198.51.100.21')
@@ -50,7 +50,7 @@ test('TRIP-4 re-sending the same ref_code is rejected as duplicate (409); manual
 })
 
 test('TRIP-4 only the expense payer may confirm its slips (others → 403)', async () => {
-  const slips = await adminSlipsForExpense(trip.token, expenseId)
+  const slips = await adminSlipsForExpense(trip, expenseId)
   expect(slips.length, 'setup slips exist').toBeGreaterThan(0)
   const slipId = slips[0].id
 
@@ -64,6 +64,6 @@ test('TRIP-4 only the expense payer may confirm its slips (others → 403)', asy
   await api.dispose()
 
   // The confirm actually stuck.
-  const after = await adminSlipsForExpense(trip.token, expenseId)
+  const after = await adminSlipsForExpense(trip, expenseId)
   expect(after.find((s) => s.id === slipId)?.confirmed, 'slip is now confirmed').toBe(true)
 })

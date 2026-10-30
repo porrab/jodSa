@@ -29,7 +29,7 @@ export default defineConfig({
   webServer: {
     command: `pnpm start --port ${e2ePort}`,
     url: `${e2eBaseUrl}/login`,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 180_000,
   },
 })

@@ -125,7 +125,7 @@ test('RV-OWNERFB-1 Home investment total matches /invest and omits a fully-sold 
   await page.getByRole('button', { name: 'Close' }).click()
 
   await page.goto('/invest')
-  await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
+  await page.getByRole('tab', { name: 'ภาพรวม', exact: true }).click()
   await expect(page.getByText('฿1,000.00', { exact: true }).first()).toBeVisible()
 })
 
@@ -174,11 +174,11 @@ test('M9-home-2 the 6-month chart renders under งบ → ภาพรวม (l
   await page.waitForLoadState('networkidle')
 
   // Default tab is งบประมาณ (budget bars) — no chart yet.
-  await expect(page.getByRole('button', { name: 'ภาพรวม', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'ภาพรวม', exact: true })).toBeVisible()
   await expect(page.locator('[class*="recharts"]')).toHaveCount(0)
 
   // Open ภาพรวม → the lazy chart chunk mounts and Recharts DOM appears.
-  await page.getByRole('button', { name: 'ภาพรวม', exact: true }).click()
+  await page.getByRole('tab', { name: 'ภาพรวม', exact: true }).click()
   await expect(page.getByText('รายรับ/รายจ่าย 6 เดือนล่าสุด')).toBeVisible()
   await expect(page.locator('[class*="recharts"]').first()).toBeVisible({ timeout: 30_000 })
 

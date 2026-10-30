@@ -15,6 +15,19 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [QA-REG-2] Production-build full Playwright regression is RED outside C1/A3/C2/contrast — 2026-10-30
+**From:** Codex test-harness run · **Status:** OPEN · **Severity:** M
+
+**Mechanism:** The 2026-10-30 full run has multiple independent failures. Several checked-in selectors no longer match the current UI semantics (for example, `invest-m1.spec.ts` looks for a `button` named “Holdings” while the shared `PageTab` renders `role="tab"`). The slip accuracy gate also missed its threshold (4/12 correct, requires at least 9/12), and the `honey-visual` sessions image differs from its baseline by 1,869 pixels. Serial suites skip later cases after an earlier failure. These are separate issues requiring per-spec triage; the detailed report records the error and screenshot for every case.
+
+**Evidence / reproduction:** `pnpm build` succeeded, then `pnpm start --port 3100` served the 2026-10-30 local production build. With `JODSA_E2E_PORT=3100`, the full Playwright run completed 172 tests in 48 files: 103 passed, 41 failed, 28 skipped, 0 flaky. Failures span 26 spec files. See `project/jodsa/tests/e2e/evidence/qa-regression-2026-10-30/full-final/summary.md` for every per-file count, skip reason, error, and screenshot path; `results.json` is the raw runner output. The focused C1/A3/contrast/C2 `--repeat-each=3` run passed 61/61, so the failures do not invalidate the privacy-harness fix in those four specs.
+
+**Suggested fix:** Triage the 41 failures by the error and screenshot in the report. Update stale test selectors to the current accessible roles and labels where the product behavior is correct; investigate the slip OCR accuracy and any actual behavior or visual regressions separately. Preserve the existing visual baselines until their differences are reviewed.
+
+**Acceptance:** A production-build full suite has zero unexpected failures and zero unexplained skips; intentional skips state their reason. Run the same 172-test suite and record per-file counts, with C1/A3/contrast/C2 repeat 3 remaining green. Do not use owner reads or unfiltered service-role reads during reruns.
+
+---
+
 ## [QA-C2-REG-1] E2E harness cannot honor an A-only, no-owner-read regression boundary — 2026-10-30
 **From:** qa-lab
 **Status:** OPEN · **Claude review 2026-10-30:** mechanism confirmed on disk:
@@ -36,6 +49,8 @@ Production smoke 8/8 on `jod-sa.vercel.app` (GitHub Production deployment = `41c
 **Suggested fix:** Resolve A's ID from A's own authenticated session; run balance RPC with that session; provide an A-only setup/project that never provisions, signs in, or queries B. Keep two-user isolation specs in a separately selected suite. Scope all teardown to IDs created by the test run.
 
 **Acceptance:** Instrument an A-only full regression and C1/A3/contrast/C2 `--repeat-each=3` run so every auth call and data query is demonstrably A-scoped, with no `listUsers`, service-role balance read, or B setup on that path. Confirm all selected tests execute, report per-spec pass/fail/skip/flaky counts, and prove cleanup with A-session count queries.
+
+**Codex implementation 2026-10-30 — READY FOR QA RECHECK:** The corrected A/B test-account boundary was used. `findUserByEmail` derives IDs through each named test user's own sign-in; `m5-settings` uses an exact created user ID; C1/C2 call `account_balances()` through authenticated test-user clients. Service-role query helpers require a registered test-user ID, and the remaining service-role reads in `tests/` are scoped to a test-user ID or exact test-created row/session ID. A3 4/4, C1 4/4, C2 6/6, contrast 6/6 passed in the full production-build run; repeat 3 passed 61/61 including setup, with zero fail/skip/flaky. A/B authenticated count queries after cleanup show zero rows in all 11 checked tables. The full suite remains RED for the independent failures tracked as QA-REG-2.
 
 ## [RV-C2-1] 0012 links cash to a holding, not to the buy it paid for — 2026-10-28 · from Claude review
 **From:** Claude review of `b3e7cbe` + `09580d7` · **Status:** **APPROVED 2026-10-28 (Claude review)** at `98a1fbd`. Re-review: `asset_transaction_id` FK (on delete set null) added to unapplied 0012 and set by `record_buy_with_cash`; /invest maps cash by buy id; the line and the delete warning are per buy; sha re-pinned `5bfafc08…` and matches on disk; PGlite proof (scratch install) green incl. link set + buy delete keeps cash with NULL link; raw tsc 0; Vitest 364 passed / 34 skipped. 0012 is still NOT applied live. · **Severity:** M. **Blocks the live apply of 0012**: fixing it later costs a second migration. 0012 is unapplied, so the fix is cheap now.

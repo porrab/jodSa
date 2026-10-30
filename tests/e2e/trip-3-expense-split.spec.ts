@@ -24,7 +24,7 @@ test.beforeAll(async () => {
   trip = await seedTripSession(a.id, 'QA-TRIP-3 ก๋วยเตี๋ยว')
 })
 
-test.afterAll(async () => { if (trip) await deleteTripSession(trip.token) })
+test.afterAll(async () => { if (trip) await deleteTripSession(trip) })
 
 test('TRIP-3 add expense + QR; others see equal split + the QR; object lands in trip-qr', async ({ browser }) => {
   // Two guests join (owner + เอ + บี = 3 members → default split 3).

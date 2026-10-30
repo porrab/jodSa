@@ -1,14 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
-import { GENERATED_DIR, STORAGE_A } from './helpers/env'
+import { env, evidenceDir, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { adminClient, findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
-import { env } from './helpers/env'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
 
-const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/a3-2026-10-26/app')
+const EVIDENCE_DIR = evidenceDir('a3-display-name', 'tests/e2e/evidence/a3-2026-10-26/app')
 let userId = ''
 let sourceAccountId = ''
 let destinationAccountId = ''

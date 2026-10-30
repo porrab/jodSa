@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { request as pwRequest, expect, type APIRequestContext, type Locator } from '@playwright/test'
-import { adminClient } from './admin'
+import { adminClient, requireTestUserId } from './admin'
+import { e2eBaseUrl } from './env'
 
 /**
  * Prod-build hydration race guard. On `next start` under load, the FIRST
@@ -38,12 +39,14 @@ export async function clickUntilVisible(trigger: Locator, appears: Locator, time
 
 export type SeededTrip = {
   token: string
+  ownerUserId: string
   ownerParticipantId: string
   ownerParticipantToken: string
 }
 
 /** Seed an OPEN trip session owned by `ownerUserId`, owner auto-joined. */
 export async function seedTripSession(ownerUserId: string, title: string): Promise<SeededTrip> {
+  requireTestUserId(ownerUserId, 'seedTripSession')
   const a = adminClient()
   const token = nanoid(21)
   const { error: sErr } = await a.from('payment_sessions').insert({
@@ -57,30 +60,33 @@ export async function seedTripSession(ownerUserId: string, title: string): Promi
     user_id: ownerUserId, is_owner: true,
   }).select('id').single()
   if (pErr || !data) throw new Error(`seedTripSession (owner participant) failed: ${pErr?.message}`)
-  return { token, ownerParticipantId: data.id, ownerParticipantToken: ownerToken }
+  return { token, ownerUserId, ownerParticipantId: data.id, ownerParticipantToken: ownerToken }
 }
 
 /** Delete a trip session (cascades participants/expenses/slips). */
-export async function deleteTripSession(token: string): Promise<void> {
-  const { error } = await adminClient().from('payment_sessions').delete().eq('id', token)
+export async function deleteTripSession(trip: SeededTrip): Promise<void> {
+  requireTestUserId(trip.ownerUserId, 'deleteTripSession')
+  const { error } = await adminClient().from('payment_sessions').delete().eq('id', trip.token).eq('owner', trip.ownerUserId)
   if (error) throw new Error(`deleteTripSession failed: ${error.message}`)
 }
 
 /** Clear every session a user owns (trip sessions don't cascade via account delete). */
 export async function clearOwnerSessions(ownerUserId: string): Promise<void> {
+  requireTestUserId(ownerUserId, 'clearOwnerSessions')
   const { error } = await adminClient().from('payment_sessions').delete().eq('owner', ownerUserId)
   if (error) throw new Error(`clearOwnerSessions failed: ${error.message}`)
 }
 
-export async function setTripStatus(token: string, status: 'open' | 'closed'): Promise<void> {
-  const { error } = await adminClient().from('payment_sessions').update({ status }).eq('id', token)
+export async function setTripStatus(trip: SeededTrip, status: 'open' | 'closed'): Promise<void> {
+  requireTestUserId(trip.ownerUserId, 'setTripStatus')
+  const { error } = await adminClient().from('payment_sessions').update({ status }).eq('id', trip.token).eq('owner', trip.ownerUserId)
   if (error) throw new Error(`setTripStatus failed: ${error.message}`)
 }
 
 /** A fresh APIRequestContext bound to a distinct rate-limit bucket (per-IP key). */
 export async function apiCtx(ipBucket: string): Promise<APIRequestContext> {
   return pwRequest.newContext({
-    baseURL: 'http://localhost:3000',
+    baseURL: e2eBaseUrl,
     extraHTTPHeaders: { 'x-forwarded-for': ipBucket },
   })
 }
@@ -140,11 +146,12 @@ export async function confirmSlip(
 }
 
 /** Read the slips bound to a trip (admin) — used to grab slip ids for authz tests. */
-export async function adminSlipsForExpense(token: string, expenseId: string) {
+export async function adminSlipsForExpense(trip: SeededTrip, expenseId: string) {
+  requireTestUserId(trip.ownerUserId, 'adminSlipsForExpense')
   const { data, error } = await adminClient()
     .from('session_slips')
     .select('id, payer_participant_id, confirmed, amount_satang')
-    .eq('session_id', token)
+    .eq('session_id', trip.token)
     .eq('expense_id', expenseId)
     .order('created_at')
   if (error) throw new Error(`adminSlipsForExpense failed: ${error.message}`)

@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { env } from './env'
+import { createTestUserGuard } from './test-user-guard'
 
 /**
  * Service-role client — TEST SETUP/TEARDOWN ONLY (provision confirmed test
@@ -8,6 +9,38 @@ import { env } from './env'
  * the user-facing stack stay fully exercised.
  */
 let admin: SupabaseClient | null = null
+const testUsers = createTestUserGuard()
+const credentials = new Map<string, string>([
+  [env.userA.email.toLowerCase(), env.userA.password],
+  [env.userB.email.toLowerCase(), env.userB.password],
+])
+const credentialsById = new Map<string, { email: string; password: string }>()
+
+export function requireTestUserId(userId: string | null | undefined, operation: string): string {
+  return testUsers.require(userId, operation)
+}
+
+export function registerTestUserSession(user: User, expectedEmail: string): void {
+  const email = expectedEmail.toLowerCase()
+  const password = credentials.get(email)
+  if (!password || user.email?.toLowerCase() !== email) {
+    throw new Error('Cannot register an unrecognized test-user session')
+  }
+  testUsers.register(user.id)
+  credentialsById.set(user.id, { email: expectedEmail, password })
+}
+
+export async function testUserClient(userId: string): Promise<SupabaseClient> {
+  requireTestUserId(userId, 'authenticated client')
+  const credential = credentialsById.get(userId)
+  if (!credential) throw new Error('No credential recorded for test-user id')
+  const client = createClient(env.supabaseUrl, env.anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const { data, error } = await client.auth.signInWithPassword(credential)
+  if (error || data.user?.id !== userId) throw new Error(`Test-user sign-in failed: ${error?.message ?? 'id mismatch'}`)
+  return client
+}
 
 export function adminClient(): SupabaseClient {
   if (!env.serviceRoleKey) {
@@ -20,13 +53,26 @@ export function adminClient(): SupabaseClient {
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
-  const { data, error } = await adminClient().auth.admin.listUsers({ page: 1, perPage: 1000 })
-  if (error) throw new Error(`listUsers failed: ${error.message}`)
-  return data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase()) ?? null
+  const normalized = email.toLowerCase()
+  const password = credentials.get(normalized)
+  if (!password) throw new Error(`No test credential registered for ${email}`)
+  const client = createClient(env.supabaseUrl, env.anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const { data, error } = await client.auth.signInWithPassword({ email, password })
+  if (error?.code === 'invalid_credentials') return null
+  if (error) throw new Error(`Test-user sign-in failed: ${error.message}`)
+  if (!data.user || data.user.email?.toLowerCase() !== normalized) throw new Error('Test-user email mismatch')
+  registerTestUserSession(data.user, email)
+  return data.user
 }
 
 /** Create the user if missing; guarantee the email is confirmed either way. */
 export async function ensureConfirmedUser(email: string, password: string, displayName?: string): Promise<string> {
+  if (email !== env.userA.email && email !== env.userB.email && !/^qa-[^@]+@jodsa\.test$/i.test(email)) {
+    throw new Error('Only named test accounts may be provisioned')
+  }
+  credentials.set(email.toLowerCase(), password)
   const existing = await findUserByEmail(email)
   if (existing) {
     if (!existing.email_confirmed_at) {
@@ -42,11 +88,14 @@ export async function ensureConfirmedUser(email: string, password: string, displ
     user_metadata: displayName ? { full_name: displayName } : undefined,
   })
   if (error) throw new Error(`createUser ${email} failed: ${error.message}`)
+  testUsers.register(data.user.id)
+  credentialsById.set(data.user.id, { email, password })
   return data.user.id
 }
 
 /** Wipe a test user's rows so every run starts from a known-empty state. */
 export async function resetUserData(userId: string): Promise<void> {
+  requireTestUserId(userId, 'resetUserData')
   const a = adminClient()
   // transactions reference accounts — delete them first
   const { error: txErr } = await a.from('transactions').delete().eq('user_id', userId)
@@ -61,6 +110,7 @@ export async function resetUserData(userId: string): Promise<void> {
  * transactions reference accounts/rules/groups, so they go first; accounts last.
  */
 export async function resetAllUserData(userId: string): Promise<void> {
+  requireTestUserId(userId, 'resetAllUserData')
   const a = adminClient()
   // transactions first (they reference accounts/rules/groups); accounts last.
   // recurring_exceptions cascade on rule delete (ON DELETE CASCADE on rule_id).
@@ -78,6 +128,7 @@ export async function resetAllUserData(userId: string): Promise<void> {
  * Used by invest-m1/invest-m3 specs the way resetAllUserData is used by M3/M4.
  */
 export async function resetInvestData(userId: string): Promise<void> {
+  requireTestUserId(userId, 'resetInvestData')
   const a = adminClient()
   // M5 (0009): `plans` rows are independent of holdings (inputs/outputs are jsonb
   // snapshots, no FK), so they'd survive a holdings wipe and pollute plan history.
@@ -103,8 +154,10 @@ export async function seedInvestHolding(
     ledger: Array<{ type: 'buy' | 'sell'; qty: string; priceMinor: string; datetime: string }>
   },
 ): Promise<string> {
+  requireTestUserId(userId, 'seedInvestHolding')
   const a = adminClient()
-  const { data: asset, error: assetError } = await a
+  const userClient = await testUserClient(userId)
+  const { data: asset, error: assetError } = await userClient
     .from('assets')
     .select('id, currency')
     .eq('is_system', true)
@@ -153,6 +206,7 @@ export async function setAssetProxyClass(
   assetName: string,
   proxyClass: string,
 ): Promise<void> {
+  requireTestUserId(userId, 'setAssetProxyClass')
   const { error } = await adminClient()
     .from('assets')
     .update({ proxy_class: proxyClass })
@@ -183,6 +237,7 @@ export async function seedAccount(
   bank: string,
   numberHint?: string,
 ): Promise<string> {
+  requireTestUserId(userId, 'seedAccount')
   const row: Record<string, unknown> = { user_id: userId, name, bank }
   if (numberHint !== undefined) row.number_hint = numberHint
   const { data, error } = await adminClient()
@@ -205,6 +260,7 @@ export async function seedBudget(
   amountSatang: number,
   opts: { period?: 'day' | 'month'; scope?: 'overall' | 'category'; category?: string | null } = {},
 ): Promise<string> {
+  requireTestUserId(userId, 'seedBudget')
   const { data, error } = await adminClient()
     .from('budgets')
     .insert({
@@ -227,6 +283,7 @@ export async function seedBudget(
  * this seeds the group whose chip is under test.
  */
 export async function seedGroup(userId: string, title: string): Promise<string> {
+  requireTestUserId(userId, 'seedGroup')
   const { data, error } = await adminClient()
     .from('groups')
     .insert({ user_id: userId, title })
@@ -253,6 +310,7 @@ export async function seedTransaction(
     groupId?: string | null
   },
 ): Promise<string> {
+  requireTestUserId(userId, 'seedTransaction')
   const { data, error } = await adminClient()
     .from('transactions')
     .insert({

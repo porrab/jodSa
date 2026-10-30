@@ -1,0 +1,2 @@
+{"testUser":"A","counts":{"accounts":0,"transactions":0,"budgets":0,"groups":0,"recurring_rules":0,"holdings":0,"asset_transactions":0,"portfolio_snapshots":0,"plans":0,"assets":0,"payment_sessions":0}}
+{"testUser":"B","counts":{"accounts":1,"transactions":0,"budgets":0,"groups":0,"recurring_rules":0,"holdings":0,"asset_transactions":0,"portfolio_snapshots":0,"plans":0,"assets":0,"payment_sessions":0}}

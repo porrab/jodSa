@@ -40,7 +40,7 @@ test.beforeAll(async () => {
 })
 
 test.afterAll(async () => {
-  if (trip) await deleteTripSession(trip.token)
+  if (trip) await deleteTripSession(trip)
 })
 
 test('TRIP-6a a different logged-in user (User B) and a bare anon read ZERO of the trip ledger', async () => {
@@ -80,13 +80,13 @@ test('TRIP-6b a wrong/guessed token is denied with no ledger leak', async ({ bro
 })
 
 test('TRIP-6c a closed trip rejects join / expense / slip (403)', async () => {
-  await setTripStatus(trip.token, 'closed')
+  await setTripStatus(trip, 'closed')
   const api = await apiCtx('198.51.100.12')
   expect((await joinTrip(api, trip.token, 'ใหม่')).status, 'join closed').toBe(403)
   expect((await addExpense(api, trip.token, guestToken, { title: 'x', amountSatang: 100, split: 2 })).status, 'expense closed').toBe(403)
   expect(await sendTripSlip(api, trip.token, { participantToken: guestToken, expenseId, amountSatang: 100, refCode: null }), 'slip closed').toBe(403)
   await api.dispose()
-  await setTripStatus(trip.token, 'open') // restore
+  await setTripStatus(trip, 'open') // restore
 })
 
 test('TRIP-6d join over the per-IP limit is throttled (429; ≤10 succeed)', async () => {

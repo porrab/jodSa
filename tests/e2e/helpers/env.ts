@@ -43,3 +43,11 @@ export const AUTH_DIR = path.resolve(__dirname, '../.auth')
 export const GENERATED_DIR = path.resolve(__dirname, '../.generated')
 export const STORAGE_A = path.join(AUTH_DIR, 'userA.json')
 export const STORAGE_B = path.join(AUTH_DIR, 'userB.json')
+
+export const e2eBaseUrl = `http://localhost:${process.env.JODSA_E2E_PORT ?? '3000'}`
+
+/** Route run screenshots away from committed visual baselines when requested. */
+export function evidenceDir(specName: string, fallback: string): string {
+  const runRoot = process.env.JODSA_E2E_EVIDENCE_DIR
+  return runRoot ? path.resolve(runRoot, specName) : path.resolve(fallback)
+}

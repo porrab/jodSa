@@ -54,7 +54,7 @@ test.beforeAll(async () => {
   await api.dispose()
 })
 
-test.afterAll(async () => { if (trip) await deleteTripSession(trip.token) })
+test.afterAll(async () => { if (trip) await deleteTripSession(trip) })
 
 test('M9-trip guest pay page stays recorded-not-verified', async ({ browser }) => {
   const ctx = await browser.newContext()

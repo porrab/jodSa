@@ -2,7 +2,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../../lib/supabase/types'
 import { env, STORAGE_A, STORAGE_B } from './helpers/env'
-import { resetInvestData } from './helpers/admin'
+import { registerTestUserSession, resetInvestData } from './helpers/admin'
 import { addHolding, addCustomHolding, openOverview, updatePrice, openPlanTab, submitPlan } from './helpers/invest'
 
 /**
@@ -42,6 +42,8 @@ test.beforeAll(async () => {
   }
   userIdA = a.data.user.id
   userIdB = b.data.user.id
+  registerTestUserSession(a.data.user, env.userA.email)
+  registerTestUserSession(b.data.user, env.userB.email)
   expect(userIdA, 'two genuinely distinct QA identities are required').not.toBe(userIdB)
 })
 
@@ -74,8 +76,7 @@ type Locale = keyof typeof copy
 
 async function setLocale(page: Page, locale: Locale) {
   await page.goto('/settings')
-  await page.getByRole('combobox').first().click()
-  await page.getByRole('option', { name: locale === 'th' ? 'ไทย' : 'English', exact: true }).click()
+  await page.getByRole('button', { name: locale === 'th' ? 'ไทย' : 'English', exact: true }).click()
   await expect(page.getByRole('heading', { name: locale === 'th' ? 'ตั้งค่า' : 'Settings', exact: true })).toBeVisible()
 }
 
@@ -190,7 +191,7 @@ test('SPEC6-ALLOCATION persisted 60/20/10/10 retains same-asset sleeve split and
   await openOverview(page)
   await expect(page.locator('.text-4xl').first()).toContainText('1,000.00')
   await expect(page.getByText('ปตท. จำกัด (มหาชน)', { exact: true })).toHaveCount(1)
-  await expect(page.getByText('100.0%', { exact: true })).toBeVisible()
+  await expect(page.getByText('100.0%', { exact: true }).first()).toBeVisible()
   const chart = page.getByText('แบ่งตามบทบาทในพอร์ต', { exact: true }).locator('..')
   for (const label of copy.th.sleeves) await expect(chart.getByText(label, { exact: true })).toBeVisible()
   const snapshot = await saveSnapshot(page)

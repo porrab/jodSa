@@ -21,7 +21,7 @@ test.beforeAll(async () => {
   trip = await seedTripSession(a.id, 'QA-TRIP-2 ทริปทะเล') // owner auto-joined → 1 member
 })
 
-test.afterAll(async () => { if (trip) await deleteTripSession(trip.token) })
+test.afterAll(async () => { if (trip) await deleteTripSession(trip) })
 
 test('TRIP-2 guest joins, stays joined across restart, headcount grows with a 2nd guest', async ({ browser }) => {
   // ── Guest 1: fresh logged-out context → join form → join

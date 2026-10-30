@@ -1,12 +1,12 @@
 import path from 'node:path'
 import { test, expect, type Locator, type Page } from '@playwright/test'
-import { env, GENERATED_DIR, STORAGE_A } from './helpers/env'
+import { env, evidenceDir, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { findUserByEmail, resetAllUserData, seedAccount, seedTransaction } from './helpers/admin'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
 
-const EVIDENCE_DIR = path.resolve('tests/e2e/evidence/ds-3')
+const EVIDENCE_DIR = evidenceDir('ds3-form-row', 'tests/e2e/evidence/ds-3')
 let userId: string
 
 function bangkokTodayAt(time: string) {
