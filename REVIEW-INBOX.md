@@ -18,6 +18,19 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 ## [QA-REG-2] Production-build full Playwright regression is RED outside C1/A3/C2/contrast — 2026-10-30
 **From:** Codex test-harness run · **Status:** OPEN · **Severity:** M
 
+**Claude triage 2026-10-31 (from the failure list, not re-run):**
+- No failure is in a C2/0012 path. C1/A3/C2/contrast pass 61/61 on repeat 3.
+- The failures cluster in test drift from the OWNER-FB/DS redesign (DS-5 `8cb5288` 2026-10-24 and earlier):
+  - bank-picker `option KBank` (chips are now Thai names);
+  - `จำนวนเงิน (บาท)` label;
+  - `1250.00` vs `1,250.00` amount formatting;
+  - `เพิ่มงบประมาณ` / `สร้างรายการ` / `Holdings` / `Plan` controls;
+  - the B3 day header doubling `100.00` matches (`m7-edit`);
+  - strict-mode duplicates of `93.9%`/`61.0%` (`invest-m3`);
+  - an `m9-home-restructure` A2 fixture expecting ฿700 where its own seeds give -500+1,200+100 = ฿800.
+- Not drift; investigate as possible product bugs: `m2-s5` OCR 4/12 and `field-2` slip pipeline not reaching confirm (likely OCR env/provider), and `honey-visual` light-sessions 1,869 px diff.
+- **Acceptance addition:** for every failure classified as test drift, show it also fails on pre-C2 `530a8fa` OR cite the commit that changed the UI. For every failure classified as a bug, provide a minimal repro.
+
 **Mechanism:** The 2026-10-30 full run has multiple independent failures. Several checked-in selectors no longer match the current UI semantics (for example, `invest-m1.spec.ts` looks for a `button` named “Holdings” while the shared `PageTab` renders `role="tab"`). The slip accuracy gate also missed its threshold (4/12 correct, requires at least 9/12), and the `honey-visual` sessions image differs from its baseline by 1,869 pixels. Serial suites skip later cases after an earlier failure. These are separate issues requiring per-spec triage; the detailed report records the error and screenshot for every case.
 
 **Evidence / reproduction:** `pnpm build` succeeded, then `pnpm start --port 3100` served the 2026-10-30 local production build. With `JODSA_E2E_PORT=3100`, the full Playwright run completed 172 tests in 48 files: 103 passed, 41 failed, 28 skipped, 0 flaky. Failures span 26 spec files. See `project/jodsa/tests/e2e/evidence/qa-regression-2026-10-30/full-final/summary.md` for every per-file count, skip reason, error, and screenshot path; `results.json` is the raw runner output. The focused C1/A3/contrast/C2 `--repeat-each=3` run passed 61/61, so the failures do not invalidate the privacy-harness fix in those four specs.
@@ -30,7 +43,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [QA-C2-REG-1] E2E harness cannot honor an A-only, no-owner-read regression boundary — 2026-10-30
 **From:** qa-lab
-**Status:** OPEN · **Claude review 2026-10-30:** mechanism confirmed on disk:
+**Status:** **APPROVED 2026-10-31 (Claude review)** at `e369484`: no `listUsers` and no service-role `account_balances` call remain in `tests/e2e` (full grep, not truncated); the guard plus its unit test are present; raw tsc 0; Vitest 367 passed / 34 skipped. · **Claude review 2026-10-30:** mechanism confirmed on disk:
 - `helpers/admin.ts:23` calls `listUsers({ perPage: 1000 })`, and `m5-settings.spec.ts:88` does the same.
 - `c1-reconcile.spec.ts:175` and `c2-invest-divest.spec.ts:33` call `account_balances()` through the service role.
 
