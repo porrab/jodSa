@@ -14,7 +14,7 @@ test('TRIP-7 create dialog: required asterisks present, no optional text (collec
   const ctx = await browser.newContext({ storageState: STORAGE_A })
   const page = await ctx.newPage()
   await page.goto('/sessions')
-  await page.getByRole('button', { name: 'สร้างรายการ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
 
   // Collect (default): required marks present, no optional copy.

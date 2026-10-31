@@ -157,8 +157,8 @@ test('QA-M1-5 /invest renders in dark theme and in English', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 15_000 })
   await page.goto('/invest')
   await expect(page.getByRole('heading', { name: 'Investing' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Holdings', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Overview', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Holdings', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toBeVisible()
 
   // Restore Thai for the rest of the suite (cookie-based, same storage state).
   await page.goto('/settings')

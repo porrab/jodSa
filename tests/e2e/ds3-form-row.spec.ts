@@ -2,6 +2,7 @@ import path from 'node:path'
 import { test, expect, type Locator, type Page } from '@playwright/test'
 import { env, evidenceDir, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { findUserByEmail, resetAllUserData, seedAccount, seedTransaction } from './helpers/admin'
+import { uploadSlipForOcr } from './helpers/ui'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
@@ -134,10 +135,7 @@ test('DS-3 evidence: manual and slip-confirm both render category above account'
   await page.screenshot({ path: path.join(EVIDENCE_DIR, 'app-manual-add.png') })
   await manual.getByRole('button', { name: 'Close' }).click()
 
-  await page.goto('/import')
-  await page.waitForLoadState('networkidle')
-  const input = page.locator('input[type="file"]')
-  await input.setInputFiles(path.join(GENERATED_DIR, 'slip-qr-a.png'))
+  await uploadSlipForOcr(page, path.join(GENERATED_DIR, 'slip-qr-a.png'))
   await expect(page.getByTestId('slip-category-field')).toBeVisible({ timeout: 480_000 })
   const slipCategory = page.getByTestId('slip-category-field')
   const slipAccount = page.getByTestId('slip-account-field')

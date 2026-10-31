@@ -1,21 +1,21 @@
 import { test, expect } from '@playwright/test'
-import { ensureConfirmedUser, deleteUserByEmail } from './helpers/admin'
+import { findUserByEmail, resetAllUserData } from './helpers/admin'
+import { env } from './helpers/env'
 import { login, createAccount, addTransaction } from './helpers/ui'
 
 /**
- * M1-S1 — new-user journey: signup → first account → first expense → visible in list + balance.
+ * M1-S1 — signup form smoke + test user A's empty-state first account and expense.
  * M1-S5 — auth guard: logged-out visitor is redirected to /login.
  */
 
-const PASSWORD = 'QaNewbie123!'
-const throwawayEmail = `qa-s1-${Date.now()}@jodsa.test`
-
-test.describe('M1-S1 new user signs up and logs first expense', () => {
-  test.afterAll(async () => {
-    await deleteUserByEmail(throwawayEmail)
+test.describe('M1-S1 signup form and first-use journey with test user A', () => {
+  test.beforeAll(async () => {
+    const user = await findUserByEmail(env.userA.email)
+    if (!user) throw new Error('test user A missing')
+    await resetAllUserData(user.id)
   })
 
-  test('signup → account → expense → listed with updated balance', async ({ page }) => {
+  test('signup form → A first account → expense → listed with updated balance', async ({ page }) => {
     // Signup form smoke: the screen renders with all fields
     await page.goto('/signup')
     await expect(page.getByLabel('ชื่อที่แสดง')).toBeVisible()
@@ -26,11 +26,10 @@ test.describe('M1-S1 new user signs up and logs first expense', () => {
     // Submitting a real signup is deliberately avoided: this Supabase project
     // requires email confirmation (mailer_autoconfirm=false), the free tier
     // rate-limits confirmation emails (~2/h), and no test inbox exists — a
-    // UI-submitted signup would be flaky by construction. Provision the same
-    // outcome (a confirmed brand-new user) via the admin API and run the rest
-    // of the first-session journey through the UI.
-    await ensureConfirmedUser(throwawayEmail, PASSWORD, 'QA Newbie')
-    await login(page, throwawayEmail, PASSWORD)
+    // UI-submitted signup would be flaky by construction and cannot create
+    // another identity under the A/B-only boundary. Reset A's rows above and
+    // run the account and expense journey through the UI.
+    await login(page, env.userA.email, env.userA.password)
 
     await createAccount(page, 'QA Wallet', 'KBank')
     await addTransaction(page, { type: 'expense', amount: '120', account: 'QA Wallet' })

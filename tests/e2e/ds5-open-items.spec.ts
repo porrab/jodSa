@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test } from '@playwright/test'
 import { env, evidenceDir, GENERATED_DIR, STORAGE_A } from './helpers/env'
+import { uploadSlipForOcr } from './helpers/ui'
 import {
   findUserByEmail,
   resetAllUserData,
@@ -76,8 +77,7 @@ test('C4 selected segmented tab is flat', async ({ page }) => {
 
 test('S2 slip confirmation shows parsed badge and bank/reference metadata', async ({ page }) => {
   test.setTimeout(600_000)
-  await page.goto('/import')
-  await page.locator('input[type="file"]').setInputFiles(path.join(GENERATED_DIR, 'slip-qr-a.png'))
+  await uploadSlipForOcr(page, path.join(GENERATED_DIR, 'slip-qr-a.png'))
   await expect(page.getByText('อ่านจากสลิปแล้ว')).toBeVisible({ timeout: 480_000 })
   await expect(page.getByText(/SCB · เลขอ้างอิง .+…../)).toBeVisible()
   await expect(page.getByText('slip-qr-a.png')).toHaveCount(0)

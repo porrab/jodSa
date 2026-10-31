@@ -29,7 +29,7 @@ test('TRIP-1 trip create hides account/QR/target; share card shows the absolute 
   const page = await ctx.newPage()
 
   await page.goto('/sessions')
-  await page.getByRole('button', { name: 'สร้างรายการ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
 
   // Pick the trip type tile (collect is the default).

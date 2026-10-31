@@ -33,6 +33,12 @@ function todayBangkok(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
 }
 
+function displayThaiDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('th-TH', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok',
+  }).format(new Date(`${isoDate}T12:00:00+07:00`))
+}
+
 /** A date strictly after today but still inside the current Bangkok month, or null
  *  if today is too close to month-end to have one. */
 function laterThisMonth(): string | null {
@@ -56,7 +62,7 @@ async function resetAndSeed(): Promise<void> {
  *  monthly; type to expense; account to accounts[0]). */
 async function createMonthlyExpenseRule(page: Page, amountBaht: string, startDate: string): Promise<void> {
   await page.goto('/recurring')
-  await page.getByRole('button', { name: 'เพิ่มรายการประจำ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('จำนวนเงิน (บาท)').fill(amountBaht)
   await dialog.getByLabel('วันเริ่ม').fill(startDate)
@@ -77,23 +83,23 @@ test('QA-M7D-1 a rule due today deducts exactly once on dashboard load; balance 
   // so ฿137.00 surfaces on the dashboard (month-expense + the account balance).
   await expect(page.getByText(/137\.00/).first()).toBeVisible()
   // Budget counts it: overall 10,000 − 137 = 9,863 remaining.
-  await expect(page.getByText('เหลือ ฿9,863.00')).toBeVisible()
+  await expect(page.getByText('เหลือ ฿9,863')).toBeVisible()
 
   // Exactly one occurrence row — idempotent, not the whole month, not duplicated.
   await page.goto('/transactions')
-  await expect(page.getByText(/137\.00/)).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /−฿137\.00/ })).toHaveCount(1)
   // …and it carries the recurring provenance badge (came from the rule, not manual).
   await expect(page.getByText('🔁')).toHaveCount(1)
 
   // J7 "did it work?" — the recurring page reports it deducted today, no error state.
   await page.goto('/recurring')
-  await expect(page.getByText(`หักล่าสุด: ${today}`)).toBeVisible()
+  await expect(page.getByText(new RegExp(`หักล่าสุด: ${displayThaiDate(today)}`))).toBeVisible()
   await expect(page.getByText('หักเงินรอบนี้ไม่สำเร็จ')).toHaveCount(0)
 
   // Reload the dashboard — materialization is idempotent, still exactly one row.
   await page.goto('/dashboard')
   await page.goto('/transactions')
-  await expect(page.getByText(/137\.00/)).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /−฿137\.00/ })).toHaveCount(1)
 })
 
 test('QA-M7D-2 a rule due later this month does NOT deduct early (≤-today clamp)', async ({ page }) => {
@@ -106,7 +112,7 @@ test('QA-M7D-2 a rule due later this month does NOT deduct early (≤-today clam
   // Open the dashboard: the future occurrence must NOT be materialized yet.
   await page.goto('/dashboard')
   await expect(page.getByText(/259\.00/)).toHaveCount(0) // no early deduction anywhere on the dashboard
-  await expect(page.getByText('เหลือ ฿10,000.00')).toBeVisible() // budget untouched
+  await expect(page.getByText('เหลือ ฿10,000')).toBeVisible() // budget untouched
 
   await page.goto('/transactions')
   await expect(page.getByText(/259\.00/)).toHaveCount(0) // zero occurrence rows
@@ -114,5 +120,5 @@ test('QA-M7D-2 a rule due later this month does NOT deduct early (≤-today clam
   // J7: the recurring page shows it has never deducted and names the future due date.
   await page.goto('/recurring')
   await expect(page.getByText('หักล่าสุด: ยังไม่เคย')).toBeVisible()
-  await expect(page.getByText(`ครั้งถัดไป: ${later}`)).toBeVisible()
+  await expect(page.getByText(new RegExp(`ครั้งถัดไป: ${displayThaiDate(later!)}`))).toBeVisible()
 })

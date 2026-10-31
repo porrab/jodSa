@@ -27,7 +27,7 @@ test.beforeAll(async () => {
 
 async function createMonthOverallBudget(page: Page, baht: string): Promise<void> {
   await page.goto('/budgets')
-  await page.getByRole('button', { name: 'เพิ่มงบประมาณ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
   // period defaults to รายเดือน (month), scope to ทั้งหมด (overall) — leave both
   await dialog.getByLabel('งบประมาณ (บาท)').fill(baht)
@@ -44,8 +44,10 @@ test('M3-S1 budget 10,000 with 7,000 expense + 5,000 transfer → 3,000 remainin
 
   await page.goto('/budgets')
   // spent reflects only the two expenses; the 5,000 transfer is excluded
-  await expect(page.getByText('฿7,000.00 / ฿10,000.00')).toBeVisible()
-  await expect(page.getByText('เหลือ ฿3,000.00')).toBeVisible()
+  const budgetCard = page.getByRole('button', { name: /งบรายเดือน · ทั้งหมด/ })
+  await expect(budgetCard).toContainText('ใช้ไป ฿7,000')
+  await expect(budgetCard).toContainText('จาก ฿10,000')
+  await expect(budgetCard).toContainText('เหลือ ฿3,000')
   // if the transfer had leaked in, spent would be 12,000 → over-budget label
   await expect(page.getByText(/เกินงบ/)).toHaveCount(0)
 })

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { env, STORAGE_A } from './helpers/env'
-import { findUserByEmail, resetUserData } from './helpers/admin'
+import { findUserByEmail, resetAllUserData } from './helpers/admin'
 import { login, createAccount, addTransaction } from './helpers/ui'
 
 /**
@@ -16,17 +16,18 @@ test.use({ storageState: STORAGE_A })
 test.beforeAll(async () => {
   const user = await findUserByEmail(env.userA.email)
   if (!user) throw new Error(`test user missing: ${env.userA.email}`)
-  await resetUserData(user.id)
+  await resetAllUserData(user.id)
 })
 
 async function assertFixtureNumbers(page: import('@playwright/test').Page) {
   await page.goto('/dashboard')
   await expect(page.getByText('+฿1,000.00')).toBeVisible() // month income — transfer excluded
-  await expect(page.getByText('-฿250.00')).toBeVisible() // month expense — transfer excluded
+  await expect(page.getByText('−฿250.00')).toBeVisible() // month expense — transfer excluded
   await expect(page.getByText('฿750.00').first()).toBeVisible() // net total = 1000 − 250
-  await expect(page.getByText('฿450.00')).toBeVisible() // QA-X = 1000 − 250 − 300
-  await expect(page.getByText('QA-Y', { exact: true })).toBeVisible()
-  await expect(page.getByText('฿300.00').first()).toBeVisible() // QA-Y = +300 transfer_in
+  // Home now shows only the aggregate; account rows expose each transfer side.
+  await page.goto('/accounts')
+  await expect(page.getByRole('button', { name: /QA-X.*฿450\.00/ })).toBeVisible() // QA-X = 1000 − 250 − 300
+  await expect(page.getByRole('button', { name: /QA-Y.*฿300\.00/ })).toBeVisible() // QA-Y = +300 transfer_in
 }
 
 test('M1-S3 transfer/balance hand fixture', async ({ page }) => {
@@ -40,8 +41,7 @@ test('M1-S3 transfer/balance hand fixture', async ({ page }) => {
 
   // the transfer is one neutral row, not an expense
   await page.goto('/transactions')
-  await expect(page.getByText('โอนเงิน', { exact: true })).toBeVisible()
-  await expect(page.getByText('→ QA-Y')).toBeVisible()
+  await expect(page.getByRole('button', { name: /โอนเงิน → QA-Y.*⇄฿300\.00/ })).toBeVisible()
 })
 
 test('M1-S4 second device sees the same data after load', async ({ browser }) => {
@@ -56,7 +56,7 @@ test('M1-S4 second device sees the same data after load', async ({ browser }) =>
 
   await page.goto('/transactions')
   await expect(page.getByText('+฿1,000.00')).toBeVisible()
-  await expect(page.getByText('-฿250.00')).toBeVisible()
-  await expect(page.getByText('→ QA-Y')).toBeVisible()
+  await expect(page.getByText('−฿250.00')).toBeVisible()
+  await expect(page.getByRole('button', { name: /โอนเงิน → QA-Y.*⇄฿300\.00/ })).toBeVisible()
   await ctx.close()
 })

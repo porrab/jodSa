@@ -404,7 +404,7 @@ test('QA-M5-8 the Plan tab renders in English and in dark theme, disclaimer inta
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 15_000 })
 
   await page.goto('/invest')
-  await page.getByRole('button', { name: 'Plan', exact: true }).click()
+  await page.getByRole('tab', { name: 'Plan', exact: true }).click()
   await expect(page.getByText('Target allocation')).toBeVisible()
   // Disclaimer in English, while idle (before any plan exists).
   await expect(page.getByText('Decision-support only')).toBeVisible()

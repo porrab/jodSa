@@ -48,7 +48,7 @@ test('M4-S1 host creates session; logged-out guest sees QR and submits a slip; h
   await uploadAccountQr(host)
 
   await host.goto('/sessions')
-  await host.getByRole('button', { name: 'สร้างรายการ' }).click()
+  await host.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = host.getByRole('dialog')
   await dialog.getByLabel('ชื่อรายการ').fill('QA-M4 มื้อเย็น')
   await dialog.getByRole('combobox').click()

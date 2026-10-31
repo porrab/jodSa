@@ -28,27 +28,27 @@ test('QA-M7A-1 create → edit amount + counterparty → change persists on relo
   // Create an expense (฿100.00) through the real form.
   await addTransaction(page, { type: 'expense', amount: '100', account: ACCT })
   await page.goto('/transactions')
-  await expect(page.getByText(/100\.00/)).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /100\.00/ })).toHaveCount(1)
 
   // Row tap → detail sheet → แก้ไข (delete moved off the row into the sheet, J3).
-  await page.getByText(/100\.00/).first().locator('xpath=ancestor::button[1]').click()
+  await page.getByRole('button', { name: /100\.00/ }).click()
   const sheet = page.getByRole('dialog')
   await expect(sheet.getByRole('button', { name: 'แก้ไข' })).toBeVisible()
   await sheet.getByRole('button', { name: 'แก้ไข' }).click()
 
   // Prefilled edit form — change the amount and set a counterparty.
-  await sheet.getByLabel('จำนวนเงิน (บาท)').fill('175')
-  await sheet.getByLabel('ผู้รับ / ผู้โอน').fill('ร้านทดสอบแก้ไข')
+  await sheet.getByLabel('จำนวนเงิน').fill('175')
+  await sheet.getByLabel('ผู้รับ / ผู้จ่าย (ไม่บังคับ)').fill('ร้านทดสอบแก้ไข')
   await sheet.getByRole('button', { name: 'บันทึกรายการ' }).click()
   await expect(sheet).toBeHidden()
 
   // Persist check: reload and confirm the edited amount replaced the original
   // (not a second row) — create→edit must UPDATE, never duplicate.
   await page.goto('/transactions')
-  await expect(page.getByText(/175\.00/)).toHaveCount(1)
-  await expect(page.getByText(/100\.00/)).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /175\.00/ })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /100\.00/ })).toHaveCount(0)
 
   // The non-amount field persisted too: reopen the detail sheet.
-  await page.getByText(/175\.00/).first().locator('xpath=ancestor::button[1]').click()
-  await expect(page.getByRole('dialog').getByText('ร้านทดสอบแก้ไข')).toBeVisible()
+  await page.getByRole('button', { name: /175\.00/ }).click()
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'ร้านทดสอบแก้ไข' })).toBeVisible()
 })

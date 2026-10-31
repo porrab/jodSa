@@ -1,0 +1,365 @@
+{
+  "config": {
+    "configFile": "E:\\claudeWorkSpace\\project\\jodsa\\playwright.config.ts",
+    "rootDir": "E:/claudeWorkSpace/project/jodsa/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "E:/claudeWorkSpace/project/jodsa/tests/e2e/.results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "E:/claudeWorkSpace/project/jodsa/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/global\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "E:/claudeWorkSpace/project/jodsa/tests/e2e/.results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "E:/claudeWorkSpace/project/jodsa/tests/e2e",
+        "testIgnore": [
+          "/global\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": {
+      "command": "pnpm dev --port 3100",
+      "url": "http://localhost:3100/login",
+      "reuseExistingServer": true,
+      "timeout": 180000
+    }
+  },
+  "suites": [
+    {
+      "title": "global.setup.ts",
+      "file": "global.setup.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "provision users, auth states, slip fixtures",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7666,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-30T18:07:34.977Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e4eb4d1272d956fb120f-53d01c87b79de7ef2dfb",
+          "file": "global.setup.ts",
+          "line": 15,
+          "column": 6
+        }
+      ]
+    },
+    {
+      "title": "field-2-counterparty-capture.spec.ts",
+      "file": "field-2-counterparty-capture.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "QA-FIELD-2 counterparty: transfers/merchants pre-fill, bills stay empty (no sender)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 2400000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 83702,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "✅ filled  [KTB|det:KTB] 1779533670088.jpg → counterparty=นางปราณี แสงตระการ\n"
+                    },
+                    {
+                      "text": "✅ filled  [KTB|det:KTB] 1773576614931.jpg → counterparty=น.ส.ลำภู พฟ่วงพูล\n"
+                    },
+                    {
+                      "text": "✅ filled  [KTB|det:KTB] 1779696444712.jpg → counterparty=นาย ธนภูม เสน็วงศ์ ณ อยุธยา\n"
+                    },
+                    {
+                      "text": "·· empty  [KTB|det:KTB] 1779600297906.jpg → counterparty=EMPTY\n"
+                    },
+                    {
+                      "text": "✅ filled  [TTB|det:KBANK] Transfer_20260523_113038.jpg → counterparty=นาย ธบภูมิ เสนีวงศ์ ณ อยุธยา\n"
+                    },
+                    {
+                      "text": "✅ filled  [TTB|det:TTB] Transfer_20260602_205840.jpg → counterparty=นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\n"
+                    },
+                    {
+                      "text": "·· empty  [TTB|det:TTB] BillPayment_20260522_132356.jpg → counterparty=EMPTY\n"
+                    },
+                    {
+                      "text": "·· empty  [TTB|det:?] BillPayment_20260521_115411.jpg → counterparty=EMPTY\n"
+                    },
+                    {
+                      "text": "✅ filled  [KBank|det:?] Image_12b1db54-2951-4d62-8c9b-19302103cafe.jpeg → counterparty=โชติสิรี บุญเต็ม\n"
+                    },
+                    {
+                      "text": "✅ filled  [KBank|det:?] Image_f979ed1e-e954-45ae-a06a-ed0fece524e9.jpeg → counterparty=นางปราณี แสงตระการ\n"
+                    },
+                    {
+                      "text": "✅ filled  [Paotang|det:?] PaoTang_2026_06_02 19_54_07.png → counterparty=รานสุก รสเดด\n"
+                    },
+                    {
+                      "text": "✅ filled  [Paotang|det:?] PaoTang_2026_06_07 18_39_32.png → counterparty=ปราณี\n"
+                    },
+                    {
+                      "text": "✅ filled  [Paotang|det:?] PaoTang_2026_06_05 20_00_38.png → counterparty=ร้าน ไอ้พร้าว\n"
+                    },
+                    {
+                      "text": "\n=== QA-FIELD-2 COUNTERPARTY ===\n"
+                    },
+                    {
+                      "text": "  KTB: 3/4 populated (1 empty)\n"
+                    },
+                    {
+                      "text": "  TTB: 2/4 populated (2 empty)\n"
+                    },
+                    {
+                      "text": "  KBank: 2/2 populated (0 empty)\n"
+                    },
+                    {
+                      "text": "  Paotang: 3/3 populated (0 empty)\n"
+                    },
+                    {
+                      "text": "Artifact (with raw OCR text): E:\\claudeWorkSpace\\project\\jodsa\\tests\\e2e\\.results\\field-2-ocr-capture.json\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-30T18:07:45.222Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f4107e79e23cd783d087-5ab0c63b45c711ac90db",
+          "file": "field-2-counterparty-capture.spec.ts",
+          "line": 70,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "honey-visual.spec.ts",
+      "file": "honey-visual.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "light sessions",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1955,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-30T18:09:10.398Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "062d9103fec84e479c33-40a1e5124e350d6e6a69",
+          "file": "honey-visual.spec.ts",
+          "line": 49,
+          "column": 9
+        }
+      ]
+    },
+    {
+      "title": "m2-s5-accuracy.spec.ts",
+      "file": "m2-s5-accuracy.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "M2-S5 amount correct on ≥9/12 real slips; counterparty populated where expected (M2-1 + M2-9b)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 61758,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "✅ KTB โอนเงิน → นางปราณี แสงตระการ: expected=55 actual=55.00 | counterparty [–] นางปราณี แสงตระการ\n"
+                    },
+                    {
+                      "text": "✅ KTB โอนเงิน → น.ส.ลำภู พ่วงพูล: expected=40 actual=40.00 | counterparty [–] น.ส.ลำภู พฟ่วงพูล\n"
+                    },
+                    {
+                      "text": "✅ KTB โอนเงิน → KBank 2,000 บาท: expected=2000 actual=2,000.00 | counterparty [–] นาย ธนภูม เสน็วงศ์ ณ อยุธยา\n"
+                    },
+                    {
+                      "text": "✅ KTB จ่ายบิล กบตามสั่ง 40 บาท: expected=40 actual=40.00 | counterparty [–] \n"
+                    },
+                    {
+                      "text": "✅ KTB จ่ายบิล กบตามสั่ง 40 บาท (2): expected=40 actual=40.00 | counterparty [–] \n"
+                    },
+                    {
+                      "text": "✅ TTB โอนเงิน → KBank 1,000 บาท: expected=1000 actual=1,000.00 | counterparty [–] นาย ธบภูมิ เสนีวงศ์ ณ อยุธยา\n"
+                    },
+                    {
+                      "text": "✅ TTB โอนเงิน → KBank 4,000 บาท: expected=4000 actual=4,000.00 | counterparty [–] นาย ธนภูมิ เสนีวงศ์ ณ อยุธยา\n"
+                    },
+                    {
+                      "text": "❌ TTB จ่ายบิล SCB 30 บาท: expected=30 actual= | counterparty [–] \n"
+                    },
+                    {
+                      "text": "❌ TTB จ่ายบิล 60 บาท: expected=60 actual= | counterparty [–] \n"
+                    },
+                    {
+                      "text": "✅ KBank make โอนเงิน → โชติสิริ 55 บาท: expected=55 actual=55.00 | counterparty [✅] โชติสิรี บุญเต็ม\n"
+                    },
+                    {
+                      "text": "✅ KBank make โอนเงิน → นางปราณี 55 บาท: expected=55 actual=55.00 | counterparty [✅] นางปราณี แสงตระการ\n"
+                    },
+                    {
+                      "text": "✅ เป๋าตัง จ่ายร้านสุกี้ รสเด็ด 26 บาท: expected=26 actual=26.00 | counterparty [–] รานสุก รสเดด\n"
+                    },
+                    {
+                      "text": "\n=== M2-S5 SUMMARY ===\n"
+                    },
+                    {
+                      "text": "Amount accuracy (M2-1): 10/12 correct\n"
+                    },
+                    {
+                      "text": "Counterparty (M2-9b):   2/2 slips with expected counterparty\n"
+                    },
+                    {
+                      "text": "  ❌ AMOUNT FAIL: TTB จ่ายบิล SCB 30 บาท — expected 30, got \n"
+                    },
+                    {
+                      "text": "  ❌ AMOUNT FAIL: TTB จ่ายบิล 60 บาท — expected 60, got \n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-30T18:09:14.372Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e8d9832393a247b36a9f-016284019779b8b9557d",
+          "file": "m2-s5-accuracy.spec.ts",
+          "line": 61,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-30T18:07:30.895Z",
+    "duration": 166446.24399999998,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

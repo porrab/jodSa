@@ -9,6 +9,20 @@ export async function login(page: Page, email: string, password: string): Promis
   await page.waitForURL('**/dashboard', { timeout: 30_000 })
 }
 
+/** Upload one OCR fixture only after the import screen has hydrated. */
+export async function uploadSlipForOcr(page: Page, filePath: string): Promise<void> {
+  await page.goto('/import')
+  await page.waitForLoadState('networkidle')
+  const dropzone = page.getByText('วางภาพสลิปที่นี่')
+  await expect(dropzone).toBeVisible()
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.locator('input[type="file"]').setInputFiles(filePath)
+    const accepted = await dropzone.waitFor({ state: 'hidden', timeout: 8_000 }).then(() => true).catch(() => false)
+    if (accepted) return
+  }
+  throw new Error(`Import did not accept the test upload: ${filePath}`)
+}
+
 /** Create a bank account via the accounts dialog. */
 export async function createAccount(page: Page, name: string, bank: string): Promise<void> {
   await page.goto('/accounts')
@@ -18,12 +32,13 @@ export async function createAccount(page: Page, name: string, bank: string): Pro
     await page.getByRole('button', { name: 'เพิ่มบัญชี' }).click()
   }
   await dialog.getByLabel('ชื่อบัญชี').fill(name)
-  const bankChip = dialog.getByRole('button', { name: bank, exact: true })
+  const bankChip = dialog.locator(`[data-bank-code="${bank}"]`)
   if (await bankChip.count()) {
     await bankChip.click()
   } else {
+    const quickCreateBankLabel: Record<string, string> = { SCB: 'ไทยพาณิชย์', KBank: 'กสิกรไทย' }
     await dialog.getByRole('combobox').click()
-    await page.getByRole('option', { name: bank, exact: true }).click()
+    await page.getByRole('option', { name: quickCreateBankLabel[bank] ?? bank, exact: true }).click()
   }
   await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click()
   await expect(dialog).toBeHidden()

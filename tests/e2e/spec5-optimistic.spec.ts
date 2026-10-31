@@ -25,7 +25,7 @@ const ACCOUNT_NAME = 'เงินสด'
 const PENDING_TEXT = 'กำลังบันทึก'
 const SAVING_BTN = 'กำลังบันทึก...' // transaction.saving (three dots) — blocking path only
 const QUICK_ADD_TITLE = 'บันทึกรายการ' // quickAdd.title (the global create sheet)
-const EDIT_TITLE = 'รายการ' // transaction.title (the J3 detail/edit sheet)
+const EDIT_TITLE = 'ร้านเดิม QA' // detail sheet uses the saved counterparty as its title
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 
@@ -70,8 +70,8 @@ async function routeServerAction(
 async function openQuickAddWithAmount(page: Page, amount: string): Promise<void> {
   await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   await expect(page.getByRole('heading', { name: QUICK_ADD_TITLE })).toBeVisible()
-  await page.getByLabel('จำนวนเงิน (บาท)').fill(amount)
-  await expect(page.getByLabel('จำนวนเงิน (บาท)')).toHaveValue(amount)
+  await page.getByLabel('จำนวนเงิน').fill(amount)
+  await expect(page.getByLabel('จำนวนเงิน')).toHaveValue(amount)
 }
 
 test('SPEC5-F6 — optimistic save: provisional row paints subdued & not tappable, balance frozen, then resolves', async ({
@@ -132,7 +132,7 @@ test('SPEC5-1 — forced failure: row rolls back, error toast fires, sheet reope
   // SPEC5-1 dropped. A fixed local value proves the value round-trips unchanged
   // (pre-fix it came back blank/UTC-shifted and, being `required`, unusable).
   const DT = '2026-07-15T13:45'
-  await page.getByLabel('ผู้รับ / ผู้โอน').fill('ร้านทดสอบ QA') // counterparty
+  await page.getByLabel('ผู้รับ / ผู้จ่าย (ไม่บังคับ)').fill('ร้านทดสอบ QA') // counterparty
   await page.getByLabel('วันที่และเวลา').fill(DT) // datetime-local
 
   // Delay the write ~800ms THEN abort. The delay is what makes the anti-false-pass
@@ -163,8 +163,8 @@ test('SPEC5-1 — forced failure: row rolls back, error toast fires, sheet reope
   await expect(page.getByRole('heading', { name: QUICK_ADD_TITLE })).toBeVisible({ timeout: 4000 })
 
   // Every field intact.
-  await expect(page.getByLabel('จำนวนเงิน (บาท)')).toHaveValue('42')
-  await expect(page.getByLabel('ผู้รับ / ผู้โอน')).toHaveValue('ร้านทดสอบ QA')
+  await expect(page.getByLabel('จำนวนเงิน')).toHaveValue('42')
+  await expect(page.getByLabel('ผู้รับ / ผู้จ่าย (ไม่บังคับ)')).toHaveValue('ร้านทดสอบ QA')
 
   // THE SPEC5-1 assertion — datetime non-empty, exactly what was typed, and a
   // value the control actually accepts.
@@ -200,7 +200,7 @@ test('SPEC5-scope — editing an existing transaction still BLOCKS (no optimism)
   await page.getByRole('button').filter({ hasText: 'ร้านเดิม QA' }).click()
   await expect(page.getByRole('heading', { name: EDIT_TITLE, exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'แก้ไข', exact: true }).click() // transaction.edit
-  await expect(page.getByLabel('จำนวนเงิน (บาท)')).toHaveValue('50.00')
+  await expect(page.getByLabel('จำนวนเงิน')).toHaveValue('50.00')
 
   await routeServerAction(page, { delayMs: 3000 })
   await page.getByRole('button', { name: 'บันทึกรายการ', exact: true }).click()

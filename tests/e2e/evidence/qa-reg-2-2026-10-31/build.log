@@ -1,0 +1,107 @@
+
+> jodsa@0.1.0 build E:\claudeWorkSpace\project\jodsa
+> next build
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · staleTimes
+
+   Creating an optimized production build ...
+ ✓ (serwist) Bundling the service worker script with the URL '/sw.js' and the scope '/'...
+ ✓ Compiled successfully in 33.7s
+   Linting and checking validity of types ...
+
+./app/(app)/accounts/accounts-client.tsx
+16:49  Warning: 'SheetTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+18:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/(app)/budgets/budgets-client.tsx
+7:10  Warning: 'Plus' is defined but never used.  @typescript-eslint/no-unused-vars
+14:49  Warning: 'SheetTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/(app)/groups/groups-client.tsx
+13:49  Warning: 'SheetTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+70:10  Warning: 'editId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+70:18  Warning: 'setEditId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+72:18  Warning: 'handleDelete' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/(app)/invest/invest-client.tsx
+14:3  Warning: 'Dialog' is defined but never used.  @typescript-eslint/no-unused-vars
+14:11  Warning: 'DialogContent' is defined but never used.  @typescript-eslint/no-unused-vars
+14:26  Warning: 'DialogHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+14:40  Warning: 'DialogTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+14:53  Warning: 'DialogTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/(app)/invest/portfolio-dashboard.tsx
+15:8  Warning: 'LazyAllocationPieChart' is defined but never used.  @typescript-eslint/no-unused-vars
+74:10  Warning: 'bucketsToSlices' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/(app)/sessions/sessions-client.tsx
+14:53  Warning: 'DialogTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+20:10  Warning: 'formatTHB' is defined but never used.  @typescript-eslint/no-unused-vars
+164:18  Warning: 'handleDelete' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/budget-bar.tsx
+2:10  Warning: 'formatTHB' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/recurring-form.tsx
+18:49  Warning: 'SheetTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+59:9  Warning: 'locale' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./components/slip-confirm-form.tsx
+15:3  Warning: 'Select' is defined but never used.  @typescript-eslint/no-unused-vars
+16:3  Warning: 'SelectContent' is defined but never used.  @typescript-eslint/no-unused-vars
+17:3  Warning: 'SelectItem' is defined but never used.  @typescript-eslint/no-unused-vars
+18:3  Warning: 'SelectTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+19:3  Warning: 'SelectValue' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/transaction-detail-sheet.tsx
+18:3  Warning: 'TransactionTypeIcon' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/20) ...
+   Generating static pages (5/20)
+   Generating static pages (10/20)
+   Generating static pages (15/20)
+ ✓ Generating static pages (20/20)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                      Size  First Load JS
+┌ ƒ /                                           162 B         104 kB
+├ ƒ /accounts                                 9.75 kB         274 kB
+├ ƒ /api/sessions/[token]/expenses              162 B         104 kB
+├ ƒ /api/sessions/[token]/join                  162 B         104 kB
+├ ƒ /api/sessions/[token]/slips                 162 B         104 kB
+├ ƒ /api/sessions/[token]/slips/[id]/confirm    162 B         104 kB
+├ ƒ /auth/callback                              162 B         104 kB
+├ ƒ /budgets                                  6.84 kB         171 kB
+├ ƒ /dashboard                                5.67 kB         277 kB
+├ ƒ /groups                                   3.82 kB         158 kB
+├ ƒ /groups/[id]                              5.23 kB         183 kB
+├ ○ /icon.svg                                     0 B            0 B
+├ ƒ /import                                   1.82 kB         271 kB
+├ ƒ /invest                                   12.4 kB         264 kB
+├ ƒ /login                                    1.93 kB         136 kB
+├ ○ /manifest.webmanifest                       162 B         104 kB
+├ ƒ /more                                       824 B         108 kB
+├ ƒ /_not-found                                 999 B         105 kB
+├ ƒ /pay/[token]                              2.97 kB         185 kB
+├ ƒ /recurring                                 6.1 kB         258 kB
+├ ƒ /sessions                                 5.51 kB         178 kB
+├ ƒ /sessions/[id]                            5.35 kB         190 kB
+├ ƒ /settings                                 3.95 kB         208 kB
+├ ƒ /signup                                   2.05 kB         136 kB
+└ ƒ /transactions                             4.55 kB         273 kB
++ First Load JS shared by all                  104 kB
+  ├ chunks/27b6a1e1-276ad3483a4c7680.js       54.2 kB
+  ├ chunks/357-d2191024d2bc4505.js            47.7 kB
+  └ other shared chunks (total)               2.13 kB
+
+
+ƒ Middleware                                  90.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

@@ -346,6 +346,10 @@ test('SPEC6-RLS B cannot read/update/delete A ballast or forge ownership; A row 
   try {
     const pageB = await contextB.newPage()
     await pageB.goto('/invest')
+    const firstAccountSheet = pageB.getByRole('dialog', { name: 'สร้างบัญชีแรกของคุณ' })
+    if (await firstAccountSheet.waitFor({ state: 'visible', timeout: 5_000 }).then(() => true).catch(() => false)) {
+      await firstAccountSheet.getByRole('button', { name: 'Close' }).click()
+    }
     await expect(pageB.getByRole('button', { name: 'ปตท. จำกัด (มหาชน)' })).toHaveCount(1)
     await pageB.getByRole('button', { name: 'ปตท. จำกัด (มหาชน)' }).click()
     await expect(pageB.getByRole('dialog').getByText('QA A positive control', { exact: true })).toHaveCount(0)

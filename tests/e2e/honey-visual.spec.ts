@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import path from 'node:path'
 import { env, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { findUserByEmail, resetAllUserData, resetInvestData, seedAccount } from './helpers/admin'
+import { clearOwnerSessions } from './helpers/trip'
 
 test.describe.configure({ mode: 'serial' })
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
@@ -26,6 +27,7 @@ test.beforeAll(async () => {
   if (!user) throw new Error(`Missing visual-audit user ${env.userA.email}`)
   await resetAllUserData(user.id)
   await resetInvestData(user.id)
+  await clearOwnerSessions(user.id)
   await seedAccount(user.id, 'Dime! Save', 'Dime')
   await seedAccount(user.id, 'SCB หลัก', 'SCB')
 })

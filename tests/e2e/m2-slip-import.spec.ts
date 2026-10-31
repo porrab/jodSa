@@ -2,6 +2,7 @@ import path from 'node:path'
 import { test, expect, type Page } from '@playwright/test'
 import { env, STORAGE_A, GENERATED_DIR } from './helpers/env'
 import { findUserByEmail, resetUserData, seedAccount } from './helpers/admin'
+import { uploadSlipForOcr } from './helpers/ui'
 
 /**
  * M2 — slip import journey against the real on-device pipeline
@@ -29,8 +30,7 @@ test.beforeAll(async () => {
 })
 
 async function importSlip(page: Page, fixture: string): Promise<void> {
-  await page.goto('/import')
-  await page.locator('input[type="file"]').setInputFiles(fixture)
+  await uploadSlipForOcr(page, fixture)
   // parse pipeline: preprocess → QR → OCR (model download on cold cache) → extract
   await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
 }
@@ -41,7 +41,7 @@ test('M2-S1 parsed slip pre-fills confirm form; nothing saves until confirmed', 
   test.setTimeout(360_000)
   await importSlip(page, SLIP_A)
 
-  await expect(page.locator('input[name="amount"]')).toHaveValue('1250.00')
+  await expect(page.locator('input[name="amount"]')).toHaveValue('1,250.00')
   await expect(page.getByText(/เลขอ้างอิง QA/)).toBeVisible() // QR decoded → reference summary present
 
   // mandatory confirmation: the parse alone must not have created a row
@@ -75,7 +75,7 @@ test('M2-S2 no request carries image bytes during the whole import flow', async 
   })
 
   await importSlip(page, SLIP_B)
-  await expect(page.locator('input[name="amount"]')).toHaveValue('2340.50')
+  await expect(page.locator('input[name="amount"]')).toHaveValue('2,340.50')
   await confirmButton(page).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
 

@@ -107,7 +107,7 @@ test('TRIP-5 owner acts in-app (add / send / confirm) then close-gates anon, reo
   )
   await page.getByRole('button', { name: 'ลบ', exact: true }).click()
   await page.waitForURL('**/sessions')
-  await expect(page.getByRole('button', { name: 'สร้างรายการ' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'เพิ่ม', exact: true })).toBeVisible()
 
   await ctx.close()
 })

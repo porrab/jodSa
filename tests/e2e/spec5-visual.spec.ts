@@ -125,17 +125,20 @@ for (const theme of ['light', 'dark'] as const) {
 
     await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
     const sheet = page.getByRole('dialog', { name: 'บันทึกรายการ' })
-    const amount = sheet.getByLabel('จำนวนเงิน (บาท)')
-    // The muted well is the amount affordance in v6; the hairline belongs below
-    // the Amount Input component, not around it.
-    const wrapper = amount.locator('xpath=..')
+    const amount = sheet.getByLabel('จำนวนเงิน')
+    // DS-5 replaced the muted well with a visible hairline below AmountInput.
+    const wrapper = amount.locator('xpath=../..')
     await expect(wrapper).toBeVisible()
-    const background = await wrapper.evaluate((el) => getComputedStyle(el).backgroundColor)
-    expect(background, `amount well background in ${theme}`).not.toBe('rgba(0, 0, 0, 0)')
+    const border = await wrapper.evaluate((el) => ({
+      width: getComputedStyle(el).borderBottomWidth,
+      style: getComputedStyle(el).borderBottomStyle,
+    }))
+    expect(border.width, `amount hairline width in ${theme}`).toBe('1px')
+    expect(border.style, `amount hairline style in ${theme}`).toBe('solid')
 
     // The sheet amount remains the focal number at the target mobile viewport.
     const size = await amount.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))
-    console.log(`[F2] ${theme} amount font-size=${size}px background=${background}`)
+    console.log(`[F2] ${theme} amount font-size=${size}px border=${border.width} ${border.style}`)
     expect(size, `sheet amount font-size in ${theme}`).toBeGreaterThanOrEqual(30)
   })
 }
@@ -230,10 +233,10 @@ test('SPEC5-mobile — mobile viewport (390×844): FAB opens the only add sheet,
   // Center FAB opens the in-place quick-add sheet (no route change).
   await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click() // nav.add
   await expect(page.getByRole('heading', { name: 'บันทึกรายการ' })).toBeVisible()
-  const amount = page.getByRole('dialog').getByLabel('จำนวนเงิน (บาท)')
-  const wrapper = amount.locator('xpath=..')
-  const background = await wrapper.evaluate((el) => getComputedStyle(el).backgroundColor)
-  expect(background, 'mobile sheet amount well background').not.toBe('rgba(0, 0, 0, 0)')
+  const amount = page.getByRole('dialog').getByLabel('จำนวนเงิน')
+  const wrapper = amount.locator('xpath=../..')
+  const border = await wrapper.evaluate((el) => getComputedStyle(el).borderBottomWidth)
+  expect(border, 'mobile sheet amount hairline').toBe('1px')
 
   // No 12px text on the Home shell at mobile.
   const anyTwelve = await page.locator('main').evaluate((root) => {

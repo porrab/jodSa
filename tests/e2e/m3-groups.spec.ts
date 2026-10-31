@@ -27,8 +27,10 @@ test.beforeAll(async () => {
 })
 
 async function assignCandidate(dialog: ReturnType<Page['getByRole']>, amountText: string): Promise<void> {
-  const row = dialog.getByText(amountText).first().locator('xpath=ancestor::div[contains(@class,"p-3")][1]')
-  await row.getByRole('button').click()
+  const row = dialog.getByText(amountText).first().locator('xpath=ancestor::button[1]')
+  await row.click()
+  await expect(dialog.getByRole('button', { name: 'เพิ่มรายการ', exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).last().click()
   // router.refresh() removes the now-assigned candidate from the dialog
   await expect(dialog.getByText(amountText)).toHaveCount(0)
 }
@@ -47,15 +49,22 @@ test('M3-S3 group total sums expense members only; a transfer member is excluded
   await expect(createDialog).toBeHidden()
 
   // Open the group detail
-  await page.getByText(GROUP).click()
-  await page.waitForURL('**/groups/*')
+  const groupLink = page.getByRole('link', { name: new RegExp(GROUP) })
+  await expect(groupLink).toHaveAttribute('href', /\/groups\//)
+  await page.waitForLoadState('networkidle')
+  await groupLink.click()
+  if (!/\/groups\/[^/]+$/.test(page.url())) {
+    const arrived = await page.waitForURL('**/groups/*', { timeout: 8_000 }).then(() => true).catch(() => false)
+    if (!arrived) await groupLink.click()
+  }
+  await expect(page).toHaveURL(/\/groups\/[^/]+$/)
 
   // Assign all three transactions (two expenses + one transfer) to the group
   await page.getByRole('button', { name: 'เพิ่มรายการ' }).click()
   const addDialog = page.getByRole('dialog')
-  await assignCandidate(addDialog, '-฿400.00')
-  await assignCandidate(addDialog, '-฿900.00')
-  await assignCandidate(addDialog, '฿1,000.00') // transfer has no +/- prefix
+  await assignCandidate(addDialog, '−฿400.00')
+  await assignCandidate(addDialog, '−฿900.00')
+  await assignCandidate(addDialog, '⇄฿1,000.00')
   await page.keyboard.press('Escape')
 
   // Total = 400 + 900 = 1,300 (transfer excluded), but all 3 are members.

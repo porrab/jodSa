@@ -3,6 +3,7 @@ import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { env, evidenceDir, GENERATED_DIR, STORAGE_A } from './helpers/env'
 import { adminClient, findUserByEmail, resetAllUserData, seedAccount } from './helpers/admin'
+import { uploadSlipForOcr } from './helpers/ui'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
@@ -149,8 +150,7 @@ test('A3 slip confirmation exposes display name without writing a transaction', 
   const before = await adminClient().from('transactions').select('*', { count: 'exact', head: true }).eq('user_id', userId)
   if (before.error) throw before.error
 
-  await page.goto('/import')
-  await page.locator('input[type="file"]').setInputFiles(path.join(GENERATED_DIR, 'slip-qr-a.png'))
+  await uploadSlipForOcr(page, path.join(GENERATED_DIR, 'slip-qr-a.png'))
   await expect(page.getByTestId('slip-category-field')).toBeVisible({ timeout: 480_000 })
   const payee = page.locator('input[name="counterparty"]')
   await expect(payee).toBeVisible()

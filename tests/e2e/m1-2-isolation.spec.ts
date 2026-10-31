@@ -32,6 +32,10 @@ test('M1-S2 user B sees none of user A data', async ({ browser }) => {
   const pageB = await ctxB.newPage()
 
   await pageB.goto('/accounts')
+  const firstAccountSheet = pageB.getByRole('dialog', { name: 'สร้างบัญชีแรกของคุณ' })
+  if (await firstAccountSheet.waitFor({ state: 'visible', timeout: 5_000 }).then(() => true).catch(() => false)) {
+    await firstAccountSheet.getByRole('button', { name: 'Close' }).click()
+  }
   await expect(pageB.getByText('ยังไม่มีบัญชี')).toBeVisible()
   await expect(pageB.getByText(isoName)).toHaveCount(0)
 

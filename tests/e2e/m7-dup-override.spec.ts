@@ -59,11 +59,11 @@ test('QA-M7B-1 duplicate ref_code → J2 override saves a new row (not a hard bl
 
   // First import saves cleanly (฿1,250.00, QR ref present).
   await importSlip(page, SLIP_A)
-  await expect(page.locator('input[name="amount"]')).toHaveValue('1250.00')
+  await expect(page.locator('input[name="amount"]')).toHaveValue('1,250.00')
   await expect(page.getByText(/เลขอ้างอิง QA/)).toBeVisible()
   await confirmButton(page).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
-  await expect(page.getByText(/1,250\.00/)).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /−฿1,250\.00/ })).toHaveCount(1)
 
   // Second import of the SAME slip → confirm surfaces the J2 duplicate-conflict
   // panel (colliding tx shown), NOT the legacy hard-block string.
@@ -76,5 +76,5 @@ test('QA-M7B-1 duplicate ref_code → J2 override saves a new row (not a hard bl
   // Override → a second row saves (ref_code cleared so no UNIQUE collision).
   await page.getByRole('button', { name: 'บันทึกเป็นรายการใหม่' }).click()
   await page.waitForURL('**/transactions', { timeout: 30_000 })
-  await expect(page.getByText(/1,250\.00/)).toHaveCount(2)
+  await expect(page.getByRole('button', { name: /−฿1,250\.00/ })).toHaveCount(2)
 })

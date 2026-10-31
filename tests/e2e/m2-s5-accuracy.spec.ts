@@ -2,6 +2,7 @@ import path from 'node:path'
 import { test, expect } from '@playwright/test'
 import { env, STORAGE_A } from './helpers/env'
 import { findUserByEmail, resetUserData, seedAccount } from './helpers/admin'
+import { uploadSlipForOcr } from './helpers/ui'
 
 /**
  * M2-S5 — Real-slip accuracy: amount correct on ≥9/10 (M2-1).
@@ -73,8 +74,7 @@ test('M2-S5 amount correct on ≥9/12 real slips; counterparty populated where e
     let actual: string | null = null
     let counterparty: string | null = null
 
-    await page.goto('/import')
-    await page.locator('input[type="file"]').setInputFiles(filePath)
+    await uploadSlipForOcr(page, filePath)
 
     const parsed = await page
       .getByRole('button', { name: 'ยืนยันและบันทึก' })
@@ -87,7 +87,7 @@ test('M2-S5 amount correct on ≥9/12 real slips; counterparty populated where e
       counterparty = await page.locator('input[name="counterparty"]').inputValue()
     }
 
-    const amountOk = actual !== null && Math.abs(parseFloat(actual) - slip.expectedBaht) < 0.01
+    const amountOk = actual !== null && Math.abs(Number(actual.replaceAll(',', '')) - slip.expectedBaht) < 0.01
     const counterpartyOk = slip.expectCounterparty != null
       ? counterparty !== null && counterparty.includes(slip.expectCounterparty)
       : null

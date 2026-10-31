@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { env, evidenceDir, GENERATED_DIR, STORAGE_A } from './helpers/env'
+import { uploadSlipForOcr } from './helpers/ui'
 import {
   findUserByEmail,
   resetAllUserData,
@@ -109,8 +110,7 @@ test('N4 transfer uses the anchored swap divider', async ({ page }) => {
 
 test('N3/N5 slip confirm filters categories and groups the amount', async ({ page }) => {
   test.setTimeout(600_000)
-  await page.goto('/import')
-  await page.locator('input[type="file"]').setInputFiles(path.join(GENERATED_DIR, 'slip-qr-a.png'))
+  await uploadSlipForOcr(page, path.join(GENERATED_DIR, 'slip-qr-a.png'))
   const categories = page.getByTestId('slip-category-field')
   await expect(categories).toBeVisible({ timeout: 480_000 })
   await expect(categories.getByRole('button', { name: 'เงินเดือน', exact: true })).toHaveCount(0)

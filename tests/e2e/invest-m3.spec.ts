@@ -60,7 +60,7 @@ test('QA-M3-1 dashboard totals/cost/P&L, allocation and concentration match the 
   // Concentration — AAPL at 93.9% fires the ≥25% badge.
   await expect(page.getByText('ความกระจุกตัว')).toBeVisible()
   await expect(page.getByText('กระจุกตัวสูง')).toBeVisible()
-  await expect(page.getByText('93.9%')).toBeVisible()
+  await expect(page.locator('section').filter({ hasText: 'ความกระจุกตัว' }).getByText('93.9%')).toBeVisible()
 })
 
 test('QA-M3-2 updating a price re-computes value + P&L', async ({ page }) => {
@@ -115,8 +115,9 @@ test('QA-M3-4 two holding rows of the same asset aggregate before concentration'
   // Overview: asset names appear ONLY in concentration → AAPL merged to a single entry.
   await openOverview(page)
   await expect(page.getByText('Apple Inc.')).toHaveCount(1)
-  await expect(page.getByText('61.0%')).toBeVisible() // merged AAPL (10,950,000 / 17,950,000)
-  await expect(page.getByText('39.0%')).toBeVisible() // PTT (7,000,000 / 17,950,000)
+  const concentration = page.locator('section').filter({ hasText: 'ความกระจุกตัว' })
+  await expect(concentration.getByText('61.0%')).toBeVisible() // merged AAPL (10,950,000 / 17,950,000)
+  await expect(concentration.getByText('39.0%')).toBeVisible() // PTT (7,000,000 / 17,950,000)
   await expect(page.getByText('กระจุกตัวสูง')).toBeVisible()
 })
 

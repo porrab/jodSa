@@ -28,12 +28,12 @@ test.beforeAll(async () => {
 
 async function createWeeklyRule(page: Page, amountBaht: string, startDate: string): Promise<void> {
   await page.goto('/recurring')
-  await page.getByRole('button', { name: 'เพิ่มรายการประจำ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('จำนวนเงิน (บาท)').fill(amountBaht)
-  // freq Select defaults to รายเดือน (monthly) → switch to รายสัปดาห์ (weekly)
-  await dialog.getByRole('combobox').filter({ hasText: 'รายเดือน' }).click()
-  await page.getByRole('option', { name: 'รายสัปดาห์' }).click()
+  // Frequency defaults to monthly; switch to weekly through the current chips.
+  await expect(dialog.getByRole('button', { name: 'รายเดือน', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await dialog.getByRole('button', { name: 'รายสัปดาห์', exact: true }).click()
   // type defaults to รายจ่าย, account defaults to accounts[0], interval to 1,
   // weekday left empty → uses the start weekday
   await dialog.getByLabel('วันเริ่ม').fill(startDate)
@@ -49,7 +49,7 @@ test('M3-S2 deleting a generated occurrence is not recreated on reload', async (
 
   // Lazy-on-read: opening transactions materializes the due occurrences.
   await page.goto('/transactions')
-  const rows = page.getByText(AMOUNT_TEXT)
+  const rows = page.getByRole('button', { name: new RegExp(`−${AMOUNT_TEXT.replace('.', '\\.')}`) })
   await expect(rows.first()).toBeVisible()
   const before = await rows.count()
   // M7-D: materialization now clamps to today (Asia/Bangkok) instead of
@@ -63,7 +63,7 @@ test('M3-S2 deleting a generated occurrence is not recreated on reload', async (
   // sheet → ลบรายการ (M7-A / design J3 — delete moved off the list row into the
   // sheet). The list doesn't optimistically update — it re-reads on navigation —
   // so we wait for the success toast to know the delete server action completed.
-  const firstRow = page.getByText(AMOUNT_TEXT).first().locator('xpath=ancestor::button[1]')
+  const firstRow = rows.first()
   await firstRow.click()
   page.once('dialog', (d) => d.accept()) // confirm "ข้ามรายการประจำนี้?" (occurrence skip)
   await page.getByRole('button', { name: 'ลบรายการ' }).click()
@@ -75,5 +75,5 @@ test('M3-S2 deleting a generated occurrence is not recreated on reload', async (
   // never recreates it (M3-AC1). If it reappears (count back to `before`), the
   // delete path didn't record the skip and the occurrence was regenerated.
   await page.goto('/transactions')
-  await expect(page.getByText(AMOUNT_TEXT)).toHaveCount(before - 1)
+  await expect(rows).toHaveCount(before - 1)
 })

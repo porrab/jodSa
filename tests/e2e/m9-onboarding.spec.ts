@@ -71,7 +71,7 @@ test('M9-onboard-1 fresh user: FirstAccountSheet guides the first account, then 
   // Create the first account through the guided sheet (ชื่อ + ธนาคาร).
   await page.getByLabel('ชื่อบัญชี').fill('เงินสด')
   await page.locator('form').getByRole('combobox').first().click()
-  await page.getByRole('option', { name: 'KBank', exact: true }).click()
+  await page.getByRole('option', { name: 'กสิกรไทย', exact: true }).click()
   await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
   await expect(page.getByText('สร้างบัญชีแรกของคุณ', { exact: true })).toBeHidden({ timeout: 15_000 })
 
@@ -80,13 +80,13 @@ test('M9-onboard-1 fresh user: FirstAccountSheet guides the first account, then 
   await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   const sheet = page.getByRole('dialog')
   await expect(sheet).toBeVisible()
-  await sheet.getByLabel('จำนวนเงิน (บาท)').fill('120')
+  await sheet.getByLabel('จำนวนเงิน').fill('120')
   // account select already defaulted to the new account (fallback tier)
   await sheet.getByRole('button', { name: 'บันทึกรายการ' }).click()
   await expect(sheet).toBeHidden({ timeout: 20_000 })
 
   // The logged item shows on Home's today list — proves the end-to-end first log.
-  await expect(page.getByText('รายการวันนี้', { exact: false })).toBeVisible()
+  await expect(page.getByText('รายการวันนี้', { exact: true })).toBeVisible()
   await expect(page.locator('body')).toContainText('120.00')
 })
 
@@ -172,6 +172,8 @@ test('M9-onboard-5 batch import with zero accounts → each card offers inline "
 
   // Both batch cards parse; each empty-account card offers the inline create,
   // never a disabled/empty Select.
-  await expect(page.getByRole('button', { name: CREATE }).first()).toBeVisible({ timeout: 300_000 })
+  await expect(page.getByRole('listitem').first().getByRole('button')).toBeEnabled({ timeout: 300_000 })
+  await page.getByRole('listitem').first().getByRole('button').click()
+  await expect(page.getByRole('button', { name: CREATE }).first()).toBeVisible()
   await expect(page.getByText('ยังไม่มีบัญชี — กรุณาเพิ่มบัญชีก่อน').first()).toBeVisible()
 })

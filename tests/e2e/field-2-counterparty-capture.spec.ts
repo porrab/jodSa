@@ -3,6 +3,7 @@ import path from 'node:path'
 import { test, expect } from '@playwright/test'
 import { env, STORAGE_A } from './helpers/env'
 import { findUserByEmail, resetUserData, seedAccount } from './helpers/admin'
+import { uploadSlipForOcr } from './helpers/ui'
 
 /**
  * QA-FIELD-2 — counterparty extraction across banks (standing regression assertion).
@@ -91,8 +92,7 @@ test('QA-FIELD-2 counterparty: transfers/merchants pre-fill, bills stay empty (n
       continue
     }
 
-    await page.goto('/import')
-    await page.locator('input[type="file"]').setInputFiles(filePath)
+    await uploadSlipForOcr(page, filePath)
 
     const parsed = await page
       .getByRole('button', { name: 'ยืนยันและบันทึก' })

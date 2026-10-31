@@ -1,0 +1,5 @@
+stderr | tests/unit/materialize.test.ts > materializeOccurrences — per-rule isolation (M7-D) > one poisoned rule's insert failure does not block another rule's insert or guard advance
+[recurrence] occurrence insert failed for rule rule-b: insert failed
+
+stderr | tests/unit/materialize.test.ts > materializeOccurrences — per-rule isolation (M7-D) > a guard-update failure is also reported per-rule, not thrown for the whole batch
+[recurrence] guard update failed for rule rule-guard-fails: guard failed

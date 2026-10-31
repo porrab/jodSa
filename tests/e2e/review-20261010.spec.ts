@@ -17,6 +17,8 @@ test.beforeAll(async () => {
   const user = await findUserByEmail(env.userA.email)
   if (!user) throw new Error('canonical QA user A missing')
   userIdA = user.id
+  await resetAllUserData(userIdA)
+  await seedAccount(userIdA, 'QA INVEST Account', 'SCB')
 })
 
 async function trade(page: Page, assetName: string, kind: 'ซื้อ' | 'ขาย', qty: string, datetime: string) {
@@ -25,8 +27,7 @@ async function trade(page: Page, assetName: string, kind: 'ซื้อ' | 'ข�
   const sheet = page.getByRole('dialog')
   await sheet.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
   const form = sheet.locator('form')
-  await form.getByRole('combobox').click()
-  await page.getByRole('option', { name: kind, exact: true }).click()
+  await form.getByRole('button', { name: kind, exact: true }).click()
   await form.locator('#tx-qty').fill(qty)
   await form.locator('#tx-amount').fill('10')
   await form.locator('#tx-datetime').fill(datetime)
@@ -54,8 +55,7 @@ for (const valuationFx of ['35', undefined]) {
     const sheet = page.getByRole('dialog')
     await sheet.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
     const form = sheet.locator('form')
-    await form.getByRole('combobox').click()
-    await page.getByRole('option', { name: 'ขาย', exact: true }).click()
+    await form.getByRole('button', { name: 'ขาย', exact: true }).click()
     await form.locator('#tx-qty').fill('0.0140444')
     await form.locator('#tx-amount').fill('1870.35')
     await form.locator('#tx-fees').fill('0.02')
@@ -78,7 +78,7 @@ for (const valuationFx of ['35', undefined]) {
     await openOverview(page)
     await expect(page.locator('.text-4xl').first()).toContainText('1,000.00')
     await expect(page.getByText(/ต้องระบุอัตราแลกเปลี่ยน/)).toHaveCount(0)
-    const concentration = page.locator('[data-slot="card"]').filter({ hasText: 'ความกระจุกตัว' })
+    const concentration = page.locator('section').filter({ hasText: 'ความกระจุกตัว' })
     await expect(concentration.getByText('100.0%', { exact: true })).toBeVisible()
     // Closed holdings remain in history, but no longer occupy concentration entries.
     await expect(page.getByText('Apple Inc.', { exact: true })).toHaveCount(0)
@@ -137,7 +137,7 @@ test('QA-INVEST-1 partial, closed missing-FX/null-proxy, and reopened positions 
 
 test('DS-1 keyboard focus appears without a shadow transition', async ({ page }) => {
   await page.goto('/budgets')
-  const button = page.getByRole('button', { name: 'เพิ่มงบประมาณ', exact: true })
+  const button = page.getByRole('button', { name: 'เพิ่ม', exact: true })
   await expect(button).toBeVisible()
   // Use keyboard navigation so :focus-visible is genuinely active.
   for (let i = 0; i < 30; i++) {
@@ -162,17 +162,19 @@ test('DS-1 real budget progress scales to 50% and disables motion when requested
   await seedAccount(userIdA, account, 'SCB')
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/budgets')
-  await page.getByRole('button', { name: 'เพิ่มงบประมาณ' }).click()
+  await page.getByRole('button', { name: 'เพิ่ม', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('งบประมาณ (บาท)').fill('1000')
   await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click()
   await expect(dialog).toBeHidden()
   await addTransaction(page, { type: 'expense', amount: '500', account })
   await page.goto('/budgets')
-  await expect(page.getByText('฿500.00 / ฿1,000.00')).toBeVisible()
-  // BudgetBar currently has no accessible progress role; scope this structural
-  // selector to its single persisted budget card, not an invented test-only DOM.
-  const card = page.locator('[data-slot="card"]').filter({ hasText: '฿500.00 / ฿1,000.00' })
+  const card = page.getByRole('button', { name: /งบรายเดือน · ทั้งหมด/ })
+  await expect(card).toContainText('ใช้ไป ฿500')
+  await expect(card).toContainText('จาก ฿1,000')
+  await expect(card).toContainText('เหลือ ฿500')
+  // BudgetBar has no accessible progress role; scope its structural fill to
+  // the one persisted budget row while checking the unchanged 50% behavior.
   const fill = card.locator('.overflow-hidden > div')
   await expect(fill).toHaveCount(1)
   const normal = await fill.evaluate((el) => {

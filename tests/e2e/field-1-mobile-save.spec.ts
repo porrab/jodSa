@@ -2,6 +2,7 @@ import path from 'node:path'
 import { test, expect, type Page, type Locator } from '@playwright/test'
 import { env, STORAGE_A, GENERATED_DIR } from './helpers/env'
 import { findUserByEmail, resetUserData, seedAccount } from './helpers/admin'
+import { uploadSlipForOcr } from './helpers/ui'
 
 /**
  * QA-FIELD-1 — regression guard: the slip-confirm Save button must stay fully
@@ -49,8 +50,7 @@ const confirmButton = (page: Page) => page.getByRole('button', { name: 'ยื�
 const mobileNav = (page: Page) => page.locator('nav.fixed')
 
 async function importSlip(page: Page, fixture: string): Promise<void> {
-  await page.goto('/import')
-  await page.locator('input[type="file"]').setInputFiles(fixture)
+  await uploadSlipForOcr(page, fixture)
   // preprocess → QR → OCR (model download on cold cache) → extract → confirm form
   await expect(page.getByRole('button', { name: 'ยืนยันและบันทึก' })).toBeVisible({ timeout: 240_000 })
 }
