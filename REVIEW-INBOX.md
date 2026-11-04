@@ -15,6 +15,16 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [RV-REG] Review of QA-REG-2 rerun (`f7a2d12`, `bf77c7b`) — 2026-11-04 · from Claude review
+**Status:** OPEN · QA-REG-2 stays open until the items below close.
+**Re-derived on a production build (2026-11-04):** full suite 154 passed / 1 failed / 1 skipped / 16 did not run (172). QA-M7D-2, skipped on 10-31 for the month-end date guard, now passes. Raw tsc 0; Vitest 367 passed / 34 skipped. No app code changed in `f7a2d12`. The selector, format and fixture updates I read keep the same behaviour checks (`invest-m3`, `m3-budgets`, `m7-*`, `m9-home`, `spec5-visual`).
+
+- **RV-REG-1 (M, coverage loss) `m5-settings.spec.ts`:** M5-S3 was replaced by an empty `test.skip`, so every account-deletion assertion is gone (auth user removed, cascade to zero rows). This is the app's most destructive flow, and 0012 added new FKs on `transactions`. Cause: my "test users A/B only" wording. The skip is not an acceptable resolution. The fix depends on the owner's decision on a disposable `qa-*@jodsa.test` identity.
+- **RV-REG-2 (M, suspected product bug) `/import`:** classification row 2 records that after `setInputFiles` the empty dropzone stayed for 240 s when the upload came before hydration, and `uploadSlipForOcr` now waits for `networkidle` and retries. A real user on a slow phone who picks a slip early would get no result and no error, so this is not only ORDER/FIXTURE. **Fix:** read `input.files` on mount (or otherwise handle a file selected before hydration). **Acceptance:** an E2E that delays the JS bundle, selects a file first, and reaches the confirm form with no retry and no `networkidle` wait.
+- **RV-REG-3 (L) masking retries:** `m3-groups.spec.ts` clicks the group link a second time if the URL has not changed after 8 s, and `uploadSlipForOcr` tries twice. A retry can hide a dead first tap. Remove the group-link retry. Keep a retry only with a stated cause, and report what the first attempt did.
+- **RV-REG-4 (L) evidence overwrite:** one full-suite run rewrote 22 committed dated evidence images (`a3-2026-10-26`, `c2-2026-10-29`, `ds-*`). I restored them with `git checkout`. Specs must write to an untracked per-run directory unless an explicit env var asks for evidence capture.
+- **Visual baseline `light-add-manual` (11,555 px): reviewed, change accepted.** The diff comes from A3: the `+ ตั้งชื่อที่แสดงเอง` row and the label `ผู้รับ / ผู้จ่าย (ไม่บังคับ)` (`45f8c62`). Update this one snapshot only. The date field now sits partly behind the sticky CTA at 390x844 until scrolled, so assert that it can scroll fully clear of the CTA. The 16 tests that did not run sit behind this failure; review any new diff individually and do not bulk-update.
+
 ## [QA-REG-2] Production-build full Playwright regression is RED outside C1/A3/C2/contrast — 2026-10-30
 **From:** Codex test-harness run · **Status:** OPEN · **Severity:** M
 
