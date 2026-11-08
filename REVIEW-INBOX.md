@@ -15,6 +15,32 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [RV-M11] CSV export review (`c5fbb19`, `0c48da9`) — 2026-11-09 · from Claude review
+**Status:** OPEN · **Severity:** M.
+
+**Re-derived:**
+- Raw tsc 0. Vitest 371 passed / 34 skipped. `pnpm build` 0.
+- `m11-csv-export.spec.ts --repeat-each=3` passes 4/4, including setup, on a production build (port 3100).
+- The 11-column layout (adds `to_account`, `holding`, `counterparty`, `group`) is accepted as the 0011/0012 update of the roadmap's 9 columns.
+- BOM, RFC 4180 quoting, the formula guard, satang→baht and Bangkok day bounds are correct and unit-tested.
+
+**Findings:**
+- **RV-M11-1 (M) stuck on error:** `download()` has no try/catch. A query error from `collectPages` or the lookups throws, `state` stays `loading`, and the button stays disabled with no message. **Fix:** try/catch/finally, a visible th/en error, and the button re-enabled.
+- **RV-M11-2 (M) unstable paging:** pages are ordered by `datetime` only, and offset paging over a non-unique key can skip or duplicate rows across the 1,000-row boundary (slip batches and recurring rows share timestamps). **Fix:** `.order('datetime').order('id')`.
+- **RV-M11-3 (M) E2E gaps against the brief:** the spec misses
+  - a transfer (account and to_account);
+  - an invest row with its holding symbol;
+  - a note containing a comma;
+  - "row count = visible transactions for the same filter";
+  - the type filter;
+  - cleanup: it resets only at the start, so B's seeded row is left behind.
+- **RV-M11-4 (L):** `URL.revokeObjectURL` runs synchronously right after `click()`, which can cancel the download in some browsers. Defer it. The `empty` notice also persists after the filters change; clear it on change.
+
+**Acceptance:**
+- An E2E covers all items in RV-M11-3 and stays green at `--repeat-each=3`, with afterEach cleanup for A and B.
+- A test proves 1,001 rows sharing one `datetime` export exactly once each: an E2E seeded through the scoped helper, or a unit test on the query builder with page size injected.
+- A forced query error shows the error and re-enables the button.
+
 ## [RV-REG] Review of QA-REG-2 rerun (`f7a2d12`, `bf77c7b`) — 2026-11-04 · from Claude review
 **Status:** **CLOSED 2026-11-08**: RV-REG-1..4 approved (one L follow-up under RV-REG-1).
 **Re-derived on a production build (2026-11-04):** full suite 154 passed / 1 failed / 1 skipped / 16 did not run (172). QA-M7D-2, skipped on 10-31 for the month-end date guard, now passes. Raw tsc 0; Vitest 367 passed / 34 skipped. No app code changed in `f7a2d12`. The selector, format and fixture updates I read keep the same behaviour checks (`invest-m3`, `m3-budgets`, `m7-*`, `m9-home`, `spec5-visual`).
