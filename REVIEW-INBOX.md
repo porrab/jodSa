@@ -643,7 +643,11 @@ One item per commit; ask qa-lab / design-studio to re-check each slice. Phase C 
 - [x] RV-OWNERFB-1 Home closed-holding parity fix — resolved before A2 as owner ordered.
 - [x] A2 `AccountGrid` — `4fd4291`; balance tiles, stable transfer grids, swap control and keyboard/a11y behavior.
 - [x] A1 unified add sheet + multi-slip queue — `6e8d136`; Home and `/transactions` share the manual/slip sheet, `/import` and share target reuse the same sequential queue, and ready slips support per-row bulk save.
-- [ ] Next build slice: migration 0011 (`transactions.note`, `accounts.reconciled_at`) then A3 payee + display name. Requires explicit owner authorization before changing/applying the data model.
+- [x] Migration 0011 (`transactions.note`, `accounts.reconciled_at`) `306b12b`, applied live 2026-10-26 under owner authorization → A3 payee + display name `45f8c62`/`3829986`, persisted E2E `66473bd`.
+- [x] C1 `ตามเก็บรายการที่ลืม` `3e1e0fe` + DS-7 `aa19efd`..`9b59a9b` + RV-C1-1 `d65456f` + RV-C1-2 `6d6ed2c`.
+- [x] Migration 0012 (`invest`/`divest`, `holding_id`, `asset_transaction_id`, `account_balances()` divest credit, `record_buy_with_cash`) `b3e7cbe`+`98a1fbd`, applied live 2026-10-28 → C2 `09580d7`/`98a1fbd`/`5fda0f9`/`c7d0b83` (+ C1 📈 tile). Hardening 0013 (revoke anon EXECUTE) `38053fc`, applied live 2026-10-29. Production smoke 8/8 at `41c1433`.
+- [x] Regression: QA-C2-REG-1 `e369484`, QA-REG-2 resolved 2026-11-08 (full suite 172/173 on a production build, repeat-3 61/61, pushed `17edabd`).
+- **Build order (07-design.md "(a) Build order", steps 1–6) COMPLETE 2026-11-08.** Only RV-REG-1 (M5-S3 account-deletion E2E, disposable identity authorized) remains open from this batch.
 
 **Implementation sync 2026-10-26:** migration 0011 was hand-authored in `306b12b` and validated against an ephemeral PGlite database: both nullable columns had the expected PostgreSQL types, existing data was preserved, 120-character notes passed, and 121-character notes failed the named CHECK. It was **not applied to Supabase/live**. A3 landed separately in `45f8c62`: payee remains `counterparty`, optional `note` becomes the display name for manual/slip/transfer forms, detail fields, optimistic previews, and the brief-v6 Tx Row rule. The read-only A3 E2E passed 3/3 without reset/seed/submit/global setup; Figma `27:1357` pairs are in `tests/e2e/evidence/a3-2026-10-26/`. Full persistence/browser verification remains blocked until the owner explicitly authorizes applying 0011 to live; do not deploy the A3 writer first.
 
