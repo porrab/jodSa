@@ -28,7 +28,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 - **Visual baseline `light-add-manual` (11,555 px): reviewed, change accepted.** The diff comes from A3: the `+ ตั้งชื่อที่แสดงเอง` row and the label `ผู้รับ / ผู้จ่าย (ไม่บังคับ)` (`45f8c62`). Update this one snapshot only. The date field now sits partly behind the sticky CTA at 390x844 until scrolled, so assert that it can scroll fully clear of the CTA. The 16 tests that did not run sit behind this failure; review any new diff individually and do not bulk-update.
 
 ## [QA-REG-2] Production-build full Playwright regression is RED outside C1/A3/C2/contrast — 2026-10-30
-**From:** Codex test-harness run · **Status:** OPEN · **Severity:** M
+**From:** Codex test-harness run · **Status:** **RESOLVED 2026-11-08 (Claude re-run)** except RV-REG-1 (M5-S3), which stays OPEN under [RV-REG]. Production build at `2fb9bda` + `8093464`: full suite **172 passed / 1 skipped (M5-S3) / 0 failed / 0 flaky** of 173 (incl. the new `rv-reg-2-import-hydration` spec); C1/A3/contrast/C2 `--repeat-each=3` **61/61**. Stale Codex Playwright/Next processes were stopped first with owner approval. `git status` shows no modified tracked evidence; the only dirty files are the uncommitted M5-S3 helpers. Cleanup counts were not re-queried. · **Severity:** M
 
 **Claude triage 2026-10-31 (from the failure list, not re-run):**
 - No failure is in a C2/0012 path. C1/A3/C2/contrast pass 61/61 on repeat 3.
