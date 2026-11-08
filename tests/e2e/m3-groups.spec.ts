@@ -53,10 +53,6 @@ test('M3-S3 group total sums expense members only; a transfer member is excluded
   await expect(groupLink).toHaveAttribute('href', /\/groups\//)
   await page.waitForLoadState('networkidle')
   await groupLink.click()
-  if (!/\/groups\/[^/]+$/.test(page.url())) {
-    const arrived = await page.waitForURL('**/groups/*', { timeout: 8_000 }).then(() => true).catch(() => false)
-    if (!arrived) await groupLink.click()
-  }
   await expect(page).toHaveURL(/\/groups\/[^/]+$/)
 
   // Assign all three transactions (two expenses + one transfer) to the group
