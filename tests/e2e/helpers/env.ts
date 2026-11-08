@@ -46,8 +46,13 @@ export const STORAGE_B = path.join(AUTH_DIR, 'userB.json')
 
 export const e2eBaseUrl = `http://localhost:${process.env.JODSA_E2E_PORT ?? '3000'}`
 
-/** Route run screenshots away from committed visual baselines when requested. */
-export function evidenceDir(specName: string, fallback: string): string {
+/**
+ * Runtime evidence must never overwrite reviewed, committed images.  A caller
+ * that deliberately wants durable capture opts in with JODSA_E2E_EVIDENCE_DIR;
+ * ordinary runs stay under Playwright's ignored output tree.
+ */
+const automaticEvidenceRoot = path.join(root, 'tests', 'e2e', '.results', 'evidence', `${Date.now()}-${process.pid}`)
+export function evidenceDir(specName: string, _fallback: string): string {
   const runRoot = process.env.JODSA_E2E_EVIDENCE_DIR
-  return runRoot ? path.resolve(runRoot, specName) : path.resolve(fallback)
+  return path.resolve(runRoot ?? automaticEvidenceRoot, specName)
 }
