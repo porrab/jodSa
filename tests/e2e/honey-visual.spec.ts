@@ -22,6 +22,17 @@ async function ready(page: Page) {
   await page.locator('nextjs-portal').evaluateAll((nodes) => nodes.forEach((node) => node.remove()))
 }
 
+async function expectDateClearOfStickyCta(page: Page) {
+  const dateField = page.locator('#quick-add-datetime')
+  const saveCta = page.getByRole('dialog').getByRole('button', { name: 'บันทึกรายการ' })
+  await dateField.evaluate((element) => element.scrollIntoView({ block: 'center' }))
+  const [dateBox, ctaBox] = await Promise.all([dateField.boundingBox(), saveCta.boundingBox()])
+  expect(dateBox).not.toBeNull()
+  expect(ctaBox).not.toBeNull()
+  expect(dateBox!.y + dateBox!.height).toBeLessThanOrEqual(ctaBox!.y)
+  await page.getByRole('dialog').evaluate((dialog) => dialog.scrollTo({ top: 0 }))
+}
+
 test.beforeAll(async () => {
   const user = await findUserByEmail(env.userA.email)
   if (!user) throw new Error(`Missing visual-audit user ${env.userA.email}`)
@@ -62,8 +73,13 @@ for (const theme of themes) {
     await ready(page)
     await expect(page).toHaveScreenshot(`${theme}-add-manual.png`, { fullPage: true })
 
+    // At the mobile 390×844 viewport, the datetime control must be able to
+    // scroll completely above the sticky save CTA rather than remain occluded.
+    await expectDateClearOfStickyCta(page)
+
     await page.getByRole('button', { name: 'โอนเงิน', exact: true }).click()
     await expect(page.getByRole('radiogroup', { name: 'บัญชีต้นทาง' })).toBeVisible()
+    await expectDateClearOfStickyCta(page)
     await expect(page).toHaveScreenshot(`${theme}-add-transfer.png`, { fullPage: true })
 
     await page.getByRole('dialog').locator('input[type="file"]').first().setInputFiles(path.join(GENERATED_DIR, 'slip-noqr.png'))
