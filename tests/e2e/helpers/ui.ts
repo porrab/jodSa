@@ -9,18 +9,13 @@ export async function login(page: Page, email: string, password: string): Promis
   await page.waitForURL('**/dashboard', { timeout: 30_000 })
 }
 
-/** Upload one OCR fixture only after the import screen has hydrated. */
+/** Upload one OCR fixture and wait for the UI's explicit acceptance signal. */
 export async function uploadSlipForOcr(page: Page, filePath: string): Promise<void> {
   await page.goto('/import')
-  await page.waitForLoadState('networkidle')
   const dropzone = page.getByText('วางภาพสลิปที่นี่')
   await expect(dropzone).toBeVisible()
-  for (let attempt = 0; attempt < 2; attempt++) {
-    await page.locator('input[type="file"]').setInputFiles(filePath)
-    const accepted = await dropzone.waitFor({ state: 'hidden', timeout: 8_000 }).then(() => true).catch(() => false)
-    if (accepted) return
-  }
-  throw new Error(`Import did not accept the test upload: ${filePath}`)
+  await page.locator('input[type="file"]').setInputFiles(filePath)
+  await expect(dropzone).toBeHidden({ timeout: 8_000 })
 }
 
 /** Create a bank account via the accounts dialog. */

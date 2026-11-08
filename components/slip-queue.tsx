@@ -71,6 +71,7 @@ export default function SlipQueue({
   const [manualId, setManualId] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const processing = useRef(false)
+  const initialInputRef = useRef<HTMLInputElement>(null)
   const addInputRef = useRef<HTMLInputElement>(null)
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
@@ -85,6 +86,11 @@ export default function SlipQueue({
       fallbackAccountId: accounts[0]?.id ?? null,
     })
   }, [accounts, globalLastAccountId, lastByCategory])
+
+  const addFiles = useCallback((files: File[]) => {
+    if (files.length === 0) return
+    setItems((current) => [...current, ...files.map(makeItem)])
+  }, [])
 
   const classify = useCallback(async (slip: ParsedSlip) => {
     const accountId = resolveAccount(slip)
@@ -109,6 +115,18 @@ export default function SlipQueue({
     const unsaved = items.filter((item) => item.status !== 'saved').length
     onUnsavedCountChange?.(unsaved)
   }, [items, onUnsavedCountChange])
+
+  // A browser can assign input.files before React has hydrated its onChange
+  // handler. Read that DOM-owned state once on mount so the first selection is
+  // queued just like a post-hydration change.
+  useEffect(() => {
+    const input = initialInputRef.current
+    if (!input) return
+    const files = input.files ? Array.from(input.files) : []
+    if (files.length === 0) return
+    addFiles(files)
+    input.value = ''
+  }, [addFiles])
 
   useEffect(() => {
     if (processing.current) return
@@ -141,11 +159,6 @@ export default function SlipQueue({
       }
     })()
   }, [classify, displayName, items, t])
-
-  function addFiles(files: File[]) {
-    if (files.length === 0) return
-    setItems((current) => [...current, ...files.map(makeItem)])
-  }
 
   function onFileInput(event: React.ChangeEvent<HTMLInputElement>) {
     addFiles(Array.from(event.target.files ?? []))
@@ -279,7 +292,7 @@ export default function SlipQueue({
         <FileImage className="size-8 text-muted-foreground" />
         <span className="font-medium">{t('dropHere')}</span>
         <span className="text-sm text-muted-foreground">{t('tapToPick')}</span>
-        <input type="file" accept="image/*" multiple className="sr-only" onChange={onFileInput} />
+        <input ref={initialInputRef} type="file" accept="image/*" multiple className="sr-only" onChange={onFileInput} />
       </label>
     )
   }

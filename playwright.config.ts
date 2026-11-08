@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test'
 
 const e2ePort = process.env.JODSA_E2E_PORT ?? '3000'
 const e2eBaseUrl = `http://localhost:${e2ePort}`
+const e2eServerCommand = process.env.JODSA_E2E_PRODUCTION === '1'
+  ? `pnpm start --port ${e2ePort}`
+  : `pnpm dev --port ${e2ePort}`
 
 /**
  * E2E config — owned by qa-lab (see REVIEW-INBOX.md handshake).
@@ -35,7 +38,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm dev --port ${e2ePort}`,
+    command: e2eServerCommand,
     url: `${e2eBaseUrl}/login`,
     reuseExistingServer: true,
     timeout: 180_000,
