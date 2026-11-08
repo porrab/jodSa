@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { env } from './env'
-import { createTestUserGuard } from './test-user-guard'
+import { createTestUserGuard, requireDisposableTestEmail } from './test-user-guard'
 
 /**
  * Service-role client — TEST SETUP/TEARDOWN ONLY (provision confirmed test
@@ -69,11 +69,10 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 
 /** Create the user if missing; guarantee the email is confirmed either way. */
 export async function ensureConfirmedUser(email: string, password: string, displayName?: string): Promise<string> {
-  if (email !== env.userA.email && email !== env.userB.email && !/^qa-[^@]+@jodsa\.test$/i.test(email)) {
-    throw new Error('Only named test accounts may be provisioned')
-  }
-  credentials.set(email.toLowerCase(), password)
-  const existing = await findUserByEmail(email)
+  const normalized = email.toLowerCase()
+  if (normalized !== env.userA.email.toLowerCase() && normalized !== env.userB.email.toLowerCase()) requireDisposableTestEmail(email)
+  credentials.set(normalized, password)
+  const existing = await findUserByEmail(normalized)
   if (existing) {
     if (!existing.email_confirmed_at) {
       const { error } = await adminClient().auth.admin.updateUserById(existing.id, { email_confirm: true })
@@ -88,8 +87,7 @@ export async function ensureConfirmedUser(email: string, password: string, displ
     user_metadata: displayName ? { full_name: displayName } : undefined,
   })
   if (error) throw new Error(`createUser ${email} failed: ${error.message}`)
-  testUsers.register(data.user.id)
-  credentialsById.set(data.user.id, { email, password })
+  registerTestUserSession(data.user, normalized)
   return data.user.id
 }
 
@@ -216,12 +214,16 @@ export async function setAssetProxyClass(
   if (error) throw new Error(`setAssetProxyClass ${assetName} failed: ${error.message}`)
 }
 
+export async function deleteUserById(userId: string): Promise<void> {
+  requireTestUserId(userId, 'deleteUserById')
+  const { error } = await adminClient().auth.admin.deleteUser(userId)
+  if (error) throw new Error(`deleteUser ${userId} failed: ${error.message}`)
+}
+
 export async function deleteUserByEmail(email: string): Promise<void> {
   const user = await findUserByEmail(email)
   if (!user) return
-  await resetUserData(user.id)
-  const { error } = await adminClient().auth.admin.deleteUser(user.id)
-  if (error) throw new Error(`deleteUser ${email} failed: ${error.message}`)
+  await deleteUserById(user.id)
 }
 
 /**
