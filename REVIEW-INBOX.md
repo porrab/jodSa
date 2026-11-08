@@ -828,7 +828,7 @@ M5 analysis methodology: `Resources/portfolio-risk-review/portfolio-risk-methodo
 (manual prices) · not licensed advice · multi-tenant RLS isolation per new table.
 
 ### The only open milestone
-- [ ] **M2 — Broker-Screenshot OCR** · complexity M · deps M1 (done) · **prereq: ~10 real Dime
+- [ ] **M2 — Broker-Screenshot OCR** · **2026-11-08: owner asked to proceed; BLOCKED on the corpus.** Checked on disk: no broker screenshots under `qa-lab/projects/jodsa/corpus/`, and no `workers/portfolio.worker.ts`. Start build only after ≥10 labelled shots land. · complexity M · deps M1 (done) · **prereq: ~10 real Dime
   screenshots** — not yet collected; no corpus, no objective exit.
   Reuse the on-device worker; **image never uploaded**; ≥85% position-value correct; confirm grid with
   low-confidence flags.
@@ -880,7 +880,7 @@ applied live; deployed.
 ---
 
 ## [SPEC-3] Phase 2 backlog — M10–M13 (Push · CSV · BYO Vision · Realtime) — 2026-07-14 · from idea-forge
-**Status**: **PARKED** — blueprinted, **not the active target**. 2026-07-14 the owner chose the investment
+**Status**: **UNPARKED 2026-11-08 by the owner in chat** ("ทำตามนี้ต่อ" for SPEC-4 M2 + SPEC-3 M10–M13). **Order:** M11 first, because it needs no schema, infra or owner steps; then M10 (needs migration `0014` authorization plus VAPID/`CRON_SECRET` in Vercel), then M12 → M13. M2 (SPEC-4) runs in parallel once the owner's labelled Dime corpus lands; nothing in M10–M13 depends on it. Previous status: **PARKED** — blueprinted, **not the active target**. 2026-07-14 the owner chose the investment
 module (SPEC-4) as the Phase-2 build instead. Keep M10–M13 as planned backlog; **do NOT start M10** until
 the owner re-prioritizes. Net-new phase, not a fix to M1–M9.
 
