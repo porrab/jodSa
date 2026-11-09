@@ -77,11 +77,11 @@ export default function CsvExport() {
   return <section className="space-y-3 py-4" aria-labelledby="csv-export-title">
     <div><h2 id="csv-export-title" className="font-semibold">{t('exportTitle')}</h2><p className="text-sm text-muted-foreground">{t('exportDescription')}</p></div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Label className="flex min-w-0 flex-col gap-2">
+      <Label className="flex min-w-0 flex-col items-stretch gap-2">
         {t('exportFrom')}
         <Input className="min-h-11 w-full" type="date" value={from} onChange={(event) => updateDate(setFrom, event.target.value)} />
       </Label>
-      <Label className="flex min-w-0 flex-col gap-2">
+      <Label className="flex min-w-0 flex-col items-stretch gap-2">
         {t('exportTo')}
         <Input className="min-h-11 w-full" type="date" value={to} onChange={(event) => updateDate(setTo, event.target.value)} />
       </Label>
