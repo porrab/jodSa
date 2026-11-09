@@ -27,4 +27,16 @@ describe('CSV export', () => {
     expect(rows).toEqual(['a', 'b', 'c'])
     expect(calls).toEqual([0, 2])
   })
+
+  it('keeps 1,001 equal-timestamp rows exactly once over the production-sized boundary', async () => {
+    const rows = Array.from({ length: 1001 }, (_, index) => ({ id: String(index), datetime: '2026-11-08T00:00:00.000Z' }))
+    const exported = await collectPages(1000, async (offset) => rows.slice(offset, offset + 1000))
+    expect(exported).toHaveLength(1001)
+    expect(new Set(exported.map((row) => row.id)).size).toBe(1001)
+  })
+
+  it('keeps duplicate timestamps stable with an injected page size of two', async () => {
+    const rows = ['a', 'b', 'c', 'd']
+    expect(await collectPages(2, async (offset) => rows.slice(offset, offset + 2))).toEqual(rows)
+  })
 })
