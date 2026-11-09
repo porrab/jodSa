@@ -304,12 +304,16 @@ export async function seedTransaction(
   userId: string,
   accountId: string,
   opts: {
-    type?: 'income' | 'expense' | 'transfer'
+    type?: 'income' | 'expense' | 'transfer' | 'invest' | 'divest'
     amountSatang: number
     datetime?: string
     category?: string | null
     counterparty?: string | null
     groupId?: string | null
+    toAccountId?: string | null
+    holdingId?: string | null
+    note?: string | null
+    refCode?: string | null
   },
 ): Promise<string> {
   requireTestUserId(userId, 'seedTransaction')
@@ -324,6 +328,10 @@ export async function seedTransaction(
       category: opts.category ?? null,
       counterparty: opts.counterparty ?? null,
       group_id: opts.groupId ?? null,
+      to_account_id: opts.toAccountId ?? null,
+      holding_id: opts.holdingId ?? null,
+      note: opts.note ?? null,
+      ref_code: opts.refCode ?? null,
     })
     .select('id')
     .single()
