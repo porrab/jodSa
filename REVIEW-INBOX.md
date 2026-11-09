@@ -16,7 +16,7 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 # OPEN
 
 ## [RV-M11] CSV export review (`c5fbb19`, `0c48da9`) — 2026-11-09 · from Claude review
-**Status:** OPEN · **Severity:** M.
+**Status:** OPEN · **Severity:** M. **Re-review 2026-11-09:** RV-M11-1..4 fixed in `87ae2e5`/`702bb65`/`c366687`. Raw tsc 0, Vitest 373/34 skipped, build 0, M11 E2E repeat-3 4/4. Full suite on a production build: 156 passed / 1 failed / 17 did not run (honey-visual serial). The only failure is `light-settings` (15,623 px), caused by the new export section, and it exposed **RV-M11-5 (M, layout):** at 390x844 the label sits inline beside each date input, so the "from" date is clipped (`22/10/202▢`). **Fix:** stack each label above its input (or give each input full width); then review the light/dark settings diffs before any baseline update. Minor gap: the E2E does not compare the CSV row count with the visible `/transactions` rows. Accepted as covered by the exact 4-line assertion. Earlier: **Status:** OPEN · **Severity:** M.
 
 **Re-derived:**
 - Raw tsc 0. Vitest 371 passed / 34 skipped. `pnpm build` 0.
