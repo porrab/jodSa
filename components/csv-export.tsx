@@ -18,26 +18,33 @@ export default function CsvExport() {
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState(today)
   const [types, setTypes] = useState<ExportType[]>([...EXPORT_TYPES])
-  const [state, setState] = useState<'idle' | 'loading' | 'empty'>('idle')
+  const [state, setState] = useState<'idle' | 'loading' | 'empty' | 'error'>('idle')
 
   function toggle(type: ExportType) {
+    setState('idle')
     setTypes((current) => current.includes(type) ? current.filter((value) => value !== type) : [...current, type])
+  }
+
+  function updateDate(setter: (value: string) => void, value: string) {
+    setState('idle')
+    setter(value)
   }
 
   async function download() {
     if (!from || !to || from > to || types.length === 0) return
     setState('loading')
-    const supabase = createClient()
-    const range = bangkokRange(from, to)
-    const txs = await collectPages(PAGE_SIZE, async (offset) => {
+    try {
+      const supabase = createClient()
+      const range = bangkokRange(from, to)
+      const txs = await collectPages(PAGE_SIZE, async (offset) => {
       const { data, error } = await supabase.from('transactions').select('*')
         .gte('datetime', range.from).lt('datetime', range.toExclusive).in('type', types)
-        .order('datetime', { ascending: true }).range(offset, offset + PAGE_SIZE - 1)
+        .order('datetime', { ascending: true }).order('id', { ascending: true }).range(offset, offset + PAGE_SIZE - 1)
       if (error) throw error
       return data ?? []
-    })
-    if (!txs.length) { setState('empty'); return }
-    const accountIds = [...new Set(txs.flatMap((row) => [row.account_id, row.to_account_id]).filter((id): id is string => !!id))]
+      })
+      if (!txs.length) { setState('empty'); return }
+      const accountIds = [...new Set(txs.flatMap((row) => [row.account_id, row.to_account_id]).filter((id): id is string => !!id))]
     const groupIds = [...new Set(txs.map((row) => row.group_id).filter((id): id is string => !!id))]
     const holdingIds = [...new Set(txs.map((row) => row.holding_id).filter((id): id is string => !!id))]
     const [{ data: accounts }, { data: groups }, { data: holdings }] = await Promise.all([
@@ -59,15 +66,20 @@ export default function CsvExport() {
     const href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = href; link.download = `jodsa-${from}-${to}.csv`; link.click()
-    URL.revokeObjectURL(href)
-    setState('idle')
+      setTimeout(() => URL.revokeObjectURL(href), 0)
+    } catch {
+      setState('error')
+    } finally {
+      setState((current) => current === 'loading' ? 'idle' : current)
+    }
   }
 
   return <section className="space-y-3 py-4" aria-labelledby="csv-export-title">
     <div><h2 id="csv-export-title" className="font-semibold">{t('exportTitle')}</h2><p className="text-sm text-muted-foreground">{t('exportDescription')}</p></div>
-    <div className="grid grid-cols-2 gap-3"><Label>{t('exportFrom')}<Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></Label><Label>{t('exportTo')}<Input type="date" value={to} onChange={(event) => setTo(event.target.value)} /></Label></div>
+    <div className="grid grid-cols-2 gap-3"><Label>{t('exportFrom')}<Input type="date" value={from} onChange={(event) => updateDate(setFrom, event.target.value)} /></Label><Label>{t('exportTo')}<Input type="date" value={to} onChange={(event) => updateDate(setTo, event.target.value)} /></Label></div>
     <div className="flex flex-wrap gap-2">{EXPORT_TYPES.map((type) => <Chip key={type} pressed={types.includes(type)} onClick={() => toggle(type)}>{t(`exportType${type[0].toUpperCase()}${type.slice(1)}`)}</Chip>)}</div>
     {state === 'empty' && <p role="status" className="text-sm text-muted-foreground">{t('exportEmpty')}</p>}
+    {state === 'error' && <p role="alert" className="text-sm text-destructive">{t('exportError')}</p>}
     <Button type="button" onClick={download} disabled={state === 'loading' || !from || !to || from > to || types.length === 0}><Download className="size-4" />{state === 'loading' ? t('exporting') : t('exportDownload')}</Button>
   </section>
 }

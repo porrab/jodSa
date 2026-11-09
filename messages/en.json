@@ -815,6 +815,7 @@
     "exportDownload": "Download CSV",
     "exporting": "Preparing CSV...",
     "exportEmpty": "No transactions match this range and type filter.",
+    "exportError": "Could not prepare the CSV. Please try again.",
     "exportTypeIncome": "Income",
     "exportTypeExpense": "Expense",
     "exportTypeTransfer": "Transfer",

@@ -815,6 +815,7 @@
     "exportDownload": "ดาวน์โหลด CSV",
     "exporting": "กำลังเตรียม CSV...",
     "exportEmpty": "ไม่พบรายการที่ตรงกับช่วงวันที่และประเภทที่เลือก",
+    "exportError": "เตรียมไฟล์ CSV ไม่สำเร็จ กรุณาลองอีกครั้ง",
     "exportTypeIncome": "รายรับ",
     "exportTypeExpense": "รายจ่าย",
     "exportTypeTransfer": "โอนเงิน",
