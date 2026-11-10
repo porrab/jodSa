@@ -46,15 +46,13 @@ export default function SettingsClient({ email }: { email: string }) {
   }
 
   async function handleLogout() {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try { if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
       if (subscription) {
-        const result = await removePushSubscription(subscription.endpoint)
-        if (result.error) { toast.error(result.error); return }
-        await subscription.unsubscribe()
+        try { await removePushSubscription(subscription.endpoint) } finally { await subscription.unsubscribe() }
       }
-    }
+    } } catch { /* Push cleanup must not block sign-out. */ }
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')

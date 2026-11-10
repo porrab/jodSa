@@ -59,15 +59,13 @@ export default function AppNav() {
     .some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
   async function handleLogout() {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try { if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const subscription = await (await navigator.serviceWorker.ready).pushManager.getSubscription()
       if (subscription) {
         const { removePushSubscription } = await import('@/app/actions/notifications')
-        const result = await removePushSubscription(subscription.endpoint)
-        if (result.error) throw new Error(result.error)
-        await subscription.unsubscribe()
+        try { await removePushSubscription(subscription.endpoint) } finally { await subscription.unsubscribe() }
       }
-    }
+    } } catch { /* Push cleanup must not block sign-out. */ }
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
