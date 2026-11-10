@@ -12,6 +12,7 @@ import { setLocale, deleteOwnAccount } from '@/app/actions/preferences'
 import { createClient } from '@/lib/supabase/client'
 import { LogOut } from 'lucide-react'
 import CsvExport from '@/components/csv-export'
+import { PushSettings } from '@/components/push-settings'
 
 export default function SettingsClient({ email }: { email: string }) {
   const t = useTranslations('settings')
@@ -67,6 +68,7 @@ export default function SettingsClient({ email }: { email: string }) {
             </div>
           </div>
           <CsvExport />
+          <PushSettings />
           <div className="space-y-2 py-4">
             <p className="text-sm text-muted-foreground">{email}</p>
             <div className="space-y-2 bg-blush p-4">

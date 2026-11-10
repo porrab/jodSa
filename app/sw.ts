@@ -42,6 +42,16 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() as { title?: string; body?: string; url?: string } | undefined
+  event.waitUntil(self.registration.showNotification(data?.title ?? 'JodSa', { body: data?.body, data: { url: data?.url ?? '/' } }))
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(self.clients.openWindow(new URL(event.notification.data?.url ?? '/', self.location.origin).href))
+})
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
