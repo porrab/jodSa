@@ -2,18 +2,28 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { notificationPrefsSchema } from '@/lib/notifications/prefs'
+
+export async function saveNotificationPrefs(input: unknown) {
+  const prefs = notificationPrefsSchema.parse(input)
+  const db = await createClient()
+  const { data: { user } } = await db.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  const { error } = await db.from('user_settings').upsert({ user_id: user.id, notification_prefs: prefs })
+  if (error) throw new Error(error.message)
+}
 
 const subscription = z.object({ endpoint: z.string().url(), keys: z.object({ p256dh: z.string().min(1), auth: z.string().min(1) }) })
 export async function savePushSubscription(input: unknown) {
   const parsed = subscription.safeParse(input); if (!parsed.success) return { error: 'Invalid subscription' }
   const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
-  const { error } = await (supabase.from('push_subscriptions' as never) as any).upsert({ user_id: user.id, endpoint: parsed.data.endpoint, p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth }, { onConflict: 'endpoint' })
+  const { error } = await supabase.rpc('claim_push_subscription', { endpoint: parsed.data.endpoint, p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth })
   return { error: error?.message ?? '' }
 }
 export async function removePushSubscription(endpoint: string) {
   const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return { error: 'Not authenticated' }
-  const { error } = await (supabase.from('push_subscriptions' as never) as any).delete().eq('endpoint', endpoint).eq('user_id', user.id)
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint).eq('user_id', user.id)
   return { error: error?.message ?? '' }
 }
 export async function confirmOccurrence(txId: string) {

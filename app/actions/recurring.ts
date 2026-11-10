@@ -95,13 +95,18 @@ export async function deleteRecurringRule(id: string) {
  * Skip a single generated occurrence: delete the materialized transaction and
  * record an exception so lazy-on-read never recreates it.
  */
-export async function skipOccurrence(ruleId: string, occurrenceDate: string, txId: string) {
+export async function skipOccurrence(ruleId: string, occurrenceDate: string, _txId: string) {
   const supabase = await createClient()
-  await supabase.from('transactions').delete().eq('id', txId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  const { data: rule, error: ruleError } = await supabase.from('recurring_rules').select('id').eq('id', ruleId).eq('user_id', user.id).single()
+  if (ruleError || !rule) throw new Error('Occurrence not found')
   const { error } = await supabase
     .from('recurring_exceptions')
     .insert({ rule_id: ruleId, skipped_date: occurrenceDate })
   if (error && error.code !== '23505') throw new Error(error.message)
+  const { error: deleteError } = await supabase.from('transactions').delete().eq('recurring_rule_id', ruleId).eq('occurrence_date', occurrenceDate).eq('user_id', user.id)
+  if (deleteError) throw new Error(deleteError.message)
   revalidatePath('/recurring')
   revalidatePath('/transactions')
   revalidatePath('/dashboard')

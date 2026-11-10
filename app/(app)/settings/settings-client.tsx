@@ -12,6 +12,7 @@ import { setLocale, deleteOwnAccount } from '@/app/actions/preferences'
 import { createClient } from '@/lib/supabase/client'
 import { LogOut } from 'lucide-react'
 import CsvExport from '@/components/csv-export'
+import { removePushSubscription } from '@/app/actions/notifications'
 import { PushSettings } from '@/components/push-settings'
 
 export default function SettingsClient({ email }: { email: string }) {
@@ -45,6 +46,15 @@ export default function SettingsClient({ email }: { email: string }) {
   }
 
   async function handleLogout() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      if (subscription) {
+        const result = await removePushSubscription(subscription.endpoint)
+        if (result.error) { toast.error(result.error); return }
+        await subscription.unsubscribe()
+      }
+    }
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
