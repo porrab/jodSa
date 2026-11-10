@@ -16,6 +16,7 @@ describe('M10 service-role containment', () => {
     const files = ['app', 'lib', 'components'].flatMap((dir) => walk(path.join(root, dir)))
     const importers = files.filter((file) => /\.(ts|tsx)$/.test(file) && /createAdminClient|SUPABASE_SERVICE_ROLE_KEY/.test(fs.readFileSync(file, 'utf8')))
       .map((file) => path.relative(root, file).replaceAll('\\', '/'))
+    expect(importers).toContain('app/api/cron/notify/supabase.ts')
     for (const file of importers) expect(legacy.has(file) || file.startsWith('app/api/cron/')).toBe(true)
   })
 })
