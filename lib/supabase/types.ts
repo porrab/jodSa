@@ -534,7 +534,7 @@ export interface Database {
     }
     Views: { [_ in never]: never }
     Functions: {
-      claim_push_subscription: { Args: { endpoint: string; p256dh: string; auth: string }; Returns: undefined }
+      claim_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string }; Returns: undefined }
       account_balances: {
         Args: Record<PropertyKey, never>
         Returns: { account_id: string; balance_satang: number }[]

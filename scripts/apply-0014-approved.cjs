@@ -9,7 +9,7 @@ async function main() {
   const root = path.resolve(__dirname, '..')
   const source = fs.readFileSync(path.join(root, 'db/migrations/0014_push_notifications.sql'), 'utf8')
   const sha = crypto.createHash('sha256').update(source).digest('hex')
-  assert.equal(sha, 'ee300b6dbf4446df434e2a78bbeb41b572655f6ee911045769ceb0eb98b982c7', 'SQL_SHA_MISMATCH')
+  assert.equal(sha, 'cedc59c95bad45afa067549733020d4740789723f20da9969b384c44b5a9a166', 'SQL_SHA_MISMATCH')
   const env = require('dotenv').parse(fs.readFileSync(path.join(root, '.env.local')))
   const api = new URL(env.NEXT_PUBLIC_SUPABASE_URL), database = new URL(env.DATABASE_URL)
   const ref = api.hostname.split('.')[0]
@@ -32,6 +32,8 @@ async function main() {
       assert.deepEqual(after, { subscriptions: true, settings: true, deliveries: true }, '0014_POSTCONDITION_FAILED')
       const [security] = await tx.unsafe(`select p.prosecdef, p.proconfig, has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute, has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute from pg_proc p where p.oid = 'public.claim_push_subscription(text,text,text)'::regprocedure`)
       assert.equal(security.prosecdef, true)
+      const [args] = await tx.unsafe(`select proargnames from pg_proc where oid = 'public.claim_push_subscription(text,text,text)'::regprocedure`)
+      assert.deepEqual(args.proargnames, ['p_endpoint', 'p_p256dh', 'p_auth'])
       assert.ok(security.proconfig.includes('search_path=public'))
       assert.equal(security.anon_execute, false)
       assert.equal(security.authenticated_execute, true)

@@ -18,7 +18,7 @@ export async function savePushSubscription(input: unknown) {
   const parsed = subscription.safeParse(input); if (!parsed.success) return { error: 'Invalid subscription' }
   const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
-  const { error } = await supabase.rpc('claim_push_subscription', { endpoint: parsed.data.endpoint, p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth })
+  const { error } = await supabase.rpc('claim_push_subscription', { p_endpoint: parsed.data.endpoint, p_p256dh: parsed.data.keys.p256dh, p_auth: parsed.data.keys.auth })
   return { error: error?.message ?? '' }
 }
 export async function removePushSubscription(endpoint: string) {

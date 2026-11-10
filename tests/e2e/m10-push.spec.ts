@@ -12,7 +12,7 @@ test('M10 subscriptions/settings isolation and idempotent confirm/skip', async (
   try {
     await resetAllUserData(a.id)
     const account = await seedAccount(a.id, 'M10 account', 'SCB')
-    const claim = await A.rpc('claim_push_subscription', { endpoint, p256dh: 'test-key', auth: 'test-auth' }); expect(claim.error).toBeNull()
+    const claim = await A.rpc('claim_push_subscription', { p_endpoint: endpoint, p_p256dh: 'test-key', p_auth: 'test-auth' }); expect(claim.error).toBeNull()
     expect((await A.from('user_settings').upsert({ user_id: a.id, notification_prefs: { daily: true } })).error).toBeNull()
     expect((await B.from('push_subscriptions').select('*').eq('user_id', a.id)).data).toEqual([])
     expect((await B.from('user_settings').select('*').eq('user_id', a.id)).data).toEqual([])
