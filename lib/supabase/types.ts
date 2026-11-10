@@ -3,6 +3,24 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
+      push_subscriptions: {
+        Row: { id: string; user_id: string; endpoint: string; p256dh: string; auth: string; user_agent: string | null; created_at: string }
+        Insert: { id?: string; user_id: string; endpoint: string; p256dh: string; auth: string; user_agent?: string | null; created_at?: string }
+        Update: { endpoint?: string; p256dh?: string; auth?: string }
+        Relationships: []
+      }
+      user_settings: {
+        Row: { user_id: string; notification_prefs: Json; updated_at: string }
+        Insert: { user_id: string; notification_prefs: Json; updated_at?: string }
+        Update: { notification_prefs?: Json; updated_at?: string }
+        Relationships: []
+      }
+      push_deliveries: {
+        Row: { id: string; user_id: string; type: string; rule_id: string | null; occurrence_date: string | null; slot_at: string | null; sent_at: string }
+        Insert: { id?: string; user_id: string; type: string; rule_id?: string | null; occurrence_date?: string | null; slot_at?: string | null; sent_at?: string }
+        Update: { sent_at?: string }
+        Relationships: []
+      }
       users: {
         Row: {
           id: string
@@ -516,6 +534,7 @@ export interface Database {
     }
     Views: { [_ in never]: never }
     Functions: {
+      claim_push_subscription: { Args: { endpoint: string; p256dh: string; auth: string }; Returns: undefined }
       account_balances: {
         Args: Record<PropertyKey, never>
         Returns: { account_id: string; balance_satang: number }[]
