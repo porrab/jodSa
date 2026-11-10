@@ -3,8 +3,11 @@ import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { computeNextDue } from '@/lib/recurrence/status'
 import RecurringClient, { type RuleStatus } from '@/components/recurring-form'
+import { getTranslations } from 'next-intl/server'
 
-export default async function RecurringPage() {
+export default async function RecurringPage({ searchParams }: { searchParams: Promise<{ done?: string }> }) {
+  const { done } = await searchParams
+  const t = await getTranslations('settings')
   const supabase = await createClient()
 
   // Lazy-on-read materialization runs here too (J7): visiting this page is how
@@ -70,8 +73,11 @@ export default async function RecurringPage() {
   }
 
   return (
+    <>
+    {(done === 'confirmed' || done === 'skipped') && <p role="status" className="rounded-lg border border-border bg-card p-4">{t(done === 'confirmed' ? 'paymentConfirmed' : 'paymentSkipped')}</p>}
     <div className="space-y-6">
       <RecurringClient rules={rules ?? []} accounts={accounts ?? []} status={status} />
     </div>
+    </>
   )
 }
