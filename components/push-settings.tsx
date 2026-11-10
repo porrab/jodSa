@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { savePushSubscription, removePushSubscription, saveNotificationPrefs } from '@/app/actions/notifications'
 import { createClient } from '@/lib/supabase/client'
 import { defaultNotificationPrefs, notificationPrefsSchema } from '@/lib/notifications/prefs'
@@ -30,10 +33,12 @@ export function PushSettings() {
     } catch { setMessage(t('notificationError')) } finally { setBusy(false) }
   }
   async function save() { setBusy(true); try { await saveNotificationPrefs(prefs); setMessage(t('notificationSaved')) } catch { setMessage(t('notificationError')) } finally { setBusy(false) } }
-  return <section className="space-y-3 py-4"><h2 className="font-semibold">{t('notifications')}</h2><p className="text-sm text-muted-foreground">{t('notificationsIosCaveat')}</p>
+  return <section className="space-y-3 py-4" aria-labelledby="push-settings-title"><div><h2 id="push-settings-title" className="font-semibold">{t('notifications')}</h2><p className="text-sm text-muted-foreground">{t('notificationsIosCaveat')}</p></div>
     <Button type="button" onClick={toggle} disabled={busy}>{enabled ? t('unsubscribe') : t('subscribe')}</Button>
-    {(['daily', 'recurring'] as const).map(type => <label key={type} className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={prefs[type]} onChange={e => setPrefs({ ...prefs, [type]: e.target.checked })} />{t(type === 'daily' ? 'notificationDaily' : 'notificationRecurring')}</label>)}
-    {(['quietStart','quietEnd'] as const).map(field => <label key={field} className="flex flex-col gap-2">{t(field)}<input className="min-h-11 rounded-md border border-input bg-background px-3" type="time" value={prefs[field] ?? ''} onChange={e => setPrefs({ ...prefs, [field]: e.target.value || null })} /></label>)}
+    {(['daily', 'recurring'] as const).map(type => <Label key={type} htmlFor={`push-${type}`} className="flex min-h-11 cursor-pointer items-center gap-3"><Switch id={`push-${type}`} checked={prefs[type]} onCheckedChange={checked => setPrefs({ ...prefs, [type]: checked })} />{t(type === 'daily' ? 'notificationDaily' : 'notificationRecurring')}</Label>)}
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {(['quietStart','quietEnd'] as const).map(field => <Label key={field} className="flex min-w-0 flex-col items-stretch gap-2">{t(field)}<Input className="min-h-11 w-full" type="time" value={prefs[field] ?? ''} onChange={e => setPrefs({ ...prefs, [field]: e.target.value || null })} /></Label>)}
+    </div>
     <Button type="button" disabled={busy} onClick={save}>{t('notificationSave')}</Button>{message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
   </section>
 }
