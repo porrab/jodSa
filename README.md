@@ -66,6 +66,18 @@ npm run dev
 
 The dev session should **confirm the resolved dependency versions before writing M1 feature code.** See [START-HERE.md](START-HERE.md).
 
+## Push notification scheduler
+
+Configure these four environment variables in Vercel: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `CRON_SECRET`. Add the same `CRON_SECRET`
+as a repository Actions secret (Settings → Secrets and variables → Actions).
+
+The `notify-cron` GitHub Actions workflow calls the notification route at 12:05 and
+22:05 Asia/Bangkok. To smoke-test it, open Actions → notify-cron → Run workflow
+(`workflow_dispatch`) and inspect the JSON response. Outside the 12:xx / 22:xx
+Bangkok windows, the response is `{"sent":0}`. GitHub may delay scheduled runs and
+disables schedules after 60 days without repository activity.
+
 ## Structure
 
 ```
