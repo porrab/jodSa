@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest'
+vi.mock('server-only', () => ({}))
 const state = vi.hoisted(() => ({ claims: new Set<string>(), deleted: [] as string[], send: vi.fn(), prefs: { daily: true, recurring: true, quietStart: null as string | null, quietEnd: null as string | null } }))
 vi.mock('web-push', () => ({ setVapidDetails: vi.fn(), sendNotification: state.send }))
 vi.mock('@/app/api/cron/notify/supabase', () => ({ createCronClient: () => ({ from: (table: string) => {
@@ -18,9 +19,10 @@ beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-10T05:
 const request = () => new Request('http://localhost/api/cron/notify', { headers: { authorization: 'Bearer test' } })
 it('rejects missing and incorrect credentials', async () => { expect((await GET(new Request('http://localhost/api/cron/notify'))).status).toBe(401) })
 it('claims daily and unmaterialized recurring once and fans out to both devices', async () => {
-  await GET(request()); expect(state.send).toHaveBeenCalledTimes(4)
+  const result = await (await GET(request())).json(); expect(result).toMatchObject({ users: 1, devices: 2, claimed: 2, sent: 4, failed: [] }); expect(state.send).toHaveBeenCalledTimes(4)
   vi.setSystemTime(new Date('2026-11-10T05:30:00Z')); await GET(request()); expect(state.send).toHaveBeenCalledTimes(4)
   expect(state.send.mock.calls.some(c => String(c[1]).includes('/recurring/confirm?rule=r&date=2026-11-10'))).toBe(true)
 })
 it.each([404,410])('removes expired subscriptions on %s', async statusCode => { state.send.mockRejectedValue({ statusCode }); await GET(request()); expect(state.deleted).toContain('one'); expect(state.deleted).toContain('two') })
-it('respects disabled types and overnight quiet hours', async () => { state.prefs.daily = false; state.prefs.recurring = false; await GET(request()); expect(state.send).not.toHaveBeenCalled(); state.prefs.daily = true; state.prefs.quietStart = '22:00'; state.prefs.quietEnd = '13:00'; await GET(request()); expect(state.send).not.toHaveBeenCalled() })
+it('reports 403 failures without leaking device details', async () => { state.send.mockRejectedValue({ statusCode: 403, body: 'one key auth ' + 'x'.repeat(250) }); const result = await (await GET(request())).json(); expect(result.failed).toHaveLength(4); expect(result.failed[0].statusCode).toBe(403); expect(result.failed[0].body.length).toBeLessThanOrEqual(200); expect(result.failed[0].body).not.toContain('one'); expect(result.sent).toBe(0) })
+it('respects disabled types and overnight quiet hours', async () => { state.prefs.daily = false; state.prefs.recurring = false; expect((await (await GET(request())).json()).skipped).toMatchObject({ dailyOff: 1, recurringOff: 1 }); expect(state.send).not.toHaveBeenCalled(); state.prefs.daily = true; state.prefs.quietStart = '22:00'; state.prefs.quietEnd = '13:00'; expect((await (await GET(request())).json()).skipped.quiet).toBe(1); expect(state.send).not.toHaveBeenCalled() })
