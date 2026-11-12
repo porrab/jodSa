@@ -72,10 +72,12 @@ Configure these four environment variables in Vercel: `NEXT_PUBLIC_VAPID_PUBLIC_
 `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `CRON_SECRET`. Add the same `CRON_SECRET`
 as a repository Actions secret (Settings → Secrets and variables → Actions).
 
-The `notify-cron` GitHub Actions workflow calls the notification route at 12:05 and
-22:05 Asia/Bangkok. To smoke-test it, open Actions → notify-cron → Run workflow
+The `notify-cron` GitHub Actions workflow calls the notification route at 12:07,
+12:27, 12:47 and 22:07, 22:27, 22:47 Asia/Bangkok, away from the top-of-hour rush.
+GitHub may delay or drop scheduled runs, so each slot gets three attempts; extra
+attempts are safe because each slot is claimed once. To smoke-test it, open Actions → notify-cron → Run workflow
 (`workflow_dispatch`) and inspect the JSON response. Outside the 12:xx / 22:xx
-Bangkok windows, the response is `{"sent":0}`. GitHub may delay scheduled runs and
+Bangkok windows, the response is `{"sent":0,"slot":null}`. GitHub
 disables schedules after 60 days without repository activity.
 
 ## Structure
