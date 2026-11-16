@@ -1,12 +1,7 @@
-# The route is idempotent per slot and accepts the whole 12:xx / 22:xx Bangkok hour.
-# GitHub may delay or drop scheduled runs; extra attempts are safe because each slot is claimed once.
-# Schedules are disabled after 60 days without repo activity.
+# Scheduling now lives in vercel.json; this workflow is only a manual smoke test.
 name: notify-cron
 
 on:
-  schedule:
-    - cron: '7,27,47 5 * * *'
-    - cron: '7,27,47 15 * * *'
   workflow_dispatch:
 
 permissions: {}
