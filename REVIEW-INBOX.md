@@ -17,6 +17,10 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [M12] SPEC-3 BYO Vision OCR — ready for independent review, 2026-11-17
 
+**Claude review 2026-11-17: APPROVED (code).** Re-derived on `bc84b78`: raw tsc 0; Vitest 403 passed / 34 skipped; `pnpm build` 0; production E2E `m12-vision` + `honey-visual` 33 passed (setup + 28 + 4). Read the full diff: key goes only in the `X-Goog-Api-Key` header to vision.googleapis.com; errors carry the status code only; every Vision failure falls back to Tesseract; only `add-slip-sheet` (host session, signed in) and `slip-queue` opt in, guest `pay-client`/`trip-client` stay on Tesseract (static test + E2E with a planted key); the E2E records app-origin URLs, headers and bodies, including a real server action, and finds no key. `findUserByEmail` signs in as A, no listUsers. Settings baselines: only the new section was added, in both themes. `extract.ts` untouched.
+- Open, owner only: one real-key run (a slip Tesseract misreads must read correctly via Vision). Needs the owner's own restricted Google key; cannot be automated.
+- L (non-blocking): `vision.ts` and `vision-settings.tsx` pack several statements per line; split them up the next time those files are touched.
+
 Implemented browser-direct Vision TEXT_DETECTION with header-only key, original-image
 JPEG downscale (2000px), 15s abort, safe status-only errors and Tesseract fallback.
 Only authenticated add-slip/queue callers opt in; guest pay/trip remain default Tesseract.
