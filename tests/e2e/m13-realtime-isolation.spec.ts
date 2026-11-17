@@ -14,20 +14,26 @@ for (const table of ['accounts','transactions','budgets'] as const) {
     const a = await findUserByEmail(env.userA.email), b = await findUserByEmail(env.userB.email)
     if (!a || !b) throw new Error('Missing A/B')
     const A = await testUserClient(a.id), B = await testUserClient(b.id)
+    // A separate A-authenticated transport prevents SDK topic reuse from merging
+    // the public attack with A's existing private hostile channel on user:<B>.
+    const APublic = await testUserClient(a.id)
     const receivedA: Raw[] = [], receivedB: Raw[] = [], unauthorized: Raw[] = []
+    const publicReceived: Raw[] = [], publicStatuses: string[] = []
+    const publicMarker = randomUUID()
     const channels: { db: SupabaseClient; channel: RealtimeChannel }[] = []
     const rows: { db: SupabaseClient; table: string; id: string }[] = []
     const aId = randomUUID(), bId = randomUUID(), sourceA = randomUUID(), sourceB = randomUUID()
     const deniedStatuses: string[] = []
-    async function channel(db: SupabaseClient, uid: string, received: Raw[], denied = false) {
+    async function channel(db: SupabaseClient, uid: string, received: Raw[], denied = false, privateChannel = true, statuses?: string[]) {
       const { data: { session } } = await db.auth.getSession(); if (!session) throw new Error('No session')
       await db.realtime.setAuth(session.access_token)
-      const ch = db.channel(`user:${uid}`, { config: { private: true, broadcast: { ack: true } } }).on('broadcast', { event: '*' }, raw => received.push(raw as unknown as Raw))
+      const ch = db.channel(`user:${uid}`, { config: { private: privateChannel, broadcast: { ack: true } } }).on('broadcast', { event: '*' }, raw => received.push(raw as unknown as Raw))
       channels.push({ db, channel: ch })
       await new Promise<void>((resolve,reject) => {
         const timer = setTimeout(() => reject(new Error('Subscribe timeout')),15000)
         ch.subscribe(status => {
-          if (denied) deniedStatuses.push(status)
+          if (statuses) statuses.push(status)
+          else if (denied) deniedStatuses.push(status)
           if (status === 'SUBSCRIBED' || (denied && ['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status))) { clearTimeout(timer); resolve() }
           else if (['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)) { clearTimeout(timer); reject(new Error(status)) }
         })
@@ -44,6 +50,11 @@ for (const table of ['accounts','transactions','budgets'] as const) {
         }
       }
       expect(unauthorized, `UNAUTHORIZED_TOPIC_PAYLOAD ${JSON.stringify(unauthorized)}`).toEqual([])
+      for (const raw of publicReceived) {
+        const bIds = rows.filter(row => row.db === B).map(row => row.id)
+        expect(bIds, `PUBLIC_CHANNEL_TRIGGER_LEAK ${JSON.stringify(raw)}`).not.toContain(raw.payload.id)
+      }
+      expect(receivedB.some(e => e.event === 'INJECT' || e.payload.id === publicMarker), 'Public injection must not reach B private channel').toBe(false)
     }
     async function seen(events: Raw[], id: string, op: string) {
       await expect.poll(() => { validate(); return events.some(e => e.payload.id === id && e.payload.op === op && e.payload.table === table) }, { timeout: 15000 }).toBe(true)
@@ -78,6 +89,8 @@ for (const table of ['accounts','transactions','budgets'] as const) {
         for (const id of probes) { expect((await db.from(table).delete().eq('id',id)).error).toBeNull(); await seen(events,id,'DELETE') }
       }
       const hostile = await channel(A,b.id,unauthorized,true)
+      const publicHostile = await channel(APublic,b.id,publicReceived,true,false,publicStatuses)
+      await publicHostile.send({ type:'broadcast',event:'INJECT',payload:{table,op:'INJECT',id:publicMarker} }).catch(() => 'error')
       // Even if join is denied, send() may try HTTP fallback: both transports must deny injection.
       const marker = randomUUID()
       await hostile.send({ type:'broadcast',event:'INJECT',payload:{table,op:'INJECT',id:marker} }).catch(() => 'error')
@@ -91,7 +104,7 @@ for (const table of ['accounts','transactions','budgets'] as const) {
         }
         await seen(receivedA,aId,op); await seen(receivedB,bId,op); await observeWindow()
       }
-      await test.info().attach('broadcast-observations', { body:JSON.stringify({receivedA,receivedB,unauthorized,deniedStatuses},null,2),contentType:'application/json' })
+      await test.info().attach('broadcast-observations', { body:JSON.stringify({receivedA,receivedB,unauthorized,deniedStatuses,publicStatuses,publicReceived,publicMarker},null,2),contentType:'application/json' })
     } finally {
       await Promise.all(channels.map(({db,channel})=>db.removeChannel(channel)))
       // Reverse order removes transactions before their source accounts.
