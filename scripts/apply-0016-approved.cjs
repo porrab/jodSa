@@ -1,5 +1,6 @@
 // Owner-authorized only. Catalog inspection and migration share one transaction.
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto'), assert = require('node:assert/strict')
+const { snapshot: normalizeSnapshot, names, assertCatalogChanges } = require('./0016-catalog-values.cjs')
 async function main() {
   if (process.argv.length !== 3 || process.argv[2] !== '--apply-owner-approved-0016') throw { code: 'EXPLICIT_APPLY_REQUIRED' }
   const root = path.resolve(__dirname, '..')
@@ -13,7 +14,7 @@ async function main() {
   const sql = require('postgres')(env.DATABASE_URL, { prepare: false, max: 1, connect_timeout: 10, idle_timeout: 1, ssl: 'require', onnotice: () => {} })
   try {
     const result = await sql.begin(async tx => {
-      const snapshot = async () => ({
+      const snapshot = async () => normalizeSnapshot({
         tables: await tx.unsafe(`select c.oid, c.relname, c.relreplident, c.relrowsecurity, c.relforcerowsecurity from pg_class c where c.oid in ('public.accounts'::regclass,'public.transactions'::regclass,'public.budgets'::regclass,'realtime.messages'::regclass) order by c.oid`),
         members: await tx.unsafe(`select schemaname,tablename from pg_publication_tables where pubname='supabase_realtime' order by schemaname,tablename`),
         publication: await tx.unsafe(`select puballtables,pubinsert,pubupdate,pubdelete,pubtruncate from pg_publication where pubname='supabase_realtime'`),
@@ -36,20 +37,17 @@ async function main() {
       assert.equal(existing[0].present, false, '0016_ALREADY_APPLIED')
       await tx.unsafe(source.replace(/^begin;\s*/i, '').replace(/\scommit;\s*$/i, ''))
       const after = await snapshot()
-      assert.deepEqual(after.tables, before.tables, 'TABLE_SECURITY_OR_IDENTITY_CHANGED')
-      assert.deepEqual(after.publication, before.publication, 'PUBLICATION_OPTIONS_CHANGED')
-      const targets = new Set(['public.accounts','public.transactions','public.budgets'])
-      assert.deepEqual(after.members, before.members.filter(t => !targets.has(`${t.schemaname}.${t.tablename}`)), 'PUBLICATION_DROP_MISMATCH')
+      assertCatalogChanges(before, after)
       assert.equal(after.policies.length, 1)
       const policy = after.policies[0]
       assert.equal(policy.policyname, 'user broadcast receive'); assert.equal(policy.cmd, 'SELECT'); assert.deepEqual(policy.roles, ['authenticated']); assert.equal(policy.with_check, null)
       assert.match(policy.qual, /realtime.topic\(\)/); assert.match(policy.qual, /auth.uid\(\)/); assert.match(policy.qual, /user:/); assert.match(policy.qual, /extension.*broadcast/)
       const [fn] = await tx.unsafe(`select p.prosecdef,p.proconfig,pg_get_userbyid(p.proowner) as owner,p.prosrc,has_function_privilege('anon',p.oid,'EXECUTE') as anon,has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated, exists(select 1 from aclexplode(p.proacl) a where a.grantee=0 and a.privilege_type='EXECUTE') as public_execute from pg_proc p where p.oid='public.broadcast_user_change()'::regprocedure`)
-      assert.equal(fn.owner, 'postgres'); assert.equal(fn.prosecdef, true); assert.ok(fn.proconfig.some(c => c === 'search_path=""' || c === 'search_path='))
+      assert.equal(fn.owner, 'postgres'); assert.equal(fn.prosecdef, true); assert.ok(names(fn.proconfig).some(c => c === 'search_path=""' || c === 'search_path='))
       assert.equal(fn.anon, false); assert.equal(fn.authenticated, false); assert.equal(fn.public_execute, false)
       assert.match(fn.prosrc, /exception when others then null/i)
       const triggers = await tx.unsafe(`select c.relname,t.tgtype,t.tgenabled from pg_trigger t join pg_class c on c.oid=t.tgrelid where t.tgfoid='public.broadcast_user_change()'::regprocedure order by c.relname`)
-      assert.deepEqual(triggers.map(t => t.relname), ['accounts','budgets','transactions'])
+      assert.deepEqual(Array.from(triggers, t => t.relname), ['accounts','budgets','transactions'])
       assert.ok(triggers.every(t => t.tgtype === 29 && t.tgenabled === 'O'), 'AFTER_ROW_INSERT_UPDATE_DELETE_REQUIRED')
       return { sqlSha256: sha, realtimeSendSignature: 'realtime.send(jsonb,text,text,boolean)', realtimeSendWarns: sendWarns, triggerExceptionsSwallowed: true, broadcastPolicies: 1, postgresChangesRemoved: true }
     })
