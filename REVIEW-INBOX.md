@@ -15,6 +15,31 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [M13-GATE] Realtime publication and DELETE isolation — awaiting owner authorization, 2026-11-17
+
+Step 0 only: `db/migrations/0015_realtime_publication.sql` adds transactions,
+accounts and budgets to supabase_realtime idempotently. No REPLICA IDENTITY change.
+SHA256: `fa2f15864823591ad6ffdf42a399f0632df05a657aa2dc41b8e9427e55349eb7`.
+Pinned `scripts/apply-0015-approved.cjs` requires `--apply-owner-approved-0015`,
+checks target project and catalog before/after in one transaction, preserves existing
+publication members/options, RLS flags and replica identities. NOT applied.
+
+Standing spec `tests/e2e/m13-realtime-isolation.spec.ts` uses A/B authenticated
+websockets with user_id filters. It creates only test rows, observes raw payloads
+(no client-side guard), requires own INSERT/UPDATE/DELETE positive controls on both
+sockets, checks A for B's row including PK-only old payloads for a 5s window per
+operation, and deletes only the created ids. Serial mode stops subsequent tables
+on failure. Any leak throws CROSS_USER_REALTIME_EVENT with the exact test payload.
+Run only after authorization/application, with --project=chromium --no-deps to
+avoid provisioning via global setup. No service-role reads or listUsers in spec.
+
+Offline validation: raw npx tsc --noEmit --incremental false exit 0; apply script
+node --check exit 0; invocation without flag exits 1 EXPLICIT_APPLY_REQUIRED.
+No live isolation run yet: DELETE isolation remains UNKNOWN. No realtime feature,
+publication application, production E2E, bundle check or visual run performed.
+After gate passes, implement coalesced router.refresh (not TanStack cache changes),
+visibility/focus lifecycle and mutation/form deferral, then remaining M13 tests.
+
 ## [M12] SPEC-3 BYO Vision OCR — ready for independent review, 2026-11-17
 
 **Claude review 2026-11-17: APPROVED (code).** Re-derived on `bc84b78`: raw tsc 0; Vitest 403 passed / 34 skipped; `pnpm build` 0; production E2E `m12-vision` + `honey-visual` 33 passed (setup + 28 + 4). Read the full diff: key goes only in the `X-Goog-Api-Key` header to vision.googleapis.com; errors carry the status code only; every Vision failure falls back to Tesseract; only `add-slip-sheet` (host session, signed in) and `slip-queue` opt in, guest `pay-client`/`trip-client` stay on Tesseract (static test + E2E with a planted key); the E2E records app-origin URLs, headers and bodies, including a real server action, and finds no key. `findUserByEmail` signs in as A, no listUsers. Settings baselines: only the new section was added, in both themes. `extract.ts` untouched.
