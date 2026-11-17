@@ -15,6 +15,40 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [M13-BROADCAST-GATE] Owner chose private Broadcast — awaiting 0016 authorization
+
+2026-11-17: 0015 was applied and the postgres_changes gate proved foreign PK-only
+DELETE delivery. Owner chose database Broadcast instead. Prepared (NOT applied)
+`0016_realtime_broadcast.sql`, SHA256
+`4d9e26abe799c3579f1bf982587223e472b215839fa2a4d0760b1a2e70f5986b`.
+It removes the three public tables from supabase_realtime, installs one postgres-owned
+trigger function with empty search_path and trigger-only EXECUTE, emits only table/op/id
+to private per-user topics, and sends both topics on ownership changes. Each send has
+its own swallowed exception block so realtime failures cannot abort a user write.
+Rollback SQL is in the migration; intentionally does not restore the leaking publication.
+
+Official sources checked: https://supabase.com/docs/guides/realtime/broadcast shows
+realtime.send(payload jsonb, event text, topic text, private boolean), and
+https://supabase.com/kb/troubleshooting/realtime-warn-sending-broadcast-message describes
+send insert failures as warnings. A read-only pg_proc check on this project returned
+signatureExists=true, result=void, language=plpgsql, exceptionRaisesWarning=true;
+no user rows queried. apply-0016-approved.cjs rechecks the exact regprocedure, return
+and exception/RAISE WARNING definition before mutation. It fails closed on mismatch.
+Before/after assertions preserve RLS, replica identity and unrelated publication membership;
+pre-existing realtime.messages policies require separate review. After apply only the
+authenticated SELECT topic+extension policy may exist, with no client INSERT policy.
+
+Rewritten standing spec has private A/B channels, A's unauthorized B-topic subscription
+and send attempt, raw payload retention, exact minimal payload keys, bidirectional
+foreign-id checks, own INSERT/UPDATE/DELETE controls and 5s isolation windows. Both sockets
+warm up through observable throwaway writes before measured operations (no fixed settle).
+Cleanup uses only created ids. Run only after Claude applies 0016 with owner authorization.
+
+Offline verification: raw npx tsc exit 0; Vitest 404 passed / 34 existing RLS tests skipped;
+pnpm build exit 0; apply script syntax passes and no-flag invocation rejects before credentials/connection.
+Feature subscriber, refresh coalescing/deferral, production sync/offline/bundle E2E and
+honey-visual remain gated on successful live Broadcast isolation. No push or apply.
+
 ## [M13-GATE] Realtime publication and DELETE isolation — awaiting owner authorization, 2026-11-17
 
 **Claude review 2026-11-17 (`3e4b58d`, `eb05b35`).** Migration OK: sha256 `fa2f1586…49eb7` re-derived and matching; idempotent; replica identity untouched; script refuses without the flag (`EXPLICIT_APPLY_REQUIRED`, exit 1); before/after assertions cover publication options, RLS, replica identity and membership. Raw tsc 0. Rollback if ever needed: `alter publication supabase_realtime drop table public.transactions, public.accounts, public.budgets`.
