@@ -17,6 +17,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [M13-GATE] Realtime publication and DELETE isolation — awaiting owner authorization, 2026-11-17
 
+**Claude review 2026-11-17 (`3e4b58d`, `eb05b35`).** Migration OK: sha256 `fa2f1586…49eb7` re-derived and matching; idempotent; replica identity untouched; script refuses without the flag (`EXPLICIT_APPLY_REQUIRED`, exit 1); before/after assertions cover publication options, RLS, replica identity and membership. Raw tsc 0. Rollback if ever needed: `alter publication supabase_realtime drop table public.transactions, public.accounts, public.budgets`.
+- **[RV-M13-1] M — isolation spec tests the client filter, not RLS. Fix before running the gate.** Both subscribers pass `filter: user_id=eq.<uid>`, so a pass only proves Realtime honours the filter. The security property is that a client that **omits** the filter (anyone holding the public anon key plus any account) still never receives another user's rows. Add an unfiltered subscriber for A on each table (`{ event: '*', schema: 'public', table }`, no filter) next to the filtered one, and run the same foreign-event check on it. Keep the filtered positive controls. Note: with a filter and default replica identity, A's own DELETE may never arrive (the `old` record has only the PK, so `user_id=eq.` cannot match); if the filtered DELETE positive control times out, report that as a finding rather than loosening the assertion. The feature will then need the unfiltered channel plus the client-side user_id guard, or an invalidate-on-any-delete strategy.
+
 Step 0 only: `db/migrations/0015_realtime_publication.sql` adds transactions,
 accounts and budgets to supabase_realtime idempotently. No REPLICA IDENTITY change.
 SHA256: `fa2f15864823591ad6ffdf42a399f0632df05a657aa2dc41b8e9427e55349eb7`.
