@@ -800,6 +800,17 @@
     "recordedNote": "Your slip is only <strong>recorded</strong> for the session owner to see — it is not bank-verified. The owner will check their actual balance and confirm it themselves",
     "trustNote": "Recorded amounts only — not bank-verified. The session owner will check and confirm each slip."
   },
+  "vision": {
+    "title": "Advanced accuracy (your own key)",
+    "guidance": "Restrict your key to the Cloud Vision API and the jod-sa.vercel.app HTTP referrer. Google bills Vision usage to your own Google account. The key stays in this browser.",
+    "enable": "Use Google Vision OCR",
+    "privacy": "Your slip image leaves this device and is sent directly to Google under your API key. On-device processing no longer applies to this OCR path. If Vision fails, JodSa falls back to on-device Tesseract.",
+    "ack": "I understand and agree to send slip images to Google",
+    "accept": "Acknowledge and enable",
+    "key": "Google Cloud Vision API key",
+    "remove": "Remove key",
+    "storageError": "Browser storage is unavailable. Please check your browser settings."
+  },
   "settings": {
     "title": "Settings",
     "preferences": "Preferences",
