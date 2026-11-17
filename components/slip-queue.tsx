@@ -143,7 +143,7 @@ export default function SlipQueue({
         if (!file.type.startsWith('image/')) throw new Error(t('pickImageFile'))
         const parsed = await parseSlipImage(file, displayName, (progress) => {
           setItems((current) => current.map((item) => item.id === next.id ? { ...item, progress } : item))
-        })
+        }, { ocr: 'vision' })
         const verdict = await classify(parsed)
         setItems((current) => current.map((item) => item.id === next.id
           ? { ...item, parsed, ...verdict, error: null }

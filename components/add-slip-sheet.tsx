@@ -60,7 +60,7 @@ export default function AddSlipSheet({ sessionId }: { sessionId: string }) {
     setParsing(true)
     setProgress({ stage: 'start', percent: 2 })
     try {
-      const parsed = await parseSlipImage(file, null, setProgress)
+      const parsed = await parseSlipImage(file, null, setProgress, { ocr: 'vision' })
       setAmountInput(parsed.amount.value !== null ? (parsed.amount.value / 100).toFixed(2) : '')
       setPaidAtInput(parsed.datetime.value ? toDatetimeLocal(parsed.datetime.value) : '')
       setRefCode(parsed.refCode.value)

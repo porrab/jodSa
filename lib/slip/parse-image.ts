@@ -21,6 +21,7 @@ export async function parseSlipImage(
   file: File,
   displayName: string | null,
   onProgress: (p: ParseProgress) => void,
+  options: { ocr?: 'tesseract' | 'vision' } = {},
 ): Promise<ParsedSlip> {
   const arrayBuffer = await file.arrayBuffer()
 
@@ -54,6 +55,20 @@ export async function parseSlipImage(
   })
 
   onProgress({ stage: 'ocr', percent: 40 })
+  if (options.ocr === 'vision') {
+    try {
+      const { readVisionKey } = await import('./vision-preferences')
+      const key = readVisionKey()
+      if (key) {
+        const { recognizeWithVision } = await import('./vision')
+        const text = await recognizeWithVision(file, key)
+        onProgress({ stage: 'extract', percent: 95 })
+        const parsed = extractFields(text, preprocessed.qrData, displayName)
+        if (!parsed.datetime.value) parsed.datetime = { value: `${nowBangkok()}:00+07:00`, confidence: 0 }
+        return parsed
+      }
+    } catch { /* Any Vision failure falls back to on-device OCR. */ }
+  }
   const { createWorker } = await import('tesseract.js')
   const tWorker = await createWorker(['tha', 'eng'], 1, {
     logger: (m: { status: string; progress: number }) => {
