@@ -14,25 +14,41 @@ for (const table of ['accounts','transactions','budgets'] as const) {
     const a = await findUserByEmail(env.userA.email), b = await findUserByEmail(env.userB.email)
     if (!a || !b) throw new Error('Missing test users A/B')
     const A = await testUserClient(a.id), B = await testUserClient(b.id)
-    const receivedA: Event[] = [], receivedB: Event[] = []
+    const receivedA: Event[] = [], receivedB: Event[] = [], receivedAUnfiltered: Event[] = []
     const aId = randomUUID(), bId = randomUUID()
     const accounts = { a: randomUUID(), b: randomUUID() }
     const channels: { db: SupabaseClient; channel: ReturnType<SupabaseClient['channel']> }[] = []
-    async function subscribe(db: SupabaseClient, uid: string, received: Event[]) {
+    async function subscribe(db: SupabaseClient, uid: string, received: Event[], filtered = true) {
       const session = await db.auth.getSession()
       if (!session.data.session) throw new Error('Session missing')
       await db.realtime.setAuth(session.data.session.access_token)
-      const channel = db.channel(`m13-${table}-${randomUUID()}`).on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${uid}` }, payload => received.push(payload))
+      const channel = db.channel(`m13-${table}-${randomUUID()}`).on('postgres_changes', { event: '*', schema: 'public', table, ...(filtered ? { filter: `user_id=eq.${uid}` } : {}) }, payload => received.push(payload))
       channels.push({ db, channel })
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('Realtime subscribe timeout')), 15000)
         channel.subscribe(status => { if (status === 'SUBSCRIBED') { clearTimeout(timer); resolve() } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(timer); reject(new Error(`Realtime ${status}`)) } })
       })
     }
-    const foreign = () => receivedA.filter(p => p.new && 'id' in p.new && p.new.id === bId || p.old && 'id' in p.old && p.old.id === bId)
-    function assertNoLeak() { if (foreign().length) throw new Error(`CROSS_USER_REALTIME_EVENT ${JSON.stringify(foreign())}`) }
-    async function ownEvent(events: Event[], id: string, event: string) {
-      await expect.poll(() => { assertNoLeak(); return events.some(p => p.eventType === event && ((p.new && 'id' in p.new && p.new.id === id) || (p.old && 'id' in p.old && p.old.id === id))) }, { timeout: 10000 }).toBe(true)
+    const hasId = (p: Event, id: string) => (p.new && 'id' in p.new && p.new.id === id) || (p.old && 'id' in p.old && p.old.id === id)
+    function assertNoLeak() {
+      for (const [subscriber, events] of [['A filtered', receivedA], ['A unfiltered', receivedAUnfiltered]] as const) {
+        const foreign = events.filter(p => hasId(p, bId))
+        if (foreign.length) throw new Error(`CROSS_USER_REALTIME_EVENT ${subscriber} ${JSON.stringify(foreign)}`)
+      }
+    }
+    async function ownEvent(events: Event[], id: string, event: string, subscriber: string) {
+      try {
+        await expect.poll(() => { assertNoLeak(); return events.some(p => p.eventType === event && hasId(p, id)) }, { timeout: 10000, message: `${table}: ${subscriber} must receive its own ${event}` }).toBe(true)
+      } catch (error) {
+        assertNoLeak()
+        if (event === 'DELETE') {
+          // Observation is diagnostic only: missing filtered DELETE remains a FAILURE.
+          const observed = { table, subscriber, ownFiltered: events.filter(p => hasId(p, id)), aUnfiltered: receivedAUnfiltered.filter(p => hasId(p, aId)) }
+          await test.info().attach('delete-delivery-observation', { body: JSON.stringify(observed, null, 2), contentType: 'application/json' })
+          throw new Error(`DELETE_DELIVERY_NOT_OBSERVED ${subscriber}; default replica identity may omit user_id. ${JSON.stringify(observed)}`, { cause: error })
+        }
+        throw error
+      }
     }
     async function insert(db: SupabaseClient, uid: string, id: string, account: string) {
       const result = table === 'accounts' ? await db.from('accounts').insert({ id, user_id: uid, name: 'M13 isolated', bank: 'SCB' })
@@ -46,6 +62,7 @@ for (const table of ['accounts','transactions','budgets'] as const) {
         expect((await B.from('accounts').insert({ id: accounts.b, user_id: b.id, name: 'M13 B source', bank: 'SCB' })).error).toBeNull()
       }
       await subscribe(A, a.id, receivedA); await subscribe(B, b.id, receivedB)
+      await subscribe(A, a.id, receivedAUnfiltered, false)
       for (const event of ['INSERT','UPDATE','DELETE']) {
         if (event === 'INSERT') { await insert(A,a.id,aId,accounts.a); await insert(B,b.id,bId,accounts.b) }
         else {
@@ -54,8 +71,10 @@ for (const table of ['accounts','transactions','budgets'] as const) {
             expect(result.error).toBeNull()
           }
         }
-        // Require positive controls on BOTH real sockets; publication disabled cannot pass.
-        await ownEvent(receivedA, aId, event); await ownEvent(receivedB, bId, event)
+        // All raw subscriptions need positive controls; a dead unfiltered channel cannot pass.
+        await ownEvent(receivedAUnfiltered, aId, event, 'A unfiltered')
+        await ownEvent(receivedA, aId, event, 'A filtered')
+        await ownEvent(receivedB, bId, event, 'B filtered')
         const until = Date.now() + 5000
         while (Date.now() < until) { assertNoLeak(); await new Promise(resolve => setTimeout(resolve, 100)) }
         assertNoLeak()
