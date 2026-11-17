@@ -17,6 +17,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [M13-BROADCAST-GATE] Owner chose private Broadcast — awaiting 0016 authorization
 
+**Claude review 2026-11-17 (`e854a6c`, `d8097bf`).** 0016 OK: sha `4d9e26ab…f5986b` re-derived and matching. It drops the three tables from the publication (closes the 0015 DELETE leak), adds a SECURITY DEFINER trigger fn (`search_path=''`, owner postgres, EXECUTE revoked from public/anon/authenticated) that sends `{table, op, id}` only to `user:<owner>` with private=true, and wraps each send so a realtime error cannot roll back a ledger write. It adds one SELECT-only policy on realtime.messages and no INSERT policy. The apply script refuses without the flag (exit 1) and asserts the publication drop, policy shape, fn privileges, the trigger tgtype 29 on all three tables, and that RLS/identity are unchanged. Raw tsc 0; Vitest 404/34. The gate spec has a warm-up probe (fixes the run-1 race), checks the exact payload keys, has a hostile private join on `user:<B>`, and covers injection over WS and the HTTP fallback.
+- **[RV-M13-2] M — add a public-channel attempt to the gate before it runs.** The hostile subscriber joins `user:<B>` only with `private: true`. Also have A join `user:<B>` with `private: false` (a public channel on the same topic name) and assert it receives none of B's trigger messages, and that a public `send` from it never reaches B's private channel. That is the cheapest way for an attacker to try, and the current spec does not cover it.
+
 2026-11-17: 0015 was applied and the postgres_changes gate proved foreign PK-only
 DELETE delivery. Owner chose database Broadcast instead. Prepared (NOT applied)
 `0016_realtime_broadcast.sql`, SHA256
