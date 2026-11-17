@@ -17,6 +17,11 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [M13-STEP3] Private Broadcast live-sync — ready for independent review, 2026-11-18
 
+**Claude review 2026-11-18 (`649f9b3`, `e33db5b`, `27eee6a`): CHANGES NEEDED (one M).** Re-derived: raw tsc 0; Vitest 414/34; `pnpm build` 0; production E2E `m13-realtime-sync` + `m13-realtime-isolation` + `honey-visual` **34 passed** (setup + 2 + 3 + 28). Design is sound: lazy chunk after hydration, private `user:<uid>` channel on the authenticated client, 500 ms coalescing, reconnect reconciles on SUBSCRIBED, Serwist `reloadOnOnline: false` so no full reload, no mount on /pay.
+- **[RV-M13-4] M — `editing()` treats ANY visible `<form>` as "user is editing", so live-sync never fires on pages with a permanent inline form.** `/invest` (`portfolio-dashboard.tsx:297`, the snapshot `<form action={snapAction}>` button is always rendered) and the plan page (`plan-client.tsx:401`, an inline form inside a Card) keep `blocked()` true forever, so a queued refresh retries every 500 ms and never runs. The E2E only exercises `/transactions`, which has no inline form, so it does not catch this. Fix: drop the bare `form` selector; defer only on an open dialog/alertdialog/sheet, `[aria-busy="true"]`, a focused text field, or a pending same-origin write. Add an E2E on `/invest` (or another page with an inline form): a DB change made while that page is open and no dialog is open must show up within ~2 s.
+- L: `resume` runs on every window `focus`, so each click back into the window triggers a refresh even when nothing changed. Consider refreshing on focus only if the channel had dropped or an event was queued.
+- L (note, not a change): the global `window.fetch` wrapper is the riskiest part of this feature. It is restored on unmount and only counts same-origin non-GET requests. Keep it covered by the existing optimistic-flow specs.
+
 Gate prerequisite: `386c920` records 0016 applied and Broadcast isolation passed.
 Implementation commits: `649f9b3` (500ms queue + three unit tests), `e33db5b`
 (subscriber, dynamic loader, authenticated layout and online reconciliation).
