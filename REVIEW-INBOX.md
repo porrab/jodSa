@@ -15,6 +15,25 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [M12] SPEC-3 BYO Vision OCR — ready for independent review, 2026-11-17
+
+Implemented browser-direct Vision TEXT_DETECTION with header-only key, original-image
+JPEG downscale (2000px), 15s abort, safe status-only errors and Tesseract fallback.
+Only authenticated add-slip/queue callers opt in; guest pay/trip remain default Tesseract.
+Settings default OFF with explicit acknowledgement; removing a key clears key, enabled
+and acknowledgement. No migration, dependency, server env or SW caching changes.
+
+Validation: raw npx tsc --noEmit --incremental false exit 0; Vitest 403 passed / 34
+existing RLS tests skipped; pnpm build exit 0; production M12 E2E 4/4 and honey-visual
+28/28 (--no-deps to avoid provisioning B). E2E mocks Google and uses user A only.
+Only light-settings-chromium-win32.png and dark-settings-chromium-win32.png updated
+for the intentional Settings section. No real API key used. Chromium from the public
+production /login origin could read HTTP 403 from an empty Google annotate POST with
+an empty X-Goog-Api-Key header (no image): CORS/preflight worked for that probe;
+successful OCR with a real restricted/billed key remains unverified. No proxy added.
+Optional test-key button omitted. Review seams: opt-in/ack boundary, guest isolation,
+key never reaching app-origin requests, original-image upload, fallback and settings.
+
 ## [RV-M10] Push notifications partial review (`6cdf694`, `ea9df1b`) — 2026-11-10 · from Claude review
 **Status:** OPEN · **Severity:** H. Raw tsc 0, Vitest 375/34 skipped, but **`pnpm build` exits 1**, so these commits must not be pushed (Vercel deploys main). Migration 0014 is NOT ready for owner authorization: RV-M10-2 changes its schema. Codex's own open list (E2E, unit tests, skip flow) still stands on top of these.
 - **RV-M10-1 (H) build red:** `@typescript-eslint/no-explicit-any` errors in `app/actions/notifications.ts` (2) and `app/api/cron/notify/route.ts` (6). Also `Attempted import error: 'web-push' does not contain a default export`, so `webpush.setVapidDetails` is undefined at runtime. **Fix:** `import * as webpush from 'web-push'` (or named imports); type the new tables (add them to `lib/supabase/types.ts` by hand to match 0014) and drop the `any` casts. `pnpm build` must exit 0.
