@@ -15,6 +15,50 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [M13-STEP3] Private Broadcast live-sync — ready for independent review, 2026-11-18
+
+Gate prerequisite: `386c920` records 0016 applied and Broadcast isolation passed.
+Implementation commits: `649f9b3` (500ms queue + three unit tests), `e33db5b`
+(subscriber, dynamic loader, authenticated layout and online reconciliation).
+Review coordinates: `386c920..e33db5b`, 6 files / 130 insertions; additionally
+review `tests/e2e/m13-realtime-sync.spec.ts` in this handoff commit.
+
+The authenticated `(app)` layout mounts a small client loader; Next's `ssr:false`
+dynamic import runs only after hydration. The subscriber uses the browser session,
+private `user:<uid>` Broadcast topic, and server-rendered data via router.refresh.
+It removes its channel when hidden/offline/unmounted, reconciles on SUBSCRIBED
+(including reconnect), and coalesces bursts. Same-origin mutation fetches remain
+pending through their streamed response body; visible forms/dialogs or active inputs
+hold one pending refresh. No guest `/pay` mount, service-role use, migration or new dependency.
+
+Important integration seam: Serwist defaults to location.reload on `online`, which
+the no-navigation E2E caught after the data assertions had passed. `reloadOnOnline:
+false` lets the subscriber reconcile instead; no SW cache strategy was changed.
+Check subscription lifecycle, mutation/form gating, and this reconnect seam.
+
+Fresh verification (production port 3100, JODSA_E2E_PRODUCTION=1):
+- Raw `rtk proxy npx.cmd tsc --noEmit --incremental false`: exit 0. A concurrent
+  earlier attempt ran out of memory; the separate rerun passed.
+- `rtk proxy pnpm -s vitest run`: 414 passed / 34 skipped, 44 files passed / 1 skipped.
+  All 34 skips are the existing RLS integration unit file: its TEST_SUPABASE_*
+  and TEST_USER_* environment gate is not configured in this unit-test run.
+- `rtk proxy pnpm build`: exit 0, existing unused-import/variable warnings only.
+- `m13-realtime-sync.spec.ts --project=chromium --no-deps`: 2 passed / 0 skipped.
+  Two fresh A contexts: UI add/edit/delete propagation (2200ms assertion limits),
+  queued refresh while a sheet is open, offline/online reconciliation with one row,
+  and zero reader document navigations. Fixtures are removed by their created ids.
+- `m13-realtime-isolation.spec.ts --project=chromium --no-deps`: 3 passed / 0 skipped
+  (accounts, transactions, budgets); original hostile-channel/injection checks unchanged.
+- Full `honey-visual.spec.ts --project=chromium --update-snapshots=none`:
+  28 passed / 0 skipped plus setup 1 passed. No baseline updates.
+
+Bundle proof: production chunk `7052.b25d297981ef0242.js` contains the subscriber.
+The second sync E2E holds all initial JS requests before hydration and asserts this
+chunk is absent, then releases hydration and asserts its request and mount marker.
+Only A/B sessions were used. Post-run process/port check found no project Next or
+Playwright node process and no listener on 3000/3100. Tracked evidence/baselines
+are unchanged. No push. Awaiting independent review, not a self-approval.
+
 ## [M13-BROADCAST-GATE] Owner chose private Broadcast — awaiting 0016 authorization
 
 **Claude review 2026-11-17 (`e854a6c`, `d8097bf`).** 0016 OK: sha `4d9e26ab…f5986b` re-derived and matching. It drops the three tables from the publication (closes the 0015 DELETE leak), adds a SECURITY DEFINER trigger fn (`search_path=''`, owner postgres, EXECUTE revoked from public/anon/authenticated) that sends `{table, op, id}` only to `user:<owner>` with private=true, and wraps each send so a realtime error cannot roll back a ledger write. It adds one SELECT-only policy on realtime.messages and no INSERT policy. The apply script refuses without the flag (exit 1) and asserts the publication drop, policy shape, fn privileges, the trigger tgtype 29 on all three tables, and that RLS/identity are unchanged. Raw tsc 0; Vitest 404/34. The gate spec has a warm-up probe (fixes the run-1 race), checks the exact payload keys, has a hostile private join on `user:<B>`, and covers injection over WS and the HTTP fallback.
