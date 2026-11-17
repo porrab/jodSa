@@ -7,6 +7,9 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
+  // M13 reconciles authenticated pages via router.refresh() on reconnect.
+  // Serwist's default online handler performs a full document reload instead.
+  reloadOnOnline: false,
   // SW + turbopack dev don't mix; the share-target flow is verified on a prod build
   disable: process.env.NODE_ENV === 'development',
 })

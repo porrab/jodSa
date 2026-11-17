@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient, getUser } from '@/lib/supabase/server'
 import { buildLastAccountMap } from '@/lib/last-account'
 import AppShell from '@/components/app-shell'
+import RealtimeLoader from '@/components/realtime-loader'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser()
@@ -31,6 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       displayName={profile?.display_name ?? null}
     >
       {children}
+      <RealtimeLoader />
     </AppShell>
   )
 }
