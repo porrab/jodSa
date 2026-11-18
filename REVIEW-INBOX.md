@@ -17,6 +17,66 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [INVEST-ENTRY-UX] Make manual investment entry self-explaining — 2026-11-18 · from owner via Claude
 
+### Implementation handoff — 2026-11-18, ready for independent review
+
+- [x] Implemented in `c5d3d13` (shared totals/fee conversion), `a95815b`
+  (forms/hints), `02a5742` (production UX tests and malformed-fee guard).
+  Review **`839bfc7..02a5742`**, **9 files, +347/-56**. Key seams: exact THB-to-asset
+  fee rounding; `tradeTotalMinor` shared with server cost basis; visible fee input
+  versus canonical hidden fees; FX clearing; unchanged funded-buy cash semantics.
+- The shared entry fields cover add holding and buy/sell/dividend/fee entry, keep
+  existing field ids/action names, add transaction FX, currency-labelled fees,
+  generic-first th/en Dime source hints, and a collapsed text mapping table.
+  Holding edit and bulk price updates explain the current-value source too.
+  Buy checks add fees; sell checks subtract them to show net proceeds. THB is an
+  approximation using the existing FX helper. No schema/server-action changes.
+- The THB fee switch is disabled/explained without positive FX. Clearing FX while
+  using THB preserves the last converted asset fee, turns THB mode off, and disables
+  it. Zero/coupon fees remain valid. A browser regression found comma-only text
+  passed the initial input pattern (RED: validity true, expected false); the final
+  pattern requires digits/proper thousands groups, preventing invalid THB fees from
+  silently becoming zero. That same regression and canonical DB fee checks now pass.
+- All examples are invented (including the supplied 0.5000000 / 100.00 / 0.12 / 34.00
+  example). No private owner corpus, numbers or screenshots were read or committed.
+  No new dependency, migration or push.
+
+Fresh final checks: raw `rtk proxy npx.cmd tsc --noEmit --incremental false` exit 0;
+`pnpm build` exit 0 (existing unused-import/variable warnings); Vitest **419 passed /
+34 skipped**, **45 files passed / 1 skipped**. The 34 skips are the existing RLS
+integration unit file gated by missing TEST_* environment variables. Five new unit
+tests cover THB conversion, missing/invalid FX, rounding, zero fees, and buy/sell
+check totals against `computeCostBasis`.
+
+Production (`JODSA_E2E_PRODUCTION=1`, port 3100), final build, per-file runs:
+
+| Spec | Passed | Skipped |
+| --- | ---: | ---: |
+| invest-entry-ux | 2 | 0 |
+| invest-m1 | 6 | 0 |
+| invest-m3 | 5 | 0 |
+| invest-m5 | 9 | 0 |
+| c2-invest-divest | 6 | 0 |
+| ballast | 7 | 0 |
+| honey-visual | 28 | 0 |
+
+**63 behavioral/visual tests passed**, plus initial A/B setup **1 passed**. New UX
+tests verify normalized fees/FX in A's ledger, buy/sell totals, missing/cleared FX,
+Thai/English and light/dark at 390×844, mapping-table visibility and no overflow.
+Honey ran with `--update-snapshots=none`. **Changed baseline files: none** (the
+existing Honey invest surface is the list, not these opened forms).
+Post-run check: zero project Next/Playwright processes and zero listeners on
+3000/3100. Tracked evidence/baselines are unchanged; pre-existing untracked evidence
+was not staged.
+
+**Existing test precondition to review separately:** the extra ballast run directly
+after C2 timed out on the Thai language button because C2 cleanup leaves A with no
+accounts, so the first-account onboarding dialog blocks Settings. The run was stopped;
+no assertion was changed. Honey's normal fixture then seeded A's accounts, and the
+unchanged ballast spec passed all 7 tests. Local failure artifacts are ignored under
+`.playwright/invest-entry-ux-2026-11-18/ballast-precondition/`. This is a setup-order
+assumption, not an investment-entry assertion failure; standalone ballast should
+establish its own first-account prerequisite in a separate test-maintenance task.
+
 The owner parked M2 (OCR) and asked for the manual forms to teach the user what to type. Claude compared the
 add-holding / add-transaction / edit-holding forms in `app/(app)/invest/invest-client.tsx` with Dime's
 order-detail and holdings screens (private corpus in qa-lab). Where users get stuck:
