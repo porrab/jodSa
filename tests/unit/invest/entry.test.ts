@@ -7,6 +7,8 @@ it('converts invented THB fees, rounding only at the asset minor unit', () => {
   expect(feeFromBaht('0.20', '40', 'USD')).toBe(1n)
   expect(feeFromBaht('0.19', '40', 'USD')).toBe(0n)
   expect(feeFromBaht('34', '34', 'JPY')).toBe(1n)
+  expect(feeFromBaht('0', '34', 'USD')).toBe(0n)
+  expect(feeFromBaht(',', '34', 'USD')).toBeNull()
 })
 it('refuses missing, zero, negative or invalid FX instead of assuming one', () => {
   for (const fx of ['', '0', '-1', 'oops']) expect(feeFromBaht('4.08', fx, 'USD')).toBeNull()

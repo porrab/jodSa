@@ -84,7 +84,7 @@ export default function InvestEntryFields({ prefix, currency, type = 'buy', onNu
     </div>}
     <div className="space-y-1">
       <Label htmlFor={`${prefix}-fees`}>{t('feesLabel')} ({bahtFees ? 'THB' : currency})</Label>
-      <Input id={`${prefix}-fees`} inputMode="decimal" pattern={'[0-9,]+(\.[0-9]*)?'} value={fees} onChange={e => setFees(e.target.value)} placeholder="0" aria-describedby={`${prefix}-fees-hint`} className="min-h-11 tabular-nums" />
+      <Input id={`${prefix}-fees`} inputMode="decimal" pattern={'[0-9]+(,[0-9]{3})*(\.[0-9]*)?'} value={fees} onChange={e => setFees(e.target.value)} placeholder="0" aria-describedby={`${prefix}-fees-hint`} className="min-h-11 tabular-nums" />
       <input type="hidden" name="fees" value={effectiveFees} />
       {hint('fees', `${prefix}-fees`)}
       {currency !== 'THB' && <>
