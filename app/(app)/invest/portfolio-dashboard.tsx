@@ -15,6 +15,7 @@ import { formatMoney, parseMinor, toMajor, minorUnitDecimals } from '@/lib/inves
 import LazyAllocationPieChart from '@/components/charts/lazy-allocation-pie-chart'
 import type { AssetClass, Sleeve } from '@/lib/validators/invest'
 import { formatAppDateTime } from '@/lib/date-display'
+import { PortfolioValuationNotes } from './valuation-notes'
 
 type Bucket = { key: string; valueMinor: string; pct: number }
 
@@ -315,7 +316,7 @@ export default function PortfolioDashboard({
         <>
           <section className="space-y-2 border-y border-border py-4">
               <p className="text-sm text-muted-foreground">{t('totalValueLabel', { currency: dashboard.displayCurrency })}</p>
-              <p className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
+              <p data-testid="overview-total" className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
                 {formatMoney(dashboard.totals.totalValueMinor, dashboard.totals.currency)}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -324,17 +325,7 @@ export default function PortfolioDashboard({
               <p className={`text-sm font-medium tabular-nums ${pnl < 0n ? 'text-destructive' : 'text-income'}`}>
                 {t('pnlLine', { amount: formatMoney(dashboard.totals.totalPnlMinor, dashboard.totals.currency) })}
               </p>
-              {dashboard.totals.unpricedCount > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {t('unpricedNote', { count: dashboard.totals.unpricedCount })}
-                </p>
-              )}
-              {dashboard.totals.excludedCount > 0 && (
-                <p className="flex items-center gap-1 text-sm text-destructive">
-                  <AlertTriangle className="size-3.5" />
-                  {t('excludedFxNote', { count: dashboard.totals.excludedCount })}
-                </p>
-              )}
+              <PortfolioValuationNotes unpricedCount={dashboard.totals.unpricedCount} excludedCount={dashboard.totals.excludedCount} />
           </section>
           {utilities}
 

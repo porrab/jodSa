@@ -13,10 +13,10 @@ it('DS-8 mixed THB and USD holdings use the exact Overview total and FX path', (
   expect(getHoldingsTotal(overview)).toBe(overview.totalValueMinor.toString())
 })
 
-it('DS-8 all-unpriced holdings show no number even when Overview has a cost fallback', () => {
+it('DS-8 all-unpriced holdings use the same cost fallback as Overview', () => {
   const overview = computeTotals([holding('THB', null, null), holding('USD', null, null)].map(h => valueHolding(h)))
   expect(overview.totalValueMinor).toBe(360000n)
-  expect(getHoldingsTotal(overview)).toBeNull()
+  expect(getHoldingsTotal(overview)).toBe('360000')
 })
 
 it('DS-8 a recorded zero remains a number and missing FX is excluded by Overview', () => {

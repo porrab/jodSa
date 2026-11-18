@@ -24,6 +24,7 @@ import { addAssetTransaction, deleteAssetTransaction } from '@/app/actions/inves
 import { createCustomAsset } from '@/app/actions/invest/assets'
 import { getHoldingDisplay, getHoldingsTotal } from '@/lib/invest/portfolio'
 import type { DashboardData } from './portfolio-dashboard'
+import { PortfolioValuationNotes } from './valuation-notes'
 import {
   ASSET_CLASSES, SLEEVES, ASSET_TX_TYPES, CURRENCIES,
   type AssetClass, type Sleeve, type AssetTxType,
@@ -578,7 +579,6 @@ export default function InvestClient({ holdings, accounts, initialHoldingId, tot
   )
   const detailHolding = holdings.find((h) => h.id === detailId) ?? null
   const totalValue = getHoldingsTotal(totals)
-  const missingCount = totals.unpricedCount + totals.excludedCount
 
   return (
     <div className="space-y-4">
@@ -591,8 +591,8 @@ export default function InvestClient({ holdings, accounts, initialHoldingId, tot
         <div>
           <div className="mb-3 space-y-1">
             <p className="text-sm text-muted-foreground">{t('totalValueLabel', { currency: totals.currency })}</p>
-            <p data-testid="holdings-total" className="text-[28px] font-bold leading-[1.7] tabular-nums">{totalValue === null ? '—' : `≈ ${formatMoney(totalValue, totals.currency)}`}</p>
-            {missingCount > 0 && <p className="text-sm text-muted-foreground">{t('missingValueStatus', { count: missingCount })}</p>}
+            <p data-testid="holdings-total" className="text-[28px] font-bold leading-[1.7] tabular-nums">{formatMoney(totalValue, totals.currency)}</p>
+            <PortfolioValuationNotes unpricedCount={totals.unpricedCount} excludedCount={totals.excludedCount} />
           </div>
           <div className="divide-y divide-border border-y border-border">
           {holdings.map((h) => {

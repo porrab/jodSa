@@ -32,7 +32,8 @@ assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; i
   reason (after/light-invest-plan.jpg). Fix: keep the full disclaimer in the `<details>`, but render the
   checkbox outside it, directly above `สร้างแผน`, always visible. E2E: fresh load with the details
   closed shows the checkbox; ticking it enables the button.
-- [ ] **RV-UX-2 [M] Holdings and Overview still disagree on the same portfolio (the original DS-8 complaint).**
+- [x] **RV-UX-2 [M] Holdings and Overview still disagree on the same portfolio (the original DS-8 complaint).**
+  - Implementation 2026-11-19: Holdings displays the exact Overview aggregate and shared valuation notes, including cost fallback. Unit RED then GREEN 30/30; same-fixture equality E2E 1/1 passed. Final production gates pending; awaiting independent re-check.
   For A, Holdings shows `—` + "ยังไม่ระบุมูลค่าหรือ FX 2 รายการ", while Overview shows `฿3,800.00`
   valued at cost for the 2 unpriced holdings. Fix: Holdings shows the same number as Overview with the
   same "valued at cost" note; show `—` only where Overview also has no figure. E2E: same fixture,

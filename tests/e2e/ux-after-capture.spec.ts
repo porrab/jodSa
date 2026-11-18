@@ -56,7 +56,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.goto('/invest')
     await ready(page)
     await expect(page.getByTestId('holdings-total')).toHaveCount(1)
-    await expect(page.getByTestId('holdings-total')).toHaveText('—')
+    await expect(page.getByTestId('holdings-total')).toHaveText('฿3,800.00')
     await capture(page, theme, 'invest-holdings')
     await page.getByRole('button').filter({ hasText: 'Apple' }).click()
     const detail = page.getByRole('dialog')
