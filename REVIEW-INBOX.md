@@ -32,6 +32,11 @@ test user A. Application code was read only. Full review, coverage/limits and ev
   available. Do not format missing as zero. Stack one shortened status below a
   full-width label/amount instead of balancing two unequal text columns. Keep valuation
   policy in detail. Read-only trace: `project/jodsa/app/(app)/invest/invest-client.tsx:576–599`.
+  **Claude review add-on (2026-11-18):** the same total also sums `current_value_minor`
+  across currencies and labels it THB (`getHoldingDisplay` returns the raw value in the
+  holding's own currency, `lib/invest/portfolio.ts:441`), so a $267.96 USD holding would
+  count as ฿267.96. The DS-8 fix must convert with the same FX path Overview uses; add a
+  unit test with one THB and one USD holding.
   Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-holdings.jpg`,
   `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-holdings.jpg`,
   `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-overview.jpg`.
