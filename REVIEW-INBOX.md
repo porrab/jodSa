@@ -36,7 +36,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 
 ### Invest — Holdings / holding detail
 
-- [ ] **DS-8 [H] Missing values masquerade as a zero total; the note outweighs the figure.**
+- [x] **DS-8 [H] Missing values masquerade as a zero total; the note outweighs the figure.**
+  - Implementation DS-8 (2026-11-18): Pass the already-computed Overview totals to Holdings; present no total when no valued holding exists, with a stacked short missing/FX status. Validation: Three new unit regressions RED then GREEN; shared portfolio suite 30/30 and typecheck passed. No second valuation or FX arithmetic. Awaiting independent re-check.
   Holdings shows `≈ ฿0.00`, beside a multi-line “uses cost” note, while Overview shows
   `฿100,000.00` for the same six A holdings. Use the same valuation eligibility/fallback
   as Overview, or show `—` with a short missing-value state when no meaningful total is
@@ -51,7 +52,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
   Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-holdings.jpg`,
   `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-holdings.jpg`,
   `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-overview.jpg`.
-- [ ] **DS-9 [M] Missing-value prose takes display-number emphasis in holding detail.**
+- [x] **DS-9 [M] Missing-value prose takes display-number emphasis in holding detail.**
+  - Implementation DS-9 (2026-11-18): Reserve display size for the amount or dash; show missing-value status at 14px, preserving cost and edit action. Validation: Shared holding tests remain 30/30; source verifies separate text-sm status; final rendered capture pending. Awaiting independent re-check.
   `ยังไม่ได้อัปเดตมูลค่าปัจจุบัน` fills two 36px lines and dominates cost/trades/actions.
   Reserve display size for the amount or `—`; shorten the status to `ยังไม่ระบุมูลค่า`
   at 14px and retain the existing cost line/edit action. No extra explanatory panel.

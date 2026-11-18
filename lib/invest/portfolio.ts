@@ -229,6 +229,11 @@ export type PortfolioTotals = {
   currency: string
 }
 
+/** Present the already-valued Overview aggregate; missing valuations are not zero. */
+export function getHoldingsTotal(totals: { totalValueMinor: bigint | string; pricedCount: number }): string | null {
+  return totals.pricedCount > 0 ? totals.totalValueMinor.toString() : null
+}
+
 /** Sum priced/valued-at-cost holdings into portfolio-wide value/cost/P&L. */
 export function computeTotals(rows: ValuedHolding[], displayCurrency: string = DISPLAY_CURRENCY): PortfolioTotals {
   let totalValue = 0n

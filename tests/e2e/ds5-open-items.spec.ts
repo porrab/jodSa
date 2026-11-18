@@ -98,10 +98,11 @@ test('S7 account summary separates its caption from the 28/700 amount', async ({
 
 test('S9 investment row uses one metadata line and total is 28/700', async ({ page }) => {
   await page.goto('/invest')
-  const totalLabel = page.getByText('มูลค่ารวม (THB) · กรอกเอง')
+  const totalLabel = page.getByText('มูลค่ารวม (THB)', { exact: true })
   const total = totalLabel.locator('xpath=following-sibling::p[1]')
   await expect(total).toHaveCSS('font-size', '28px')
   await expect(total).toHaveCSS('font-weight', '700')
+  await expect(total).toHaveText('≈ ฿21,279.00')
   await expect(page.getByText('หุ้นไทย (SET) · หลัก (Core) · 10 หน่วย')).toBeVisible()
   await ready(page)
   await page.screenshot({ path: path.join(EVIDENCE_DIR, '29-invest-holdings.png'), fullPage: true })

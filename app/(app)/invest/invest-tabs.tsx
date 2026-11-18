@@ -58,7 +58,7 @@ export default function InvestTabs({
       <AddHoldingSheet assets={assets} open={addOpen} onOpenChange={setAddOpen} />
 
       {tab === 'holdings' ? (
-        <InvestClient holdings={holdings} assets={assets} accounts={accounts} initialHoldingId={initialHoldingId} />
+        <InvestClient holdings={holdings} assets={assets} accounts={accounts} initialHoldingId={initialHoldingId} totals={dashboard.totals} />
       ) : tab === 'overview' ? (
         <PortfolioDashboard dashboard={dashboard} snapshots={snapshots} />
       ) : (

@@ -257,7 +257,7 @@
     "riskCapitalWarning": "This capital is 100% losable — kept separate from core investing capital.",
     "currentValueLabel": "Current value ({currency})",
     "currentValueHint": "Entered manually — no automatic price feed in this version.",
-    "noCurrentValue": "Current value not set yet",
+    "noCurrentValue": "Value not entered",
     "qtyHeld": "{qty} units",
     "costBasisLine": "Cost basis {amount}",
     "pnlLine": "P&L {amount}",
@@ -417,7 +417,8 @@
       "checkEmpty": "Enter quantity and execution price to check the total.",
       "checkHint": "Match the order amount (Dime: ‘จำนวนเงิน (USD)’) and THB total in the order details; check currency and discounts.",
       "sellCheckHint": "Net sale proceeds after fees should match the amount and THB total in the sell order details (Dime)."
-    }
+    },
+    "missingValueStatus": "{count} holdings need a value or FX rate"
   },
   "budget": {
     "title": "Budgets",

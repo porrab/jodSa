@@ -22,7 +22,8 @@ import {
 import { createHolding, updateHolding, deleteHolding } from '@/app/actions/invest/holdings'
 import { addAssetTransaction, deleteAssetTransaction } from '@/app/actions/invest/transactions'
 import { createCustomAsset } from '@/app/actions/invest/assets'
-import { getHoldingDisplay } from '@/lib/invest/portfolio'
+import { getHoldingDisplay, getHoldingsTotal } from '@/lib/invest/portfolio'
+import type { DashboardData } from './portfolio-dashboard'
 import {
   ASSET_CLASSES, SLEEVES, ASSET_TX_TYPES, CURRENCIES,
   type AssetClass, type Sleeve, type AssetTxType,
@@ -489,8 +490,9 @@ function HoldingDetailSheet({
                 <p className="text-4xl font-bold leading-[1.7] tabular-nums text-focal">
                   {display.valueMinor
                     ? formatMoney(display.valueMinor, holding.current_value_currency ?? currency)
-                    : t('noCurrentValue')}
+                    : '—'}
                 </p>
+                {display.valueMinor === null && <p className="text-sm text-muted-foreground">{t('noCurrentValue')}</p>}
                 <p className="text-sm text-muted-foreground">
                   {t('qtyHeld', { qty: cb.qty })} · {t('costBasisLine', { amount: formatMoney(display.costMinor, currency) })}
                 </p>
@@ -569,16 +571,14 @@ export function AddHoldingSheet({ assets, open, onOpenChange }: { assets: Asset[
   </Sheet>
 }
 
-export default function InvestClient({ holdings, accounts, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; accounts: CashAccount[]; initialHoldingId: string | null }) {
+export default function InvestClient({ holdings, accounts, initialHoldingId, totals }: { holdings: Holding[]; assets: Asset[]; accounts: CashAccount[]; initialHoldingId: string | null; totals: DashboardData['totals'] }) {
   const t = useTranslations('invest')
   const [detailId, setDetailId] = useState<string | null>(
     holdings.some((holding) => holding.id === initialHoldingId) ? initialHoldingId : null,
   )
   const detailHolding = holdings.find((h) => h.id === detailId) ?? null
-  const holdingDisplays = holdings.map((holding) => ({ holding, display: getHoldingDisplay(holding, holding.asset?.currency ?? 'THB') }))
-  const priced = holdingDisplays.filter(({ display }) => display.valueMinor !== null)
-  const totalValue = priced.reduce((sum, { display }) => sum + BigInt(display.valueMinor ?? 0), 0n)
-  const unpricedCount = holdings.length - priced.length
+  const totalValue = getHoldingsTotal(totals)
+  const missingCount = totals.unpricedCount + totals.excludedCount
 
   return (
     <div className="space-y-4">
@@ -589,12 +589,10 @@ export default function InvestClient({ holdings, accounts, initialHoldingId }: {
         </div>
       ) : (
         <div>
-          <div className="mb-2 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-sm text-muted-foreground">{t('totalValueManualLabel')}</p>
-              <p className="text-[28px] font-bold leading-[1.35] tabular-nums">≈ {formatMoney(totalValue, 'THB')}</p>
-            </div>
-            {unpricedCount > 0 && <p className="text-sm text-muted-foreground">{t('unpricedNote', { count: unpricedCount })}</p>}
+          <div className="mb-3 space-y-1">
+            <p className="text-sm text-muted-foreground">{t('totalValueLabel', { currency: totals.currency })}</p>
+            <p data-testid="holdings-total" className="text-[28px] font-bold leading-[1.7] tabular-nums">{totalValue === null ? '—' : `≈ ${formatMoney(totalValue, totals.currency)}`}</p>
+            {missingCount > 0 && <p className="text-sm text-muted-foreground">{t('missingValueStatus', { count: missingCount })}</p>}
           </div>
           <div className="divide-y divide-border border-y border-border">
           {holdings.map((h) => {
