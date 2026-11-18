@@ -113,7 +113,7 @@ test('QA-M5-1 a balanced portfolio renders NO-TRADE as a first-class, complete o
   await expect(page.getByText('มีคำแนะนำให้ดำเนินการ')).toHaveCount(0)
 
   // 2. The headline explains WHY it's fine — reassurance, not silence.
-  await expect(page.getByText(/NO-TRADE — พอร์ตของคุณอยู่ในกรอบสัดส่วนเป้าหมาย/)).toBeVisible()
+  await expect(page.getByText(/NO-TRADE — พอร์ตอยู่ในเป้าหมาย และไม่มีสินทรัพย์ไหนกระจุกตัวเกินไปเดือนนี้/)).toBeVisible()
 
   // 3. It is NOT an empty state: the full evidence a user needs still renders.
   await expect(page.getByText(/มูลค่าพอร์ตที่ใช้คำนวณ/)).toBeVisible()
@@ -186,7 +186,7 @@ test('QA-M5-2 suggestions render with tags, amounts and buy/sell/hold labels', a
 
   // Disclaimer persistently visible: once above the form, once on the result.
   await expect(page.getByText('ข้อมูลประกอบการตัดสินใจเท่านั้น')).toHaveCount(2)
-  await expect(page.getByText(/คุณเป็นผู้ตรวจสอบและสั่งซื้อขายเองทั้งหมด/).first()).toBeVisible()
+  await expect(page.getByText(/คุณตรวจและส่งคำสั่งซื้อขายเองทั้งหมด/).first()).toBeVisible()
 })
 
 /**
@@ -283,8 +283,8 @@ test('QA-M5-5 an unclassified custom asset blocks the plan with guidance, and cl
   await submitPlan(page)
 
   // Blocked — but as guidance: it names the asset and explains WHY it won't guess.
-  await expect(page.getByText('มีสินทรัพย์ที่ต้องจัดประเภทก่อน')).toBeVisible({ timeout: 60_000 })
-  await expect(page.getByText(/เครื่องมือนี้จะไม่เดาระดับความเสี่ยงของสินทรัพย์ — โปรดจัดประเภทก่อนสร้างแผน/)).toBeVisible()
+  await expect(page.getByText('มีสินทรัพย์ยังไม่จัดประเภท')).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText(/แอปไม่เดาความเสี่ยงของสินทรัพย์ — จัดประเภทก่อนสร้างแผน/)).toBeVisible()
   await expect(page.getByText(FEEDER_NAME).first()).toBeVisible()
 
   // No plan was persisted, and no half-rendered result leaked.
@@ -304,7 +304,7 @@ test('QA-M5-5 an unclassified custom asset blocks the plan with guidance, and cl
   await openPlanTab(page)
   await submitPlan(page)
   await expect(page.getByText('มีคำแนะนำให้ดำเนินการ').first()).toBeVisible({ timeout: 60_000 })
-  await expect(page.getByText('มีสินทรัพย์ที่ต้องจัดประเภทก่อน')).toHaveCount(0)
+  await expect(page.getByText('มีสินทรัพย์ยังไม่จัดประเภท')).toHaveCount(0)
 })
 
 /**

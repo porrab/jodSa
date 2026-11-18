@@ -67,6 +67,9 @@ test('M4-S1 host creates session; logged-out guest sees QR and submits a slip; h
   await guest.goto(`/pay/${payToken}`)
   await expect(guest.getByRole('heading', { name: 'QA-M4 มื้อเย็น' })).toBeVisible()
   await expect(guest.getByAltText('QR รับเงินของเจ้าของรายการ')).toBeVisible()
+  // The approved rich-text warning must keep its semantic emphasis after translation.
+  await expect(guest.locator('footer strong')).toHaveText('บันทึก')
+  await expect(guest.locator('footer')).toContainText('ส่งสลิปแล้ว — บันทึกไว้ให้เจ้าของทริปเห็นเท่านั้น ไม่ได้เช็กกับธนาคาร เจ้าของจะเช็กยอดเข้าบัญชีแล้วยืนยันเอง')
 
   // on-device parse → prefilled confirm → submit (OCR model download can be slow)
   await guest.locator('input[type="file"]').setInputFiles(GUEST_SLIP)

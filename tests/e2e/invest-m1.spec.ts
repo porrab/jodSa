@@ -108,7 +108,7 @@ test('QA-M1-3 the risk_capital sleeve is flagged 100%-losable', async ({ page })
   const sheet = page.getByRole('dialog')
   await expect(sheet.getByText('เงินเสี่ยงสูง (Risk Capital)')).toBeVisible()
   // The destructive 100%-losable warning banner.
-  await expect(sheet.getByText(/เสี่ยงสูญเสียได้ทั้งหมด 100%/)).toBeVisible()
+  await expect(sheet.getByText(/อาจหายได้ทั้งหมด 100%/)).toBeVisible()
 })
 
 test('QA-M1-4 a custom asset can be created via the "+ create asset" exit and held', async ({ page }) => {

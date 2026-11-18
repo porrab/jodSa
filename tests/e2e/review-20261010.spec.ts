@@ -108,7 +108,7 @@ test('QA-INVEST-1 partial, closed missing-FX/null-proxy, and reopened positions 
   await expect(row).toContainText('50.00') // active positions keep the manual total-value convention
   await openPlanTab(page)
   await submitPlan(page)
-  await expect(page.getByText('มีสินทรัพย์ที่ต้องจัดประเภทก่อน')).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText('มีสินทรัพย์ยังไม่จัดประเภท')).toBeVisible({ timeout: 60_000 })
 
   await trade(page, assetName, 'ขาย', '1', '2026-09-05T14:30')
   await openOverview(page)
@@ -120,7 +120,7 @@ test('QA-INVEST-1 partial, closed missing-FX/null-proxy, and reopened positions 
   await openPlanTab(page)
   await submitPlan(page)
   await expect(page.getByText(/มูลค่าพอร์ตที่ใช้คำนวณ/)).toBeVisible({ timeout: 60_000 })
-  await expect(page.getByText('มีสินทรัพย์ที่ต้องจัดประเภทก่อน')).toHaveCount(0)
+  await expect(page.getByText('มีสินทรัพย์ยังไม่จัดประเภท')).toHaveCount(0)
   await expect(page.getByText(/มูลค่าพอร์ตที่ใช้คำนวณ/)).toContainText('฿1,000.00')
 
   await trade(page, assetName, 'ซื้อ', '1', '2026-09-06T14:30')
@@ -132,7 +132,7 @@ test('QA-INVEST-1 partial, closed missing-FX/null-proxy, and reopened positions 
   await expect(page.locator('.text-4xl').first()).toContainText('2,750.00')
   await openPlanTab(page)
   await submitPlan(page)
-  await expect(page.getByText('มีสินทรัพย์ที่ต้องจัดประเภทก่อน')).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText('มีสินทรัพย์ยังไม่จัดประเภท')).toBeVisible({ timeout: 60_000 })
 })
 
 test('DS-1 keyboard focus appears without a shadow transition', async ({ page }) => {

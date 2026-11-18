@@ -70,7 +70,7 @@ test('OWNER-FB A1 manual fallback saves one failed item and warns before discard
 
   await sheet.getByRole('button', { name: 'Close' }).click()
   const warning = page.getByRole('dialog', { name: 'ปิดโดยไม่บันทึกสลิป?' })
-  await expect(warning.getByText(/ยังมีสลิปที่ยังไม่บันทึก 1 ใบ/)).toBeVisible()
+  await expect(warning.getByText(/สลิปยังไม่บันทึก 1 ใบ/)).toBeVisible()
   await warning.getByRole('button', { name: 'กลับไปบันทึก' }).click()
   await expect(warning).toBeHidden()
   await sheet.getByRole('button', { name: 'Close' }).click()

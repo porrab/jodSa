@@ -61,7 +61,7 @@ test('M9-trip guest pay page stays recorded-not-verified', async ({ browser }) =
   const page = await ctx.newPage()
   await page.goto(`/pay/${trip.token}`)
   // The trip guest flow surfaces the "recorded, not verified" trust note.
-  await expect(page.getByText('ไม่ได้ตรวจสอบกับธนาคาร', { exact: false })).toBeVisible()
+  await expect(page.getByText('ไม่ได้เช็กกับธนาคาร', { exact: false })).toBeVisible()
   await ctx.close()
 })
 

@@ -63,7 +63,7 @@ const copy = {
     add: 'เพิ่มสินทรัพย์', edit: 'แก้ไข', save: 'บันทึก', role: 'บทบาทในพอร์ต',
     sleeves: ['หลัก (Core)', 'ตัวถ่วง (Ballast)', 'เสริม (Satellite)', 'เงินเสี่ยงสูง (Risk Capital)'],
     helper: 'ส่วนที่คุณกำหนดให้ช่วยถ่วงความผันผวนของพอร์ต ไม่ได้หมายความว่าไม่มีความเสี่ยง',
-    warning: 'เงินก้อนนี้เสี่ยงสูญเสียได้ทั้งหมด 100% — แยกจากเงินลงทุนหลัก',
+    warning: 'เงินก้อนนี้อาจหายได้ทั้งหมด 100% (แยกจากเงินลงทุนหลัก)',
   },
   en: {
     add: 'Add Holding', edit: 'Edit', save: 'Save', role: 'Portfolio role',
@@ -305,7 +305,7 @@ test('SPEC6-PLANNER active unclassified ballast still blocks planning through th
   expect(asset.data?.proxy_class).toBeNull()
   await openPlanTab(page)
   await submitPlan(page)
-  await expect(page.getByText('มีสินทรัพย์ที่ต้องจัดประเภทก่อน', { exact: true })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText('มีสินทรัพย์ยังไม่จัดประเภท', { exact: true })).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('form').filter({ hasText: name }).getByRole('combobox')).toBeVisible()
   await expect(page.getByText('ยังไม่มีแผนที่สร้างไว้', { exact: true })).toBeVisible()
   const plans = await clientA.from('plans').select('id').eq('user_id', userIdA)
