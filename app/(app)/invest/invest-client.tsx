@@ -328,7 +328,6 @@ function AddTransactionForm({ holding, accounts, onDone }: { holding: Holding; a
           {accounts.length === 0 ? <InlineCreateAccount hint={t('cashAccount')} onCreated={setCashAccountId} /> :
             <AccountGrid accounts={accounts} value={cashAccountId} onValueChange={setCashAccountId} balances={balances} balancesLoading={balancesLoading} label={t('cashAccount')} compact />}
           <Label htmlFor="tx-cash-amount">{t('cashAmountTHB')} <RequiredMark /></Label>
-          <p className="text-sm text-muted-foreground">{t('entry.cashHint')}</p>
           <Input id="tx-cash-amount" name="cash_amount" type="text" inputMode="decimal" required value={shownCashAmount} onChange={(event) => { setCashAmountTouched(true); setCashAmount(event.target.value) }} className="tabular-nums" />
         </div>}
       </div>}

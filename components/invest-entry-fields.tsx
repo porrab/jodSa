@@ -9,16 +9,20 @@ import { RequiredMark } from '@/components/ui/required-mark'
 import { entryCheck, feeFromBaht, validFx } from '@/lib/invest/entry'
 import { convertMinor, minorUnitDecimals, toMajor, toMinor } from '@/lib/invest/money'
 
-export function InvestEntryGuide() {
+export function InvestEntryGuide({ prefix = 'h', feeStatus }: { prefix?: 'h' | 'tx'; feeStatus?: React.ReactNode }) {
   const t = useTranslations('invest.entry')
   return <details className="rounded-lg border border-border px-3 text-sm">
     <summary className="min-h-11 cursor-pointer py-3 font-medium text-honey-text">{t('guideTitle')}</summary>
     <table className="w-full table-fixed text-left"><tbody>
       {(['qty', 'price', 'fees', 'date', 'fx', 'cash', 'value'] as const).map(field => <tr key={field} className="border-t border-border align-top">
         <th scope="row" className="w-1/3 py-2 pr-2 font-medium">{t(`${field}Name`)}</th>
-        <td className="py-2 text-muted-foreground">{t(`${field}Hint`)}</td>
+        <td id={field === 'price' ? undefined : `${prefix}-${field === 'date' ? 'datetime' : field}-hint`} className="break-words py-2 text-muted-foreground">{t(`${field}Hint`)}</td>
       </tr>)}
     </tbody></table>
+    <p className="py-2 text-muted-foreground">{t('needsFx')}</p>
+    {feeStatus}
+    <p className="pb-2 text-muted-foreground">{t('checkHint')}</p>
+    <p className="pb-2 text-muted-foreground">{t('sellCheckHint')}</p>
     <p className="pb-3 text-muted-foreground">{t('example')}</p>
   </details>
 }
@@ -70,7 +74,6 @@ export default function InvestEntryFields({ prefix, currency, type = 'buy', onNu
     {needsQty && <div className="space-y-1">
       <Label htmlFor={`${prefix}-qty`}>{t('qtyLabel')} <RequiredMark /></Label>
       <Input id={`${prefix}-qty`} name="qty" inputMode="decimal" required value={qty} onChange={e => setQty(e.target.value)} aria-describedby={`${prefix}-qty-hint`} className="min-h-11 tabular-nums" />
-      {hint('qty', `${prefix}-qty`)}
     </div>}
     <div className="space-y-1">
       <Label htmlFor={priceId}>{t(needsQty ? 'priceLabel' : 'amountLabel', { currency })} <RequiredMark /></Label>
@@ -80,30 +83,24 @@ export default function InvestEntryFields({ prefix, currency, type = 'buy', onNu
     {currency !== 'THB' && <div className="space-y-1">
       <Label htmlFor={`${prefix}-fx`}>{t('fxRateLabel', { currency })}</Label>
       <Input id={`${prefix}-fx`} name="fx_rate" inputMode="decimal" value={fx} onChange={e => changeFx(e.target.value)} required={bahtFees} pattern="[0-9]+(\.[0-9]+)?" aria-describedby={`${prefix}-fx-hint`} className="min-h-11 tabular-nums" />
-      {hint('fx', `${prefix}-fx`)}
     </div>}
     <div className="space-y-1">
       <Label htmlFor={`${prefix}-fees`}>{t('feesLabel')} ({bahtFees ? 'THB' : currency})</Label>
       <Input id={`${prefix}-fees`} inputMode="decimal" pattern={'[0-9]+(,[0-9]{3})*(\.[0-9]*)?'} value={fees} onChange={e => setFees(e.target.value)} placeholder="0" aria-describedby={`${prefix}-fees-hint`} className="min-h-11 tabular-nums" />
       <input type="hidden" name="fees" value={effectiveFees} />
-      {hint('fees', `${prefix}-fees`)}
       {currency !== 'THB' && <>
         <Label htmlFor={`${prefix}-baht-fees`} className="min-h-11 justify-between gap-3">
           {t('entry.enterBaht')}<Switch id={`${prefix}-baht-fees`} checked={bahtFees} disabled={!validFx(fx)} onCheckedChange={toggleBaht} />
         </Label>
-        {!validFx(fx) && <p className="text-sm text-muted-foreground">{t('entry.needsFx')}</p>}
-        {bahtFees && converted !== null && <p className="text-sm text-muted-foreground">{t('entry.storedFee', { amount: major(converted, currency), currency })}</p>}
       </>}
     </div>
     <div className="space-y-1">
       <Label htmlFor={`${prefix}-datetime`}>{t('dateLabel')} <RequiredMark /></Label>
       <Input id={`${prefix}-datetime`} name="datetime" type="datetime-local" required aria-describedby={`${prefix}-datetime-hint`} className="min-h-11 w-full min-w-0" />
-      {hint('date', `${prefix}-datetime`)}
     </div>
     {needsQty && <div role="status" aria-live="polite" className="rounded-lg bg-secondary p-3 text-sm">
       <p className="break-words font-medium tabular-nums">{check ? `${qty} × ${price} ${type === 'sell' ? '−' : '+'} ${effectiveFees || '0'} = ${major(check.minor, currency)} ${currency}${check.baht !== null && currency !== 'THB' ? ` ≈ ${major(check.baht, 'THB')} ฿` : ''}` : t('entry.checkEmpty')}</p>
-      <p className="text-muted-foreground">{t(type === 'sell' ? 'entry.sellCheckHint' : 'entry.checkHint')}</p>
     </div>}
-    <InvestEntryGuide />
+    <InvestEntryGuide prefix={prefix} feeStatus={bahtFees && converted !== null ? <p className="pb-2 text-muted-foreground">{t('entry.storedFee', { amount: major(converted, currency), currency })}</p> : undefined} />
   </div>
 }
