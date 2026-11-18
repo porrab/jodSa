@@ -102,7 +102,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 
 ### Sessions
 
-- [ ] **DS-13 [M] The list front-loads QR instructions even for split trips, then repeats them when empty.**
+- [x] **DS-13 [M] The list front-loads QR instructions even for split trips, then repeats them when empty.**
+  - Implementation DS-13 (2026-11-18): Sessions remove the populated instruction paragraph, use one action-led empty prompt, and retain the short slip/not-bank-verified note. QR copy stays in the payment-type choice. Validation: Targeted empty/populated/payment-choice E2E 1/1 passed; final production gates pending. Awaiting independent re-check.
   Remove the populated-list instructional paragraph. Keep one short action-led empty
   prompt; place QR-specific copy with the existing payment-type choice. Retain a short
   “recorded from slip / not bank-verified” notice where slips/totals appear.

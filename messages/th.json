@@ -604,7 +604,7 @@
     "addShort": "เพิ่ม",
     "addTitle": "สร้างรายการจ่ายกลุ่ม",
     "empty": "ยังไม่มีรายการจ่ายกลุ่ม",
-    "emptyHint": "สร้างลิงก์ให้เพื่อนจ่ายเงินแล้วแนบสลิปได้โดยไม่ต้องล็อกอิน",
+    "emptyHint": "กดเพิ่มเพื่อเริ่มทริปหรือเก็บเงิน",
     "recordedAmount": "{amount} บันทึก",
     "targetAmount": "เป้า {amount}",
     "statusOpen": "เปิดรับ",
@@ -655,7 +655,8 @@
     "typeTripHint": "หลายคนช่วยกันจ่าย แล้วหารกันในทริป",
     "tripBadge": "ทริป",
     "tripTitle": "บัญชีทริป",
-    "tripMembers": "สมาชิก ({count})"
+    "tripMembers": "สมาชิก ({count})",
+    "recordedSummary": "ยอดจากสลิป · ไม่ได้เช็กกับธนาคาร"
   },
   "trip": {
     "brand": "JodSa — ทริปหารกัน",

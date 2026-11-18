@@ -604,7 +604,7 @@
     "addShort": "Add",
     "addTitle": "Create Group Pay Session",
     "empty": "No group pay sessions yet",
-    "emptyHint": "Create a link so friends can pay and attach their slips without signing in",
+    "emptyHint": "Tap Add to start a trip or collect payments.",
     "recordedAmount": "{amount} recorded",
     "targetAmount": "Target {amount}",
     "statusOpen": "Open",
@@ -655,7 +655,8 @@
     "typeTripHint": "Several people front costs, then split up",
     "tripBadge": "Trip",
     "tripTitle": "Trip ledger",
-    "tripMembers": "Members ({count})"
+    "tripMembers": "Members ({count})",
+    "recordedSummary": "From slips · Not bank-verified"
   },
   "trip": {
     "brand": "JodSa — Trip split",

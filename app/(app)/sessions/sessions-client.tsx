@@ -175,7 +175,6 @@ export default function SessionsClient({
     <div className="space-y-4">
       <PageHeader
         title={t('title')}
-        subtitle={t('subtitle')}
         action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addShort')}</Button>}
       />
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -188,11 +187,12 @@ export default function SessionsClient({
       {sessions.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           <HandCoins className="mx-auto mb-2 size-6" />
-          <p>{t('empty')}</p>
-          <p className="text-sm mt-1">{t('emptyHint')}</p>
+          <p>{t('emptyHint')}</p>
         </div>
       ) : (
-        <div className="divide-y divide-border border-y border-border">
+        <div>
+          <p className="mb-3 text-sm text-muted-foreground">{t('recordedSummary')}</p>
+          <div className="divide-y divide-border border-y border-border">
           {sessions.map((s) => (
             <Link key={s.id} href={`/sessions/${s.id}`} className="flex min-h-16 items-center gap-3 px-1 py-3 transition-colors hover:bg-accent/40">
                 <div className="min-w-0 flex-1">
@@ -211,6 +211,7 @@ export default function SessionsClient({
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </Link>
           ))}
+          </div>
         </div>
       )}
     </div>
