@@ -25,7 +25,8 @@ DS-12, DS-13, DS-14 look as briefed. Not pushed.
 production build `--no-deps`: HEAD 1 failure in 4 runs, base `a643b50` 2 failures in 4 runs, the same
 assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; it does not block this round.
 
-- [ ] **RV-UX-1 [H] Plan cannot be generated without discovering a hidden checkbox.**
+- [x] **RV-UX-1 [H] Plan cannot be generated without discovering a hidden checkbox.**
+  - Implementation 2026-11-19: acknowledgement stays visible directly above Generate while the full disclaimer remains collapsed. Source RED then GREEN 1/1; final production gates pending. Record: project/jodsa/docs/postmortems/2026-11-19-ux-round.md. Awaiting independent re-check.
   `plan-client.tsx:362–367`: the new `disclaimerAck` checkbox sits inside the collapsed `<details>`,
   and `สร้างแผน` is disabled until it is ticked (`:443`). On load, the user sees a greyed button and no
   reason (after/light-invest-plan.jpg). Fix: keep the full disclaimer in the `<details>`, but render the

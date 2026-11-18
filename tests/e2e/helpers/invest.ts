@@ -123,7 +123,7 @@ export async function openPlanTab(page: Page): Promise<void> {
 export async function acknowledgePlan(page: Page): Promise<void> {
   const disclosure = page.getByTestId('plan-disclaimer')
   if (await disclosure.getAttribute('open') === null) await disclosure.locator('summary').click()
-  await disclosure.getByRole('checkbox').check()
+  await page.getByRole('checkbox').check()
 }
 
 /** Overwrite the 6 target-allocation inputs. Keys are AssetClass ids (input id `target-<class>`). */

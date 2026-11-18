@@ -364,7 +364,6 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
         <summary className="min-h-11 cursor-pointer py-3 font-medium">{t('disclaimerSummary')}</summary>
         <div className="space-y-3 pb-3">
           <DisclaimerBanner />
-          <Label className="min-h-11 gap-2"><input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)} />{t('disclaimerAck')}</Label>
         </div>
       </details>
       <form action={formAction} className="space-y-4">
@@ -440,6 +439,7 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
         </CardContent>
       </Card>
 
+            <Label className="min-h-11 gap-2"><input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)} />{t('disclaimerAck')}</Label>
             <Button type="submit" className="w-full" disabled={!acknowledged || isPending || Math.abs(sum - 100) > 0.5}>
               {isPending ? t('generating') : t('generatePlan')}
             </Button>
