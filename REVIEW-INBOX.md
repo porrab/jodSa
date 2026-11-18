@@ -15,6 +15,17 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [COPY-POLISH-20261118] Thai UI copy, 49 strings — APPROVED 2026-11-18
+
+Source: `design-studio/reviews/jodsa/2026-11-18-copy-polish/final-th-changes.json`. Gemini drafted
+it; Claude restored meaning in 7 strings (rich-text tag, licence/no-simulation disclaimer, "do not sell
+just because it rose", direct vs look-through, total-loss wording, email, onboarding). Codex `87830c0`.
+Claude re-derived: th.json changes exactly the 49 approved keys and no others; en.json untouched;
+the test edits are only text swaps plus one added `<strong>` assertion; the light-sessions baseline
+diff is text-only (subtitle 3 lines -> 2); tsc 0; vitest 419/34. E2E and visual runs were taken from
+Codex's report, not re-run. Not covered: hardcoded strings outside `messages/`, and the long helper
+copy that DS-10/12/13 will cut.
+
 ## [DS-AUDIT-20261118] Mobile density, hierarchy and Honey consistency — 2026-11-18
 
 **From:** design-studio · **Status:** OPEN — CHANGES · **Severity:** 1 H / 6 M / 0 L.
