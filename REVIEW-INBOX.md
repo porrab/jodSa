@@ -15,6 +15,103 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [DS-AUDIT-20261118] Mobile density, hierarchy and Honey consistency — 2026-11-18
+
+**From:** design-studio · **Status:** OPEN — CHANGES · **Severity:** 1 H / 6 M / 0 L.
+**Reviewed:** production build of `1794da0`, CSS viewport 375×812, Thai, light + dark,
+test user A. Application code was read only. Full review, coverage/limits and evidence:
+`design-studio/reviews/jodsa/2026-11-18-mobile-audit/README.md`.
+**Exclusion:** FB-1–FB-4 remain with their current implementer; do not duplicate them.
+
+### Invest — Holdings / holding detail
+
+- [ ] **DS-8 [H] Missing values masquerade as a zero total; the note outweighs the figure.**
+  Holdings shows `≈ ฿0.00`, beside a multi-line “uses cost” note, while Overview shows
+  `฿100,000.00` for the same six A holdings. Use the same valuation eligibility/fallback
+  as Overview, or show `—` with a short missing-value state when no meaningful total is
+  available. Do not format missing as zero. Stack one shortened status below a
+  full-width label/amount instead of balancing two unequal text columns. Keep valuation
+  policy in detail. Read-only trace: `project/jodsa/app/(app)/invest/invest-client.tsx:576–599`.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-holdings.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-holdings.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-overview.jpg`.
+- [ ] **DS-9 [M] Missing-value prose takes display-number emphasis in holding detail.**
+  `ยังไม่ได้อัปเดตมูลค่าปัจจุบัน` fills two 36px lines and dominates cost/trades/actions.
+  Reserve display size for the amount or `—`; shorten the status to `ยังไม่ระบุมูลค่า`
+  at 14px and retain the existing cost line/edit action. No extra explanatory panel.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-holding-detail.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-holding-detail.jpg`.
+
+### Invest — Monthly plan
+
+- [ ] **DS-10 [M] Explanations and target setup bury the monthly-money task.**
+  The full disclaimer, another paragraph and six target fields consume almost the first
+  viewport. Keep one visible decision-support/no-auto-trading line, with the full
+  disclaimer expandable before generation; move money/currency immediately below it.
+  Follow with the six targets, replacing their paragraph with `รวมต้องได้ 100%` beside
+  the heading. Preserve the acknowledgement and full disclaimer. This is a proposed
+  presentation amendment to the brief, not authorization to remove risk information.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-plan.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-plan.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-plan-bottom.jpg`.
+
+### Invest — Overview / header
+
+- [ ] **DS-11 [M] Utilities precede the focal metric; Add misses Honey's 44px target.**
+  Two equal-weight utilities lead the summary, while the main Add measures 40px high
+  (Honey Primary M = 44px). Move utilities after the summary, demote snapshot to ghost
+  and shorten its visible caption to `เก็บยอด`, preserving its accessible meaning.
+  Use the 44px primary variant for Add. No new menu is needed for just two actions.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-overview.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-overview.jpg`.
+  Measurements: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/measurements.json`.
+
+### Settings
+
+- [ ] **DS-12 [M] Optional configuration fills several viewports before basic account actions.**
+  CSV filters, inactive Vision key entry/instructions and push scheduling are all
+  expanded. Retain Language/Theme, then collapse CSV, Vision and Push behind a short
+  state. Expand filters on export; reveal Vision key/restriction instructions when
+  enabling it, keeping billing/privacy/restriction information before key entry.
+  Shorten CSV helper to `ส่งออกรายการเป็น CSV`; preserve the destructive warning.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-settings.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-settings-middle.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-settings-bottom.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-settings.jpg`.
+
+### Sessions
+
+- [ ] **DS-13 [M] The list front-loads QR instructions even for split trips, then repeats them when empty.**
+  Remove the populated-list instructional paragraph. Keep one short action-led empty
+  prompt; place QR-specific copy with the existing payment-type choice. Retain a short
+  “recorded from slip / not bank-verified” notice where slips/totals appear.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-sessions-populated.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-sessions-empty.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-session-detail.jpg`.
+
+### Shared navigation
+
+- [ ] **DS-14 [M] Dark active glyph is pale ink on honey.**
+  The active Home/More SVG inherits foreground ink on a honey pill, losing the
+  brown-on-honey contrast the FAB already has. Apply `--primary-foreground` to only
+  the active SVG; keep the label's ink color and existing pill. Read-only trace:
+  `project/jodsa/components/app-nav.tsx:78`.
+  Screenshots: `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-home.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-more.jpg`,
+  `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-home.jpg`.
+
+**Acceptance:** recapture the cited surfaces at 375×812 in both themes with A; preserve
+existing actions, six target classes, money semantics, privacy and risk/trust notices.
+Check theme, settled tab/sheet state, 44px Add and the no-valuation state explicitly.
+**Not inspected / limits:** payment-session detail requires a receiving QR absent from A;
+populated recurring/confirmation, reconciliation after start, QR upload, custom-asset
+creation, generated-plan detail, error states, destructive flows and every edit variant
+were not comprehensively inspected. Coverage is enumerated in the review. This is not
+an exhaustive behavioral or accessibility certification. Chrome captures a 375×811 JPEG
+for the verified 375×812 CSS viewport. Initial localhost navigation accidentally reused
+a non-A session; it was stopped without saving an image or mutating data. All saved app
+evidence is A-only on the separate 127.0.0.1 origin. Only existing E2E helpers seeded A.
+
 ## [OWNER-FB-20261118] Invest page bugs and text density — 2026-11-18 · from owner (phone), triaged by Claude
 - **[FB-1] H — "เพิ่มสินทรัพย์" in the page header does nothing on the ภาพรวม and แผนรายเดือน tabs.** Root cause (verified in code): `invest-tabs.tsx` dispatches `window` event `jodsa:holding-add`, but the only listener is inside `InvestClient`, which mounts only on the ถือครอง tab. Fix: own `addOpen` state in `InvestTabs` and render the add sheet there, so it works from every tab (or switch to the holdings tab and open it). E2E: click the header button on all three tabs and assert the sheet opens.
 - **[FB-2] H — horizontal overflow on แผนรายเดือน at phone width.** `plan-client.tsx:302`, the classify row is one non-wrapping flex row (long asset name + Select + "บันทึกการจัดประเภท" button), so the button runs off the screen and the whole page shifts sideways. Fix: stack it (name on its own line; select + button below, full width), `min-w-0` on flex children.
