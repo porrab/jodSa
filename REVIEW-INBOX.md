@@ -17,6 +17,9 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [INVEST-ENTRY-UX] Make manual investment entry self-explaining — 2026-11-18 · from owner via Claude
 
+**Claude review 2026-11-18 (`c5d3d13`, `a95815b`, `02a5742`, `f9ab73a`): APPROVED.** Re-derived: raw tsc 0; Vitest 419/34; `pnpm build` 0; production E2E in one run (entry-ux 2, invest-m1 6, m3 5, m5 9, c2 6, ballast 7, honey-visual 28, setup 1) = **64 passed**. C2 and ballast pass together with no fixture prep, so the order dependency Codex reported did not reproduce here. `tradeTotalMinor` is shared by `computeCostBasis` and the check line, so they cannot drift. The refactor does not change behaviour. `feeFromBaht` does exact bigint half-up rounding (checked by hand: 4.06 THB at 33.80 → 0.12 USD). The fee input is unnamed and a hidden `fees` field submits the asset-currency value. Raw-diff scan found no owner numbers, account numbers or names; the examples are invented.
+- L: the honey-visual baselines do not cover the invest forms, so the new hints, toggle and check line have no visual snapshot. The owner should look at them on a phone once.
+
 ### Implementation handoff — 2026-11-18, ready for independent review
 
 - [x] Implemented in `c5d3d13` (shared totals/fee conversion), `a95815b`
