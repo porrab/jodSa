@@ -62,7 +62,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 
 ### Invest — Monthly plan
 
-- [ ] **DS-10 [M] Explanations and target setup bury the monthly-money task.**
+- [x] **DS-10 [M] Explanations and target setup bury the monthly-money task.**
+  - Implementation DS-10 (2026-11-18): Keep a short collapsed summary; require opening the full unchanged disclaimer and acknowledging it before generation; put money/currency before all six targets. Validation: Typecheck and two targeted dev tests passed: acknowledgement/input order and FB-2 classification. Updated shared plan helper preserves all behavioral assertions. Awaiting independent re-check.
   The full disclaimer, another paragraph and six target fields consume almost the first
   viewport. Keep one visible decision-support/no-auto-trading line, with the full
   disclaimer expandable before generation; move money/currency immediately below it.

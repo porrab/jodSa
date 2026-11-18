@@ -117,6 +117,13 @@ export async function openPlanTab(page: Page): Promise<void> {
   await page.goto('/invest')
   await page.getByRole('tab', { name: 'แผนรายเดือน', exact: true }).click()
   await expect(page.getByText('สัดส่วนเป้าหมาย')).toBeVisible()
+  await acknowledgePlan(page)
+}
+
+export async function acknowledgePlan(page: Page): Promise<void> {
+  const disclosure = page.getByTestId('plan-disclaimer')
+  if (await disclosure.getAttribute('open') === null) await disclosure.locator('summary').click()
+  await disclosure.getByRole('checkbox').check()
 }
 
 /** Overwrite the 6 target-allocation inputs. Keys are AssetClass ids (input id `target-<class>`). */
@@ -134,6 +141,7 @@ export async function setTargetAllocation(
  * card, the `blocked` classify card, or a validation refusal themselves.
  */
 export async function submitPlan(page: Page): Promise<void> {
+  await acknowledgePlan(page)
   await page.getByRole('button', { name: 'สร้างแผน', exact: true }).click()
 }
 

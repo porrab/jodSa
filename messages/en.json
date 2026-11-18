@@ -392,7 +392,10 @@
         "gold": "Gold",
         "crypto": "Crypto (high-vol)",
         "cash": "Cash / stablecoin"
-      }
+      },
+      "disclaimerSummary": "Decision support, not investment advice",
+      "disclaimerAck": "I have read and understand these limitations",
+      "targetSumHint": "Must total 100%"
     },
     "entry": {
       "qtyName": "Quantity",

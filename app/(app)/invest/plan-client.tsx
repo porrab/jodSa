@@ -328,6 +328,7 @@ function ClassifyRow({ holdingName, assetId, isCustomAsset }: { holdingName: str
 export default function PlanClient({ plans }: { plans: PlanRow[] }) {
   const t = useTranslations('invest.plan')
   const tInvest = useTranslations('invest')
+  const [acknowledged, setAcknowledged] = useState(false)
   const [target, setTarget] = useState<Record<AssetClass, number>>(DEFAULT_TARGET)
   const [newMoney, setNewMoney] = useState('3000')
   const [newMoneyCurrency, setNewMoneyCurrency] = useState('THB')
@@ -337,6 +338,7 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
 
   const [state, formAction, isPending] = useActionState<GeneratePlanState, FormData>(
     async (prev, fd) => {
+      if (!acknowledged) return prev
       // Set explicitly from component state rather than relying on native form
       // serialization of the Select/number inputs (matches invest-client.tsx's
       // CustomAssetForm pattern — fd.set() over trusting uncontrolled name attrs).
@@ -358,12 +360,54 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
 
   return (
     <div className="space-y-4">
-      <DisclaimerBanner />
+      <details data-testid="plan-disclaimer" className="rounded-lg border border-border px-3 text-sm">
+        <summary className="min-h-11 cursor-pointer py-3 font-medium">{t('disclaimerSummary')}</summary>
+        <div className="space-y-3 pb-3">
+          <DisclaimerBanner />
+          <Label className="min-h-11 gap-2"><input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)} />{t('disclaimerAck')}</Label>
+        </div>
+      </details>
+      <form action={formAction} className="space-y-4">
+      <Card>
+        <CardContent className="pt-4">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor="newMoney">{t('newMoneyLabel')}</Label>
+                <Input
+                  id="newMoney"
+                  name="newMoney"
+                  type="text"
+                  inputMode="decimal"
+                  className="tabular-nums"
+                  value={newMoney}
+                  onChange={(e) => setNewMoney(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>{t('newMoneyCurrencyLabel')}</Label>
+                <Select value={newMoneyCurrency} onValueChange={setNewMoneyCurrency}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="space-y-3 pt-4">
-          <p className="text-sm font-medium">{t('targetAllocationTitle')}</p>
-          <p className="text-sm text-muted-foreground">{t('targetAllocationHint')}</p>
+          <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-sm font-medium">{t('targetAllocationTitle')}</p><p className="text-sm text-muted-foreground">{t('targetSumHint')}</p></div>
           <div className="grid grid-cols-2 gap-2">
             {ASSET_CLASSES.map((c) => (
               <div key={c} className="space-y-1">
@@ -396,44 +440,10 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-4">
-          <form action={formAction} className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label htmlFor="newMoney">{t('newMoneyLabel')}</Label>
-                <Input
-                  id="newMoney"
-                  name="newMoney"
-                  type="text"
-                  inputMode="decimal"
-                  className="tabular-nums"
-                  value={newMoney}
-                  onChange={(e) => setNewMoney(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>{t('newMoneyCurrencyLabel')}</Label>
-                <Select value={newMoneyCurrency} onValueChange={setNewMoneyCurrency}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={isPending || Math.abs(sum - 100) > 0.5}>
+            <Button type="submit" className="w-full" disabled={!acknowledged || isPending || Math.abs(sum - 100) > 0.5}>
               {isPending ? t('generating') : t('generatePlan')}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+      </form>
 
       {state.status === 'blocked' && (
         <Card>
