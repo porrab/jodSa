@@ -15,6 +15,36 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [UX-ROUND-20261118] FB-1..4 + DS-8..14 review — CHANGES 2026-11-19
+
+Codex `3e7ef35..8da0d34`. Claude re-derived: tsc 0; vitest 422/34; the after screenshots
+(34 at 375×812) inspected for holdings, overview, plan, settings and dark home. FB-1..4, DS-9, DS-11,
+DS-12, DS-13, DS-14 look as briefed. Not pushed.
+
+**M13 RV-M13-4 red is pre-existing, not caused by this round.** Claude ran isolation + sync in
+production build `--no-deps`: HEAD 1 failure in 4 runs, base `a643b50` 2 failures in 4 runs, the same
+assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; it does not block this round.
+
+- [ ] **RV-UX-1 [H] Plan cannot be generated without discovering a hidden checkbox.**
+  `plan-client.tsx:362–367`: the new `disclaimerAck` checkbox sits inside the collapsed `<details>`,
+  and `สร้างแผน` is disabled until it is ticked (`:443`). On load, the user sees a greyed button and no
+  reason (after/light-invest-plan.jpg). Fix: keep the full disclaimer in the `<details>`, but render the
+  checkbox outside it, directly above `สร้างแผน`, always visible. E2E: fresh load with the details
+  closed shows the checkbox; ticking it enables the button.
+- [ ] **RV-UX-2 [M] Holdings and Overview still disagree on the same portfolio (the original DS-8 complaint).**
+  For A, Holdings shows `—` + "ยังไม่ระบุมูลค่าหรือ FX 2 รายการ", while Overview shows `฿3,800.00`
+  valued at cost for the 2 unpriced holdings. Fix: Holdings shows the same number as Overview with the
+  same "valued at cost" note; show `—` only where Overview also has no figure. E2E: same fixture,
+  `holdings-total` text equals the Overview total text.
+- [ ] **RV-UX-3 [L]** (a) `missingValueStatus` says "หรือ FX", which is jargon: use "ยังไม่ระบุมูลค่า {count} รายการ".
+  (b) The tab label "แผนรายเดือน" wraps to two lines at 375px: shorten it to "แผน", or keep the label on one line.
+  (c) after/`*-invest-plan-bottom.jpg` is the same view as the top shot (it never scrolled), so there is no
+  after-evidence for the plan bottom. Recapture it.
+- [ ] **RV-UX-4 [M] RV-M13-4 is flaky on base and HEAD.** The test reads `before` as ฿200.00, but its own
+  first buy is only ฿100, which suggests it sees another holding. Check first for test-data leakage
+  (the test's `accounts` insert is never deleted; earlier runs may leave holdings behind). Then check
+  refresh coalescing. Do not loosen the 2200 ms assertion without a cause.
+
 ## [COPY-POLISH-20261118] Thai UI copy, 49 strings — APPROVED 2026-11-18
 
 Source: `design-studio/reviews/jodsa/2026-11-18-copy-polish/final-th-changes.json`. Gemini drafted
