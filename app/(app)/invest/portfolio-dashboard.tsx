@@ -284,28 +284,32 @@ export default function PortfolioDashboard({
   const pnl = BigInt(dashboard.totals.totalPnlMinor)
   const hasAnyValue = dashboard.priceable.length > 0
 
-  const classLabel = (key: string) => t(`assetClass.${key as AssetClass}`)
-  const sleeveLabel = (key: string) => t(`sleeve.${key as Sleeve}`)
-  const currencyLabel = (key: string) => key
-
-  return (
-    <div className="space-y-4">
+  const utilities = <>
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" onClick={() => setPricesOpen(true)}>
           <RefreshCw className="mr-1.5 size-4" />
           {t('updatePrices')}
         </Button>
         <form action={snapAction}>
-          <Button type="submit" variant="outline" className="w-full" disabled={snapPending}>
+          <Button type="submit" variant="ghost" aria-label={t('saveSnapshot')} className="w-full" disabled={snapPending}>
             <Camera className="mr-1.5 size-4" />
-            {snapPending ? tc('saving') : t('saveSnapshot')}
+            {snapPending ? tc('saving') : t('saveSnapshotShort')}
           </Button>
         </form>
       </div>
       {snapState.error && <p className="text-sm text-destructive">{snapState.error}</p>}
+  </>
+
+  const classLabel = (key: string) => t(`assetClass.${key as AssetClass}`)
+  const sleeveLabel = (key: string) => t(`sleeve.${key as Sleeve}`)
+  const currencyLabel = (key: string) => key
+
+  return (
+    <div className="space-y-4">
       {!hasAnyValue ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           <p>{t('noHoldings')}</p>
+          {utilities}
         </div>
       ) : (
         <>
@@ -332,6 +336,7 @@ export default function PortfolioDashboard({
                 </p>
               )}
           </section>
+          {utilities}
 
           {dashboard.concentration.top.length > 0 && (
             <section className="space-y-2 border-b border-border pb-4">

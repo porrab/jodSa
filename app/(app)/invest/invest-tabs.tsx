@@ -42,7 +42,7 @@ export default function InvestTabs({
     <div className="space-y-4">
       <PageHeader
         title={t('title')}
-        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addHolding')}</Button>}
+        action={<Button onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addHolding')}</Button>}
       />
       <PageTabs className="grid-cols-3">
         {(['holdings', 'overview', 'plan'] as const).map((tb) => (

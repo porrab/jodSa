@@ -76,7 +76,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 
 ### Invest — Overview / header
 
-- [ ] **DS-11 [M] Utilities precede the focal metric; Add misses Honey's 44px target.**
+- [x] **DS-11 [M] Utilities precede the focal metric; Add misses Honey's 44px target.**
+  - Implementation DS-11 (2026-11-18): Show summary before utilities, make snapshot ghost with short text and unchanged aria-label, and use the 44px Add variant. Validation: Targeted dev E2E 1/1 passed: metric order, ghost action, full accessible name and measured Add height. Awaiting independent re-check.
   Two equal-weight utilities lead the summary, while the main Add measures 40px high
   (Honey Primary M = 44px). Move utilities after the summary, demote snapshot to ghost
   and shorten its visible caption to `เก็บยอด`, preserving its accessible meaning.
