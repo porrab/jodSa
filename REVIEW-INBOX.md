@@ -15,6 +15,38 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [INVEST-ENTRY-UX] Make manual investment entry self-explaining — 2026-11-18 · from owner via Claude
+
+The owner parked M2 (OCR) and asked for the manual forms to teach the user what to type. Claude compared the
+add-holding / add-transaction / edit-holding forms in `app/(app)/invest/invest-client.tsx` with Dime's
+order-detail and holdings screens (private corpus in qa-lab). Where users get stuck:
+- **Price:** the broker shows two "price" lines (`ราคา: ใช้ราคาตลาด` and `ราคาที่ได้จริง`). Only the second is correct.
+- **Qty:** the broker calls it `จำนวนหุ้น`, with up to 7 decimals. Our label is `จำนวนหน่วย`.
+- **Fees (biggest trap):** `ค่าธรรมเนียม` shows no currency. For a buy, the broker shows commission and VAT **in THB**;
+  for a sell, the fees are **in USD** (and a coupon can cancel the commission). The field is stored in the asset
+  currency, so a user who types the THB commission gets a cost basis that is wrong by about 34×.
+- **Date:** the broker shows `วันที่ส่งคำสั่ง` and `วันที่คำสั่งสำเร็จ`. Use the completion date.
+- **FX:** the broker prints `อัตราแลกเปลี่ยน 1 USD = xx.xx THB` on buys. Our hint does not say where to find it.
+- **Cash out of the account:** this should equal the large THB total at the top of a buy order, which includes fees.
+- **Current value (edit holding / update prices):** comes from `มูลค่าสินทรัพย์ (USD)` on the holdings list.
+
+Deliverable:
+1. Every field above gets a one-line hint naming where the number comes from, generic first, then the
+   broker term, e.g. "ราคาที่ซื้อได้จริงต่อหุ้น (ใน Dime คือ 'ราคาที่ได้จริง')". th + en.
+2. The fee label shows its currency (`ค่าธรรมเนียม (USD)`). Add a small "กรอกเป็นบาท" toggle that converts
+   THB → asset currency with the FX field (disabled and explained when FX is empty).
+3. A live **check line** under the numbers: `qty × price + fees = 50.12 USD ≈ 1,704.08 ฿` (invented example), recalculated as the
+   user types, with the hint "ควรตรงกับ 'จำนวนเงิน (USD)' และยอดบาทในหน้ารายละเอียดคำสั่ง". This is the
+   main way to catch typos. Use integer-minor arithmetic like the rest of the module.
+4. A collapsible "กรอกจากใบยืนยันคำสั่งซื้อยังไง?" panel with a text mapping table (no screenshots).
+5. **No real owner numbers or screenshots in this public repo.** Examples use invented values only
+   (e.g. qty 0.5000000, price 100.00, fee 0.12, FX 34.00).
+
+Acceptance: hints render in th/en, light and dark; the THB-fee toggle converts correctly (unit tests, including
+FX empty and rounding); the check line matches the server-side cost-basis maths for buy and sell (unit test
+against the same helper); existing invest E2E stays green; honey-visual baselines change only for the invest
+forms on purpose; no schema change.
+
 ## [M13-STEP3] Private Broadcast live-sync — ready for independent review, 2026-11-18
 
 ### RV-M13-4 fix handoff — 2026-11-18
@@ -1083,7 +1115,7 @@ M5 analysis methodology: `Resources/portfolio-risk-review/portfolio-risk-methodo
 (manual prices) · not licensed advice · multi-tenant RLS isolation per new table.
 
 ### The only open milestone
-- [ ] **M2 — Broker-Screenshot OCR** · **2026-11-08: owner asked to proceed; BLOCKED on the corpus.** Checked on disk: no broker screenshots under `qa-lab/projects/jodsa/corpus/`, and no `workers/portfolio.worker.ts`. Start build only after ≥10 labelled shots land. · complexity M · deps M1 (done) · **prereq: ~10 real Dime
+- [ ] **M2 — Broker-Screenshot OCR** · **PARKED by the owner 2026-11-18.** A corpus now exists in the private qa-lab repo (`projects/jodsa/corpus/dime/`, 7 labelled screens and 8 order details). The account holds only 6 US stocks, so Thai stocks, funds and mixed-currency lists cannot be tested, and manual entry of 6 positions is cheap. Revisit if the portfolio gains asset types or more than 10 positions. The owner asked instead for clearer manual-entry UX: see [INVEST-ENTRY-UX]. · *Earlier:* **2026-11-08: owner asked to proceed; BLOCKED on the corpus.** Checked on disk: no broker screenshots under `qa-lab/projects/jodsa/corpus/`, and no `workers/portfolio.worker.ts`. Start build only after ≥10 labelled shots land. · complexity M · deps M1 (done) · **prereq: ~10 real Dime
   screenshots** — not yet collected; no corpus, no objective exit.
   Reuse the on-device worker; **image never uploaded**; ≥85% position-value correct; confirm grid with
   low-confidence flags.
