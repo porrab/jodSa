@@ -4,6 +4,53 @@ import { expect, test } from '@playwright/test'
 import { env, e2eBaseUrl } from './helpers/env'
 import { findUserByEmail, testUserClient } from './helpers/admin'
 import { login } from './helpers/ui'
+import { formatMoney } from '@/lib/invest/money'
+
+test('RV-M13-4 invest overview refreshes with its permanent inline form', async ({ browser }) => {
+  const user = await findUserByEmail(env.userA.email)
+  if (!user) throw new Error('Missing A')
+  const db = await testUserClient(user.id)
+  const { data: asset, error: assetError } = await db.from('assets').select('id').eq('is_system', true).eq('symbol', 'PTT').single()
+  if (assetError) throw assetError
+  const { data: account, error: accountError } = await db.from('accounts').insert({ user_id: user.id, name: `M13-inline-${Date.now()}`, bank: 'SCB' }).select('id').single()
+  if (accountError) throw accountError
+  let holdingId = ''
+  const context = await browser.newContext({ baseURL: e2eBaseUrl })
+  try {
+    const { data: holding, error } = await db.from('holdings').insert({ user_id: user.id, asset_id: asset.id, sleeve: 'core' }).select('id').single()
+    if (error) throw error
+    holdingId = holding.id
+    const buy = (amount: number) => db.rpc('record_buy_with_cash', {
+      p_holding_id: holdingId, p_qty: 1, p_price_minor: String(amount), p_currency: 'THB',
+      p_fees_minor: '0', p_fx_rate: null, p_datetime: new Date().toISOString(), p_ref: null,
+      p_account_id: account.id, p_amount_satang: amount,
+    })
+    expect((await buy(10000)).error).toBeNull()
+    const page = await context.newPage()
+    await login(page, env.userA.email, env.userA.password)
+    await page.goto('/invest')
+    await page.getByRole('tab', { name: 'ภาพรวม', exact: true }).click()
+    await expect(page.locator('form').filter({ has: page.getByRole('button', { name: 'บันทึกสแนปช็อต' }) })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect.poll(() => page.evaluate(() => performance.getEntriesByName('m13-realtime-ready').length)).toBeGreaterThan(0)
+    const total = page.locator('.text-4xl').first()
+    const before = BigInt((await total.innerText()).replace(/[^\d-]/g, ''))
+    let navigations = 0
+    page.on('request', request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) navigations++ })
+    // The RPC changes the portfolio cost and emits the real transactions/accounts Broadcast.
+    expect((await buy(12345)).error).toBeNull()
+    await expect(total).toHaveText(formatMoney(before + 12345n, 'THB'), { timeout: 2200 })
+    expect(navigations).toBe(0)
+  } finally {
+    if (holdingId) {
+      expect((await db.from('transactions').delete().eq('holding_id', holdingId)).error).toBeNull()
+      expect((await db.from('asset_transactions').delete().eq('holding_id', holdingId)).error).toBeNull()
+      expect((await db.from('holdings').delete().eq('id', holdingId)).error).toBeNull()
+    }
+    expect((await db.from('accounts').delete().eq('id', account.id)).error).toBeNull()
+    await context.close()
+  }
+})
 
 test('M13 A-to-A add/edit/delete, offline reconcile and form deferral without reload', async ({ browser }) => {
   test.setTimeout(180000)
