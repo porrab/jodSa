@@ -16,7 +16,7 @@ export default function RealtimeSync() {
     let stopping: Promise<unknown> = Promise.resolve()
     const visible = () => document.visibilityState === 'visible' && navigator.onLine
     function editing() {
-      return Array.from(document.querySelectorAll('form,[role="dialog"],[role="alertdialog"],[aria-busy="true"]')).some(el => !el.closest('[hidden],[aria-hidden="true"],[inert]') && el.getClientRects().length > 0)
+      return Array.from(document.querySelectorAll('[role="dialog"],[role="alertdialog"],[aria-busy="true"]')).some(el => !el.closest('[hidden],[aria-hidden="true"],[inert]') && el.getClientRects().length > 0)
         || !!document.activeElement?.matches('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable="true"]')
     }
     const queue = createRefreshQueue(() => router.refresh(), () => !visible() || writes > 0 || editing())

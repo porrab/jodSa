@@ -17,6 +17,36 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 ## [M13-STEP3] Private Broadcast live-sync — ready for independent review, 2026-11-18
 
+### RV-M13-4 fix handoff — 2026-11-18
+
+- [x] Implementation fixed; awaiting independent re-check. Regression commit
+  `b394592`; fix and this record are in the following commit. Review base:
+  `b706fe1`, head: this fix commit; seams: `editing()` and the new invest E2E.
+- **Root cause / mechanism:** `editing()` included bare `form`, confusing an idle
+  inline action form with active editing. The snapshot form on invest Overview
+  kept the queue blocked, so its 500ms retry could never refresh server data.
+  Earlier coverage only used transactions and its transient dialog; it missed
+  permanent forms on invest/plan.
+- **Fix:** remove only bare `form`. Visible dialogs/alertdialogs (including sheets),
+  busy elements, focused fields and pending same-origin writes still defer refresh.
+  Optional focus optimisation is unchanged in this bounded fix.
+- **Reproduction / validation:** new A-only production E2E opens invest Overview,
+  verifies the snapshot form is visible and no dialog is open, then funds a buy
+  through `record_buy_with_cash` on the authenticated test client. Before the fix:
+  expected `฿323.45`, received stale `฿200.00` at 2200ms (RED). With the fix: GREEN,
+  portfolio value updates within 2200ms and no document navigation occurs.
+  A preliminary test-authoring run used button instead of tab and timed out;
+  it was corrected before the RED proof, and its exact A fixture ids were cleaned.
+- **Fresh checks:** raw `rtk proxy npx.cmd tsc --noEmit --incremental false` exit 0;
+  Vitest 414 passed / 34 skipped (44 files passed / 1 skipped). All skips are the
+  existing RLS integration unit file's missing TEST_* environment gate. `pnpm build`
+  exit 0 with existing unused-variable/import warnings. Production port 3100:
+  sync **3/3**, isolation **3/3**, Honey **28/28 + setup 1/1**, no E2E skips.
+  Existing transactions sheet deferral and lazy-chunk tests remain green.
+  Honey ran with `--update-snapshots=none`; no baseline, migration or dependency changes.
+  Post-run check: zero project Next/Playwright processes and zero listeners on
+  3000/3100; tracked evidence unchanged. No push.
+
 **Claude review 2026-11-18 (`649f9b3`, `e33db5b`, `27eee6a`): CHANGES NEEDED (one M).** Re-derived: raw tsc 0; Vitest 414/34; `pnpm build` 0; production E2E `m13-realtime-sync` + `m13-realtime-isolation` + `honey-visual` **34 passed** (setup + 2 + 3 + 28). Design is sound: lazy chunk after hydration, private `user:<uid>` channel on the authenticated client, 500 ms coalescing, reconnect reconciles on SUBSCRIBED, Serwist `reloadOnOnline: false` so no full reload, no mount on /pay.
 - **[RV-M13-4] M — `editing()` treats ANY visible `<form>` as "user is editing", so live-sync never fires on pages with a permanent inline form.** `/invest` (`portfolio-dashboard.tsx:297`, the snapshot `<form action={snapAction}>` button is always rendered) and the plan page (`plan-client.tsx:401`, an inline form inside a Card) keep `blocked()` true forever, so a queued refresh retries every 500 ms and never runs. The E2E only exercises `/transactions`, which has no inline form, so it does not catch this. Fix: drop the bare `form` selector; defer only on an open dialog/alertdialog/sheet, `[aria-busy="true"]`, a focused text field, or a pending same-origin write. Add an E2E on `/invest` (or another page with an inline form): a DB change made while that page is open and no dialog is open must show up within ~2 s.
 - L: `resume` runs on every window `focus`, so each click back into the window triggers a refresh even when nothing changed. Consider refreshing on focus only if the channel had dropped or an event was queued.
@@ -33,7 +63,7 @@ dynamic import runs only after hydration. The subscriber uses the browser sessio
 private `user:<uid>` Broadcast topic, and server-rendered data via router.refresh.
 It removes its channel when hidden/offline/unmounted, reconciles on SUBSCRIBED
 (including reconnect), and coalesces bursts. Same-origin mutation fetches remain
-pending through their streamed response body; visible forms/dialogs or active inputs
+pending through their streamed response body; visible dialogs/busy states or active inputs
 hold one pending refresh. No guest `/pay` mount, service-role use, migration or new dependency.
 
 Important integration seam: Serwist defaults to location.reload on `online`, which
