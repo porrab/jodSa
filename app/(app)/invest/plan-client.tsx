@@ -299,11 +299,11 @@ function ClassifyRow({ holdingName, assetId, isCustomAsset }: { holdingName: str
   }
 
   return (
-    <form action={formAction} className="flex items-center gap-2 rounded-md border p-2">
+    <form action={formAction} className="grid min-w-0 gap-2 rounded-md border p-3">
       <input type="hidden" name="assetId" value={assetId} />
-      <span className="flex-1 text-sm font-medium">{holdingName}</span>
+      <span className="min-w-0 break-words text-sm font-medium">{holdingName}</span>
       <Select value={proxyClass} onValueChange={setProxyClass}>
-        <SelectTrigger className="w-44" size="sm">
+        <SelectTrigger className="w-full min-w-0" size="sm">
           <SelectValue placeholder={t('proxyClassPlaceholder')} />
         </SelectTrigger>
         <SelectContent>
@@ -315,7 +315,7 @@ function ClassifyRow({ holdingName, assetId, isCustomAsset }: { holdingName: str
         </SelectContent>
       </Select>
       <input type="hidden" name="proxyClass" value={proxyClass} />
-      <Button type="submit" size="sm" disabled={isPending || !proxyClass}>
+      <Button type="submit" className="w-full min-w-0" disabled={isPending || !proxyClass}>
         {t('classifySave')}
       </Button>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
