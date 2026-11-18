@@ -1,26 +1,30 @@
 import path from 'node:path'
 import { expect, test } from '@playwright/test'
 import { env, GENERATED_DIR, STORAGE_A } from './helpers/env'
-import { findUserByEmail, testUserClient } from './helpers/admin'
+import { findUserByEmail, testUserClient, seedAccount } from './helpers/admin'
 import th from '../../messages/th.json'
 
 const KEY = 'M12-FAKE-KEY-NEVER-SEND-TO-JODSA'
 test.use({ storageState: STORAGE_A })
 test.beforeEach(async ({ page }) => {
+  const user = await findUserByEmail(env.userA.email)
+  if (!user) throw new Error('Missing user A')
+  await seedAccount(user.id, 'Vision test', 'SCB')
   await page.route('https://vision.googleapis.com/**', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ responses: [{ fullTextAnnotation: { text: 'Amount 432.10 THB' } }] }) }))
 })
 test.afterEach(async ({ page }) => { if (page.url().startsWith('http')) await page.evaluate(() => localStorage.clear()) })
 
 test('M12 acknowledgement, persistence and removal', async ({ page }) => {
   await page.goto('/settings')
+  await page.getByTestId('settings-vision').locator('summary').click()
   const toggle = page.getByRole('switch', { name: th.vision.enable })
   await toggle.click(); await expect(toggle).not.toBeChecked()
   const accept = page.getByRole('button', { name: th.vision.accept }); await expect(accept).toBeDisabled()
   await page.getByRole('checkbox', { name: th.vision.ack }).check(); await accept.click()
   await expect(toggle).toBeChecked(); await page.getByLabel(th.vision.key).fill(KEY)
-  await page.reload(); await expect(page.getByLabel(th.vision.key)).toHaveValue(KEY)
+  await page.reload(); await page.getByTestId('settings-vision').locator('summary').click(); await expect(page.getByLabel(th.vision.key)).toHaveValue(KEY)
   await expect(toggle).toBeChecked(); await page.getByRole('button', { name: th.vision.remove }).click()
-  await expect(toggle).not.toBeChecked(); await expect(page.getByLabel(th.vision.key)).toHaveValue('')
+  await expect(toggle).not.toBeChecked(); await expect(page.getByLabel(th.vision.key)).toHaveCount(0)
   expect(await page.evaluate(() => localStorage.getItem('jodsa:vision:key'))).toBeNull()
 })
 
@@ -34,6 +38,7 @@ for (const status of [200,403]) test(`M12 upload Vision ${status} and no key on 
   })
   await page.goto('/settings'); await page.evaluate(key => { localStorage.setItem('jodsa:vision:key',key); localStorage.setItem('jodsa:vision:enabled','true'); localStorage.setItem('jodsa:vision:ack','true') }, KEY)
   // Exercise a real server action while the key is stored.
+  await page.getByTestId('settings-push').locator('summary').click()
   await page.getByRole('button', { name: th.settings.notificationSave }).click()
   await page.goto('/import'); await page.locator('input[type="file"]').first().setInputFiles(path.join(GENERATED_DIR,'slip-noqr.png'))
   await expect(page.locator('#slip-amount')).toHaveValue(status === 200 ? '432.10' : '777.25', { timeout: 180000 })

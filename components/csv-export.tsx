@@ -74,8 +74,10 @@ export default function CsvExport() {
     }
   }
 
-  return <section className="space-y-3 py-4" aria-labelledby="csv-export-title">
-    <div><h2 id="csv-export-title" className="font-semibold">{t('exportTitle')}</h2><p className="text-sm text-muted-foreground">{t('exportDescription')}</p></div>
+  return <details data-testid="settings-csv" className="py-2">
+    <summary className="min-h-11 cursor-pointer py-2"><span className="font-semibold">{t('exportTitle')}</span><span className="ml-2 text-sm text-muted-foreground">{t('exportSummary')}</span></summary>
+    <section className="space-y-3 py-3" aria-labelledby="csv-export-title">
+    <div><h2 id="csv-export-title" className="sr-only">{t('exportTitle')}</h2><p className="text-sm text-muted-foreground">{t('exportDescription')}</p></div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Label className="flex min-w-0 flex-col items-stretch gap-2">
         {t('exportFrom')}
@@ -90,5 +92,5 @@ export default function CsvExport() {
     {state === 'empty' && <p role="status" className="text-sm text-muted-foreground">{t('exportEmpty')}</p>}
     {state === 'error' && <p role="alert" className="text-sm text-destructive">{t('exportError')}</p>}
     <Button type="button" onClick={download} disabled={state === 'loading' || !from || !to || from > to || types.length === 0}><Download className="size-4" />{state === 'loading' ? t('exporting') : t('exportDownload')}</Button>
-  </section>
+  </section></details>
 }

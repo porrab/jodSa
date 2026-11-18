@@ -41,7 +41,9 @@ export function PushSettings() {
   }
   async function save() { setBusy(true); try { await saveNotificationPrefs(prefs); setMessage(t('notificationSaved')) } catch (error) { setMessage(t('notificationSaveFailed', { error: error instanceof Error ? error.message : 'Unknown' })) } finally { setBusy(false) } }
   async function sendTest() { setBusy(true); setTestResults(null); try { setTestResults(await sendTestNotification()) } catch (error) { setMessage(t('notificationTestFailed', { error: error instanceof Error ? error.message : 'Unknown' })) } finally { setBusy(false) } }
-  return <section className="space-y-3 py-4" aria-labelledby="push-settings-title"><div><h2 id="push-settings-title" className="font-semibold">{t('notifications')}</h2><p className="text-sm text-muted-foreground">{t('notificationsIosCaveat')}</p></div>
+  return <details data-testid="settings-push" className="py-2">
+    <summary className="min-h-11 cursor-pointer py-2"><span className="font-semibold">{t('notifications')}</span><span className="ml-2 text-sm text-muted-foreground">{t(enabled ? 'stateOn' : 'stateOff')}</span></summary>
+    <section className="space-y-3 py-3" aria-labelledby="push-settings-title"><div><h2 id="push-settings-title" className="sr-only">{t('notifications')}</h2><p className="text-sm text-muted-foreground">{t('notificationsIosCaveat')}</p></div>
     <Button type="button" onClick={toggle} disabled={busy}>{enabled ? t('unsubscribe') : t('subscribe')}</Button>
     <Button type="button" variant="outline" onClick={sendTest} disabled={busy || !enabled}>{t('notificationTest')}</Button>
     {testResults && <pre role="status" className="whitespace-pre-wrap break-all text-sm">{JSON.stringify(testResults, null, 2)}</pre>}
@@ -50,5 +52,5 @@ export function PushSettings() {
       {(['quietStart','quietEnd'] as const).map(field => <Label key={field} className="flex min-w-0 flex-col items-stretch gap-2">{t(field)}<Input className="min-h-11 w-full" type="time" value={prefs[field] ?? ''} onChange={e => setPrefs({ ...prefs, [field]: e.target.value || null })} /></Label>)}
     </div>
     <Button type="button" disabled={busy} onClick={save}>{t('notificationSave')}</Button>{message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
-  </section>
+  </section></details>
 }

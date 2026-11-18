@@ -838,7 +838,8 @@
     "accept": "ยอมรับและเปิดใช้งาน",
     "key": "Google Cloud Vision API key",
     "remove": "ลบคีย์",
-    "storageError": "ใช้พื้นที่จัดเก็บในเบราว์เซอร์ไม่ได้ กรุณาตรวจการตั้งค่าเบราว์เซอร์"
+    "storageError": "ใช้พื้นที่จัดเก็บในเบราว์เซอร์ไม่ได้ กรุณาตรวจการตั้งค่าเบราว์เซอร์",
+    "summaryTitle": "อ่านสลิปด้วย Vision"
   },
   "settings": {
     "title": "ตั้งค่า",
@@ -849,7 +850,7 @@
     "themeDark": "มืด",
     "themeSystem": "ตามระบบ",
     "exportTitle": "ส่งออก CSV",
-    "exportDescription": "ดาวน์โหลดรายการที่เลือกเป็น CSV สำหรับเปิดใน Excel",
+    "exportDescription": "ส่งออกรายการเป็น CSV",
     "exportFrom": "ตั้งแต่",
     "exportTo": "ถึง",
     "exportDownload": "ดาวน์โหลด CSV",
@@ -892,7 +893,10 @@
     "deleting": "กำลังลบ...",
     "deleteConfirm1": "ลบบัญชีผู้ใช้และข้อมูลทั้งหมด? การกระทำนี้กู้คืนไม่ได้",
     "deleteConfirm2": "ยืนยันอีกครั้ง: ข้อมูลทั้งหมดของคุณจะถูกลบถาวร",
-    "logout": "ออกจากระบบ"
+    "logout": "ออกจากระบบ",
+    "exportSummary": "เลือกช่วงวันที่",
+    "stateOn": "เปิด",
+    "stateOff": "ปิด"
   },
   "common": {
     "save": "บันทึก",

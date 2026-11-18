@@ -88,7 +88,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 
 ### Settings
 
-- [ ] **DS-12 [M] Optional configuration fills several viewports before basic account actions.**
+- [x] **DS-12 [M] Optional configuration fills several viewports before basic account actions.**
+  - Implementation DS-12 (2026-11-18): CSV, Vision and Push use state summaries; Language and Theme stay open. Vision cost, restrictions and privacy remain before key entry; destructive warning retained. Validation: M11/M12 5/5 plus disclosure/privacy-order test 1/1 passed; final production gates pending. Awaiting independent re-check.
   CSV filters, inactive Vision key entry/instructions and push scheduling are all
   expanded. Retain Language/Theme, then collapse CSV, Vision and Push behind a short
   state. Expand filters on export; reveal Vision key/restriction instructions when

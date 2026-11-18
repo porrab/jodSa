@@ -27,6 +27,7 @@ test('M11 exports the filtered A ledger with CSV-safe transfer and investment fi
     seedTransaction(b.id, accountB, { type: 'expense', amountSatang: 999, datetime: '2026-11-08T16:59:00.000Z', counterparty: 'B-private' }),
   ])
   await page.goto('/settings')
+  await page.getByTestId('settings-csv').locator('summary').click()
   await page.getByLabel('ตั้งแต่').fill('2026-11-08')
   await page.getByLabel('ถึง').fill('2026-11-08')
   const download = page.waitForEvent('download')
