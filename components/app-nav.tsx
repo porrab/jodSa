@@ -75,7 +75,7 @@ export default function AppNav() {
     cn(
       'flex flex-1 flex-col items-center gap-1 text-sm transition-colors',
       isDashboard ? 'justify-start' : 'py-2',
-      active ? 'font-semibold text-foreground [&>svg]:h-7 [&>svg]:w-12 [&>svg]:rounded-full [&>svg]:border-[1.5px] [&>svg]:border-honey-edge [&>svg]:bg-primary [&>svg]:px-3 [&>svg]:py-1' : 'text-muted-foreground hover:text-foreground',
+      active ? 'font-semibold text-foreground [&>svg]:text-primary-foreground [&>svg]:h-7 [&>svg]:w-12 [&>svg]:rounded-full [&>svg]:border-[1.5px] [&>svg]:border-honey-edge [&>svg]:bg-primary [&>svg]:px-3 [&>svg]:py-1' : 'text-muted-foreground hover:text-foreground',
     )
 
   return (

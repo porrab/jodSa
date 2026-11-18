@@ -113,7 +113,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 
 ### Shared navigation
 
-- [ ] **DS-14 [M] Dark active glyph is pale ink on honey.**
+- [x] **DS-14 [M] Dark active glyph is pale ink on honey.**
+  - Implementation DS-14 (2026-11-18): Only the active navigation SVG uses primary-foreground; labels retain foreground. Validation: RED reproduced the wrong computed icon color; GREEN SVG/label color test 1/1 passed. Unit suite 422 passed/34 skipped; final production gates pending. Awaiting independent re-check.
   The active Home/More SVG inherits foreground ink on a honey pill, losing the
   brown-on-honey contrast the FAB already has. Apply `--primary-foreground` to only
   the active SVG; keep the label's ink color and existing pill. Read-only trace:
