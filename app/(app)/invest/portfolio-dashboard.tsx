@@ -166,6 +166,7 @@ function UpdatePricesSheet({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label htmlFor={`pv-${p.holdingId}`}>{t('currentValueLabel', { currency: p.currency })}</Label>
+                      <p className="text-sm text-muted-foreground">{t('entry.valueHint')}</p>
                       <Input
                         id={`pv-${p.holdingId}`}
                         type="text"

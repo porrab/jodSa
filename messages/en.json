@@ -393,6 +393,30 @@
         "crypto": "Crypto (high-vol)",
         "cash": "Cash / stablecoin"
       }
+    },
+    "entry": {
+      "qtyName": "Quantity",
+      "qtyHint": "Shares actually filled (Dime: ‘จำนวนหุ้น’); up to 7 decimal places.",
+      "priceName": "Price per unit",
+      "priceHint": "Actual execution price per share (Dime: ‘ราคาที่ได้จริง’, not the market-price instruction ‘ใช้ราคาตลาด’).",
+      "feesName": "Fees",
+      "feesHint": "Commission plus VAT after coupon discounts (Dime: ‘ค่าธรรมเนียม’); buys may show THB and sells USD. Check the currency.",
+      "dateName": "Transaction date",
+      "dateHint": "Completed order date and time (Dime: ‘วันที่คำสั่งสำเร็จ’, not ‘วันที่ส่งคำสั่ง’).",
+      "fxName": "Exchange rate",
+      "fxHint": "THB per one unit of the asset currency (Dime: ‘อัตราแลกเปลี่ยน 1 USD = … THB’).",
+      "cashName": "Cash leaving the account",
+      "cashHint": "Actual THB debit including fees (Dime: the large THB total at the top of the buy order details).",
+      "valueName": "Current value",
+      "valueHint": "Total value of the holding, not the price per share (Dime: ‘มูลค่าสินทรัพย์ (USD)’ on the holdings list).",
+      "guideTitle": "How do I copy an order confirmation?",
+      "example": "Invented example: 0.5000000 shares × 100.00 USD + 0.12 USD fees = 50.12 USD ≈ 1,704.08 ฿ at FX 34.00.",
+      "enterBaht": "Enter fees in THB",
+      "needsFx": "Enter an FX rate greater than zero before converting THB fees.",
+      "storedFee": "Saved as {amount} {currency}",
+      "checkEmpty": "Enter quantity and execution price to check the total.",
+      "checkHint": "Match the order amount (Dime: ‘จำนวนเงิน (USD)’) and THB total in the order details; check currency and discounts.",
+      "sellCheckHint": "Net sale proceeds after fees should match the amount and THB total in the sell order details (Dime)."
     }
   },
   "budget": {
