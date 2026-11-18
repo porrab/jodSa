@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useCallback, useEffect, useState } from 'react'
+import { useActionState, useCallback, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, ChevronRight, AlertTriangle, WalletCards } from 'lucide-react'
@@ -560,14 +560,18 @@ function HoldingDetailSheet({
   )
 }
 
-export default function InvestClient({ holdings, assets, accounts, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; accounts: CashAccount[]; initialHoldingId: string | null }) {
+export function AddHoldingSheet({ assets, open, onOpenChange }: { assets: Asset[]; open: boolean; onOpenChange: (open: boolean) => void }) {
   const t = useTranslations('invest')
-  const [addOpen, setAddOpen] = useState(false)
-  useEffect(() => {
-    const open = () => setAddOpen(true)
-    window.addEventListener('jodsa:holding-add', open)
-    return () => window.removeEventListener('jodsa:holding-add', open)
-  }, [])
+  return <Sheet open={open} onOpenChange={onOpenChange}>
+    <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
+      <SheetHeader><SheetTitle>{t('addHolding')}</SheetTitle></SheetHeader>
+      <div className="px-4 pb-6"><AddHoldingDialog assets={assets} onClose={() => onOpenChange(false)} /></div>
+    </SheetContent>
+  </Sheet>
+}
+
+export default function InvestClient({ holdings, accounts, initialHoldingId }: { holdings: Holding[]; assets: Asset[]; accounts: CashAccount[]; initialHoldingId: string | null }) {
+  const t = useTranslations('invest')
   const [detailId, setDetailId] = useState<string | null>(
     holdings.some((holding) => holding.id === initialHoldingId) ? initialHoldingId : null,
   )
@@ -579,13 +583,6 @@ export default function InvestClient({ holdings, assets, accounts, initialHoldin
 
   return (
     <div className="space-y-4">
-      <Sheet open={addOpen} onOpenChange={setAddOpen}>
-        <SheetContent side="bottom" className="mx-auto max-h-[90svh] max-w-lg overflow-y-auto rounded-t-2xl">
-          <SheetHeader><SheetTitle>{t('addHolding')}</SheetTitle></SheetHeader>
-          <div className="px-4 pb-6"><AddHoldingDialog assets={assets} onClose={() => setAddOpen(false)} /></div>
-        </SheetContent>
-      </Sheet>
-
       {holdings.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           <p>{t('noHoldings')}</p>

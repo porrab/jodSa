@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { PageTabs, PageTab } from '@/components/ui/page-tabs'
-import InvestClient, { type Holding, type Asset } from './invest-client'
+import InvestClient, { AddHoldingSheet, type Holding, type Asset } from './invest-client'
 import PortfolioDashboard, { type DashboardData, type SnapshotRow } from './portfolio-dashboard'
 import PlanClient, { type PlanRow } from './plan-client'
 import { PageHeader } from '@/components/ui/page-header'
@@ -36,12 +36,13 @@ export default function InvestTabs({
 }) {
   const t = useTranslations('invest')
   const [tab, setTab] = useState<'holdings' | 'overview' | 'plan'>('holdings')
+  const [addOpen, setAddOpen] = useState(false)
 
   return (
     <div className="space-y-4">
       <PageHeader
         title={t('title')}
-        action={<Button size="sm" onClick={() => window.dispatchEvent(new Event('jodsa:holding-add'))}><Plus className="size-4" />{t('addHolding')}</Button>}
+        action={<Button size="sm" onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addHolding')}</Button>}
       />
       <PageTabs className="grid-cols-3">
         {(['holdings', 'overview', 'plan'] as const).map((tb) => (
@@ -54,6 +55,7 @@ export default function InvestTabs({
           </PageTab>
         ))}
       </PageTabs>
+      <AddHoldingSheet assets={assets} open={addOpen} onOpenChange={setAddOpen} />
 
       {tab === 'holdings' ? (
         <InvestClient holdings={holdings} assets={assets} accounts={accounts} initialHoldingId={initialHoldingId} />
