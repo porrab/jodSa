@@ -47,6 +47,11 @@ function toNumberQty(qty: string | number | null): number {
   return Number.isFinite(n) ? n : 0
 }
 
+/** Round the quantity extension once, then add buy fees or subtract sell fees. */
+export function tradeTotalMinor(type: 'buy' | 'sell', qty: number, price: bigint, fees: bigint): bigint {
+  return BigInt(Math.round(qty * Number(price))) + (type === 'buy' ? fees : -fees)
+}
+
 /**
  * Fold a holding's transactions (any order) into its current qty + cost basis.
  * Pure function — same input list ⇒ same output, regardless of array order (sorts
@@ -70,7 +75,7 @@ export function computeCostBasis(transactions: CostBasisTransaction[]): CostBasi
     if (tx.type === 'buy') {
       const q = toNumberQty(tx.qty)
       if (q <= 0) continue
-      const cost = BigInt(Math.round(q * Number(price))) + txFees
+      const cost = tradeTotalMinor('buy', q, price, txFees)
       qty += q
       totalCost += cost
     } else if (tx.type === 'sell') {
@@ -81,7 +86,7 @@ export function computeCostBasis(transactions: CostBasisTransaction[]): CostBasi
       const sellQty = Math.min(q, qty)
       const avgCostPerUnit = Number(totalCost) / qty
       const costRemoved = BigInt(Math.round(avgCostPerUnit * sellQty))
-      const proceeds = BigInt(Math.round(sellQty * Number(price))) - txFees
+      const proceeds = tradeTotalMinor('sell', sellQty, price, txFees)
       realizedPnl += proceeds - costRemoved
       totalCost -= costRemoved
       qty -= sellQty
