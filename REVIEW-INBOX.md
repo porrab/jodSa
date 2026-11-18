@@ -34,6 +34,8 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 `design-studio/reviews/jodsa/2026-11-18-mobile-audit/README.md`.
 **Exclusion:** FB-1–FB-4 remain with their current implementer; do not duplicate them.
 
+**Implementation handoff (2026-11-18): FB-1–FB-4 and DS-8–DS-14 implemented; awaiting independent re-check. Overall gates RED: final full production E2E 161 passed/1 M13 Overview-refresh failure. TypeScript/build pass; Vitest 422/34 skipped; Honey 28/28 with updates disabled; 34 after images in root commit 8da0d34. M13 security isolation passes 3/3 with --no-deps; the unchanged sync assertion remains unresolved. Review a643b50..11eb1ed. Full results, exclusions and evidence: project/jodsa/docs/postmortems/2026-11-18-mobile-ux.md.**
+
 ### Invest — Holdings / holding detail
 
 - [x] **DS-8 [H] Missing values masquerade as a zero total; the note outweighs the figure.**
@@ -53,7 +55,7 @@ test user A. Application code was read only. Full review, coverage/limits and ev
   `design-studio/reviews/jodsa/2026-11-18-mobile-audit/dark-invest-holdings.jpg`,
   `design-studio/reviews/jodsa/2026-11-18-mobile-audit/light-invest-overview.jpg`.
 - [x] **DS-9 [M] Missing-value prose takes display-number emphasis in holding detail.**
-  - Implementation DS-9 (2026-11-18): Reserve display size for the amount or dash; show missing-value status at 14px, preserving cost and edit action. Validation: Shared holding tests remain 30/30; source verifies separate text-sm status; final rendered capture pending. Awaiting independent re-check.
+  - Implementation DS-9 (2026-11-18): Reserve display size for the amount or dash; show missing-value status at 14px, preserving cost and edit action. Validation: Shared holding tests remain 30/30; source verifies separate text-sm status; 14px status asserted in the 34-image production capture job. Awaiting independent re-check.
   `ยังไม่ได้อัปเดตมูลค่าปัจจุบัน` fills two 36px lines and dominates cost/trades/actions.
   Reserve display size for the amount or `—`; shorten the status to `ยังไม่ระบุมูลค่า`
   at 14px and retain the existing cost line/edit action. No extra explanatory panel.
@@ -89,7 +91,7 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 ### Settings
 
 - [x] **DS-12 [M] Optional configuration fills several viewports before basic account actions.**
-  - Implementation DS-12 (2026-11-18): CSV, Vision and Push use state summaries; Language and Theme stay open. Vision cost, restrictions and privacy remain before key entry; destructive warning retained. Validation: M11/M12 5/5 plus disclosure/privacy-order test 1/1 passed; final production gates pending. Awaiting independent re-check.
+  - Implementation DS-12 (2026-11-18): CSV, Vision and Push use state summaries; Language and Theme stay open. Vision cost, restrictions and privacy remain before key entry; destructive warning retained. Validation: M11/M12 5/5 plus disclosure/privacy-order test 1/1 passed; final item regressions passed; overall full gate RED on M13 refresh (see handoff). Awaiting independent re-check.
   CSV filters, inactive Vision key entry/instructions and push scheduling are all
   expanded. Retain Language/Theme, then collapse CSV, Vision and Push behind a short
   state. Expand filters on export; reveal Vision key/restriction instructions when
@@ -103,7 +105,7 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 ### Sessions
 
 - [x] **DS-13 [M] The list front-loads QR instructions even for split trips, then repeats them when empty.**
-  - Implementation DS-13 (2026-11-18): Sessions remove the populated instruction paragraph, use one action-led empty prompt, and retain the short slip/not-bank-verified note. QR copy stays in the payment-type choice. Validation: Targeted empty/populated/payment-choice E2E 1/1 passed; final production gates pending. Awaiting independent re-check.
+  - Implementation DS-13 (2026-11-18): Sessions remove the populated instruction paragraph, use one action-led empty prompt, and retain the short slip/not-bank-verified note. QR copy stays in the payment-type choice. Validation: Targeted empty/populated/payment-choice E2E 1/1 passed; final item regressions passed; overall full gate RED on M13 refresh (see handoff). Awaiting independent re-check.
   Remove the populated-list instructional paragraph. Keep one short action-led empty
   prompt; place QR-specific copy with the existing payment-type choice. Retain a short
   “recorded from slip / not bank-verified” notice where slips/totals appear.
@@ -114,7 +116,7 @@ test user A. Application code was read only. Full review, coverage/limits and ev
 ### Shared navigation
 
 - [x] **DS-14 [M] Dark active glyph is pale ink on honey.**
-  - Implementation DS-14 (2026-11-18): Only the active navigation SVG uses primary-foreground; labels retain foreground. Validation: RED reproduced the wrong computed icon color; GREEN SVG/label color test 1/1 passed. Unit suite 422 passed/34 skipped; final production gates pending. Awaiting independent re-check.
+  - Implementation DS-14 (2026-11-18): Only the active navigation SVG uses primary-foreground; labels retain foreground. Validation: RED reproduced the wrong computed icon color; GREEN SVG/label color test 1/1 passed. Unit suite 422 passed/34 skipped; final item regressions passed; overall full gate RED on M13 refresh (see handoff). Awaiting independent re-check.
   The active Home/More SVG inherits foreground ink on a honey pill, losing the
   brown-on-honey contrast the FAB already has. Apply `--primary-foreground` to only
   the active SVG; keep the label's ink color and existing pill. Read-only trace:
@@ -139,9 +141,9 @@ evidence is A-only on the separate 127.0.0.1 origin. Only existing E2E helpers s
 - [x] **[FB-1] H — "เพิ่มสินทรัพย์" in the page header does nothing on the ภาพรวม and แผนรายเดือน tabs.** Root cause (verified in code): `invest-tabs.tsx` dispatches `window` event `jodsa:holding-add`, but the only listener is inside `InvestClient`, which mounts only on the ถือครอง tab. Fix: own `addOpen` state in `InvestTabs` and render the add sheet there, so it works from every tab (or switch to the holdings tab and open it). E2E: click the header button on all three tabs and assert the sheet opens.
   - Implemented 2026-11-18; parent-owned sheet, production RED→GREEN regression on all three tabs. Awaiting independent re-check. Record: `project/jodsa/docs/postmortems/2026-11-18-mobile-ux.md`.
 - [x] **[FB-2] H — horizontal overflow on แผนรายเดือน at phone width.** `plan-client.tsx:302`, the classify row is one non-wrapping flex row (long asset name + Select + "บันทึกการจัดประเภท" button), so the button runs off the screen and the whole page shifts sideways. Fix: stack it (name on its own line; select + button below, full width), `min-w-0` on flex children.
-  - Implementation FB-2 (2026-11-18): Stack the long asset name, full-width picker and save action; bound flex children. Validation: Production RED: right edge 467.109375 > 375; targeted dev regression GREEN 1/1; final production gate pending. Awaiting independent re-check.
+  - Implementation FB-2 (2026-11-18): Stack the long asset name, full-width picker and save action; bound flex children. Validation: Production RED: right edge 467.109375 > 375; targeted dev regression GREEN 1/1 and final full-production regression passed. Awaiting independent re-check.
 - [x] **[FB-3] M — guard the whole class of bug.** Add a production E2E that, at 375×812, visits every signed-in page and every tab (invest ×3, budgets tabs, settings, …) and asserts `document.documentElement.scrollWidth <= clientWidth` and that no visible button is clipped past the viewport's right edge. Make it a standing regression.
-  - Implementation FB-3 (2026-11-18): Add a standing 375x812 both-theme guard for signed-in routes, nested group/trip pages, all budget/invest tabs and add sheets. Validation: Typecheck passed; broad dev run interrupted by HMR during edits, so no pass claimed; final production run required. Awaiting independent re-check.
+  - Implementation FB-3 (2026-11-18): Add a standing 375x812 both-theme guard for signed-in routes, nested group/trip pages, all budget/invest tabs and add sheets. Validation: Final production standing guard passed in both themes, including a seeded recurring confirmation route; redirects and 404 headings are rejected. Awaiting independent re-check.
 - [x] **[FB-4] M — too much helper text (owner: "ลายตา").** The INVEST-ENTRY-UX hints (requested by Claude) put one line under every field. Keep at most one short hint visible: price only (the most error-prone). Move the rest into the existing collapsible "กรอกจากใบยืนยันคำสั่งซื้อยังไง?" panel. Keep the check line. The owner also reports unbalanced layouts on some pages; that part waits for a design pass.
   - Implementation FB-4 (2026-11-18): Keep only price guidance beside fields; move quantity/date/FX/fee/check explanations to the existing guide and retain numeric checks. Validation: Entry UX dev regression passed 2/2, including THB fee conversion, buy/sell totals and four locale/theme variants. Awaiting independent re-check.
 
