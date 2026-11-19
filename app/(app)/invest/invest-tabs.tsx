@@ -48,6 +48,7 @@ export default function InvestTabs({
         {(['holdings', 'overview', 'plan'] as const).map((tb) => (
           <PageTab
             key={tb}
+            className="whitespace-nowrap"
             onClick={() => setTab(tb)}
             active={tab === tb}
           >

@@ -38,7 +38,8 @@ assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; i
   valued at cost for the 2 unpriced holdings. Fix: Holdings shows the same number as Overview with the
   same "valued at cost" note; show `—` only where Overview also has no figure. E2E: same fixture,
   `holdings-total` text equals the Overview total text.
-- [ ] **RV-UX-3 [L]** (a) `missingValueStatus` says "หรือ FX", which is jargon: use "ยังไม่ระบุมูลค่า {count} รายการ".
+- [x] **RV-UX-3 [L]** (a) `missingValueStatus` says "หรือ FX", which is jargon: use "ยังไม่ระบุมูลค่า {count} รายการ".
+  - Implementation 2026-11-19: approved plain copy + English, short nowrap Plan tab, explicit main-container bottom capture. Line-wrap RED/GREEN; production capture2/2; Honey28/28 with updates disabled. Eight after images in workspace f01256c, bottom scroll174/920/746 in both themes. Awaiting independent re-check.
   (b) The tab label "แผนรายเดือน" wraps to two lines at 375px: shorten it to "แผน", or keep the label on one line.
   (c) after/`*-invest-plan-bottom.jpg` is the same view as the top shot (it never scrolled), so there is no
   after-evidence for the plan bottom. Recapture it.

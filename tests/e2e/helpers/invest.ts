@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import th from '../../../messages/th.json'
 
 /**
  * /invest UI helpers — drive holding creation / overview / price-update through the
@@ -112,10 +113,10 @@ export async function addCustomHolding(page: Page, opts: CustomHoldingOpts): Pro
   await expect(dialog).toBeHidden({ timeout: 30_000 })
 }
 
-/** Switch to the Plan (แผนรายเดือน) tab — the M5 planner. */
+/** Switch to the Plan tab — the M5 planner. */
 export async function openPlanTab(page: Page): Promise<void> {
   await page.goto('/invest')
-  await page.getByRole('tab', { name: 'แผนรายเดือน', exact: true }).click()
+  await page.getByRole('tab', { name: th.invest.tabPlan, exact: true }).click()
   await expect(page.getByText('สัดส่วนเป้าหมาย')).toBeVisible()
   await acknowledgePlan(page)
 }

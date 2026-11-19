@@ -9,7 +9,7 @@ test('RV-UX-1 closed disclaimer keeps acknowledgement visible above Generate', a
   if (!user) throw new Error('Missing test user A')
   await seedAccount(user.id, 'Plan acknowledgement fixture', 'SCB')
   await page.goto('/invest'); await page.waitForLoadState('networkidle')
-  await page.getByRole('tab', { name: 'แผนรายเดือน', exact: true }).click()
+  await page.getByRole('tab', { name: th.invest.tabPlan, exact: true }).click()
   const details = page.getByTestId('plan-disclaimer')
   await expect(details).not.toHaveAttribute('open')
   const generate = page.getByRole('button', { name: 'สร้างแผน', exact: true })
@@ -31,4 +31,25 @@ test('RV-UX-1 closed disclaimer keeps acknowledgement visible above Generate', a
   const money = await page.locator('#newMoney').boundingBox()
   const target = await page.locator('#target-us_equity').boundingBox()
   expect(money!.y).toBeLessThan(target!.y)
+})
+
+test('RV-UX-3 active plan tab stays on one line inside the 375px viewport', async ({ page }) => {
+  const user = await findUserByEmail(env.userA.email)
+  if (!user) throw new Error('Missing test user A')
+  await seedAccount(user.id, 'Plan label fixture', 'SCB')
+  await page.goto('/invest'); await page.waitForLoadState('networkidle')
+  const tab = page.getByRole('tab', { name: th.invest.tabPlan, exact: true })
+  await tab.click()
+  await page.evaluate(() => document.fonts.ready)
+  const metrics = await tab.evaluate(el => {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    const rects = [...range.getClientRects()]
+    const box = el.getBoundingClientRect()
+    return { lines: new Set(rects.map(r => Math.round(r.top))).size,
+      textRight: Math.max(...rects.map(r => r.right)), right: box.right }
+  })
+  expect(metrics.lines).toBe(1)
+  expect(metrics.textRight).toBeLessThanOrEqual(metrics.right + 1)
+  expect(metrics.right).toBeLessThanOrEqual(375)
 })

@@ -421,7 +421,7 @@
       "checkHint": "Match the order amount (Dime: ‘จำนวนเงิน (USD)’) and THB total in the order details; check currency and discounts.",
       "sellCheckHint": "Net sale proceeds after fees should match the amount and THB total in the sell order details (Dime)."
     },
-    "missingValueStatus": "{count} holdings need a value or FX rate",
+    "missingValueStatus": "Value not entered for {count} holdings",
     "saveSnapshotShort": "Save snapshot"
   },
   "budget": {

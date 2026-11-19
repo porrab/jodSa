@@ -12,6 +12,7 @@ import th from '../../messages/th.json'
 test.use({ storageState: STORAGE_A, viewport: { width: 375, height: 812 } })
 test.describe.configure({ mode: 'serial' })
 const output = path.resolve('../../design-studio/reviews/jodsa/2026-11-18-mobile-audit/after')
+const portfolioOnly = process.env.JODSA_CAPTURE_PORTFOLIO_ONLY === '1'
 
 async function ready(page: Page) {
   await page.waitForLoadState('networkidle')
@@ -26,6 +27,9 @@ async function capture(page: Page, theme: string, state: string) {
   const meta = await page.evaluate(() => ({
     width: innerWidth, height: innerHeight, scrollWidth: document.documentElement.scrollWidth,
     theme: document.documentElement.className, url: location.pathname,
+    mainScrollTop: document.querySelector('main')?.scrollTop,
+    mainScrollHeight: document.querySelector('main')?.scrollHeight,
+    mainClientHeight: document.querySelector('main')?.clientHeight,
   }))
   expect(meta.width).toBe(375)
   expect(meta.height).toBe(812)
@@ -50,7 +54,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByText(env.userA.email, { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'ไทย', exact: true }).click()
 
-    // Missing valuation remains missing despite a real cost basis in both currencies.
+    // Holdings and Overview use the same THB cost fallback for this mixed-currency fixture.
     await addHolding(page, { asset: '(AAPL)', qty: '1', price: '100', fx: '35' })
     await addHolding(page, { asset: '(PTT)', qty: '10', price: '30' })
     await page.goto('/invest')
@@ -58,6 +62,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('holdings-total')).toHaveCount(1)
     await expect(page.getByTestId('holdings-total')).toHaveText('฿3,800.00')
     await capture(page, theme, 'invest-holdings')
+    if (!portfolioOnly) {
     await page.getByRole('button').filter({ hasText: 'Apple' }).click()
     const detail = page.getByRole('dialog')
     await expect(detail.getByText(th.invest.noCurrentValue, { exact: true })).toBeVisible()
@@ -66,16 +71,24 @@ for (const theme of ['light', 'dark'] as const) {
     await detail.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
     await expect(page.getByRole('dialog').locator('#tx-amount')).toBeVisible()
     await capture(page, theme, 'invest-add-transaction')
+    }
 
     await page.goto('/invest')
     await page.getByRole('tab', { name: 'ภาพรวม', exact: true }).click()
     await expect(page.getByRole('button', { name: th.invest.saveSnapshot, exact: true })).toBeVisible()
+    await expect(page.getByTestId('overview-total')).toHaveText('฿3,800.00')
     await capture(page, theme, 'invest-overview')
-    await page.getByRole('tab', { name: 'แผนรายเดือน', exact: true }).click()
+    await page.getByRole('tab', { name: th.invest.tabPlan, exact: true }).click()
     await expect(page.getByTestId('plan-disclaimer')).not.toHaveAttribute('open')
+    const main = page.getByRole('main')
+    await main.evaluate(el => { el.scrollTop = 0 })
     await capture(page, theme, 'invest-plan')
-    await page.getByRole('button', { name: 'สร้างแผน', exact: true }).scrollIntoViewIfNeeded()
+    await main.evaluate(el => { el.scrollTop = el.scrollHeight })
+    await expect.poll(() => main.evaluate(el => el.scrollTop)).toBeGreaterThan(0)
+    await expect.poll(() => main.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThanOrEqual(1)
+    await expect(page.getByRole('checkbox', { name: th.invest.plan.disclaimerAck })).toBeVisible()
     await capture(page, theme, 'invest-plan-bottom')
+    if (portfolioOnly) return
 
     await page.goto('/invest')
     await page.getByRole('button', { name: 'เพิ่มสินทรัพย์', exact: true }).click()

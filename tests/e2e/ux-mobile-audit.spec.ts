@@ -5,6 +5,7 @@ import { seedGroup } from './helpers/admin'
 import { seedTripSession, deleteTripSession } from './helpers/trip'
 import { addCustomHolding, openPlanTab, submitPlan } from './helpers/invest'
 import type { Page } from '@playwright/test'
+import th from '../../messages/th.json'
 
 test.use({ storageState: STORAGE_A, viewport: { width: 375, height: 812 } })
 let accountId: string
@@ -97,7 +98,7 @@ test('FB-3 every signed-in page, tab and add sheet fits 375x812 in both themes',
 test('FB-1 header Add opens on every investment tab', async ({ page }) => {
   await page.goto('/invest')
   await page.waitForLoadState('networkidle')
-  for (const name of ['สินทรัพย์', 'ภาพรวม', 'แผนรายเดือน']) {
+  for (const name of [th.invest.tabHoldings, th.invest.tabOverview, th.invest.tabPlan]) {
     await page.getByRole('tab', { name, exact: true }).click()
     await page.getByRole('button', { name: 'เพิ่มสินทรัพย์', exact: true }).click()
     const sheet = page.getByRole('dialog', { name: 'เพิ่มสินทรัพย์', exact: true })
