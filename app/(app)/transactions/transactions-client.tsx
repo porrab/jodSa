@@ -112,8 +112,9 @@ export default function TransactionsClient({
               key={g.id}
               onClick={() => setActiveGroup(g.id)}
               pressed={activeGroup === g.id}
+              className="max-w-full"
             >
-              {g.title}
+              <span className="min-w-0 truncate">{g.title}</span>
             </Chip>
           ))}
         </div>
@@ -148,7 +149,7 @@ export default function TransactionsClient({
             <div key={group.key}>
               {/* Day header — sticks under the top bar while its rows scroll.
                   Flat bg (no blur-behind-text — design v3 anti-pattern). */}
-              <div className="sticky top-0 z-10 -mx-1 mb-1.5 flex items-center justify-between gap-3 bg-background px-1 py-1">
+              <div className="sticky top-0 z-10 mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-background px-1 py-1">
                 <h2 className="text-sm font-semibold text-foreground">{group.label}</h2>
                 {group.expenseTotal > 0 && !(lastDayMayBePartial && groupIndex === dayGroups.length - 1) && (
                   <p className="shrink-0 text-sm text-muted-foreground">
