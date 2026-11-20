@@ -45,7 +45,7 @@ export default function HomeBudgetStrip({
   return (
     <Link
       href="/budgets"
-      className={`block space-y-2 transition-colors ${status.over ? '-mx-5 -my-4 bg-blush px-5 py-4' : ''}`}
+      className={`block space-y-2 transition-colors ${status.over ? '-mx-5 -mt-4 -mb-2 bg-blush px-5 pt-4 pb-2 md:mx-0 md:my-0 md:p-0' : ''}`}
     >
       <div className="flex items-center justify-between gap-3 text-sm font-semibold">
         <span>{title}</span>
