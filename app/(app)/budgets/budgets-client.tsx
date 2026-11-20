@@ -136,7 +136,7 @@ export default function BudgetsClient({ items }: { items: BudgetItem[] }) {
         <div className="divide-y divide-border border-y border-border">
           {items.map(({ budget, status }) => (
             <div key={budget.id}>
-              <button type="button" onClick={() => setEditId(budget.id)} className="flex w-full items-center gap-3 text-left hover:bg-accent/40">
+              <button type="button" onClick={() => setEditId(budget.id)} className={`flex w-full items-center gap-3 text-left hover:bg-accent/40 ${status.over ? 'bg-blush' : ''}`}>
                 <div className="min-w-0 flex-1">
                   <BudgetBar budget={budget} status={status} />
                 </div>

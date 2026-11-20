@@ -33,9 +33,9 @@ export default function BudgetBar({
   const dailyAllowance = status.remaining > 0 && daysRemaining > 0 ? Math.round(status.remaining / daysRemaining / 100) * 100 : 0
 
   return (
-    <div className={`space-y-3 px-1 py-4 ${status.over ? '-mx-4 bg-blush px-5' : ''}`}>
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-semibold">
+    <div className="space-y-3 px-1 py-4">
+      <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
+        <span className="min-w-0 truncate font-semibold">
           {t('bandTitle', { period: budget.period === 'month' ? t('periodMonth') : t('periodDay') })} · {label}
         </span>
         <span className="shrink-0 text-muted-foreground">
@@ -43,7 +43,7 @@ export default function BudgetBar({
         </span>
       </div>
 
-      <div className="flex items-baseline gap-2">
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <p className={`text-xl font-semibold tabular-nums ${status.over ? 'text-destructive' : ''}`}>
           {status.over ? (
             <span className="inline-flex items-center gap-1.5"><AlertTriangle className="size-4" />{t('overBy', { amount: wholeTHB(-status.remaining) })}</span>
