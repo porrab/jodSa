@@ -44,7 +44,15 @@ owner's state yet, so which of these the owner sees is unconfirmed.
 Acceptance: screenshots of every HB-5 state at all three widths, no overlap or bleed, and the existing Home
 tests are unchanged in strength.
 
-## [UX-ROUND-20261118] FB-1..4 + DS-8..14 review — CHANGES 2026-11-19
+## [UX-ROUND-20261118] FB-1..4 + DS-8..14 review — APPROVED 2026-11-20 (was CHANGES 2026-11-19)
+
+**Re-review 2026-11-20:** RV-UX-1 `385ab10`, RV-UX-2 `c82ceac`, RV-UX-3 `e5b49bf`, RV-UX-4 quarantine `58e6471`.
+Claude re-derived: the plan checkbox is outside the `<details>` directly above สร้างแผน; Holdings and Overview
+share `getHoldingsTotal` + `PortfolioValuationNotes` (after shot: both ฿3,800.00 for A); the tab reads แผน on one
+line; plan-bottom is a real scrolled capture. Production build 0; M13 isolation + sync + 11 ux-* specs
+`--no-deps`: 17 passed, 3 skipped (RV-M13-4 fixme + capture/audit jobs), 0 failed. Codex's own full E2E did
+not start (temporary config load error); the full suite was not re-run by Claude either.
+L note: when every holding lacks FX, both views show the same ฿0.00 plus the red excluded-FX note; it is consistent, not hidden.
 
 Codex `3e7ef35..8da0d34`. Claude re-derived: tsc 0; vitest 422/34; the after screenshots
 (34 at 375×812) inspected for holdings, overview, plan, settings and dark home. FB-1..4, DS-9, DS-11,
@@ -76,7 +84,7 @@ assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; i
   first buy is only ฿100, which suggests it sees another holding. Check first for test-data leakage
   (the test's `accounts` insert is never deleted; earlier runs may leave holdings behind). Then check
   refresh coalescing. Do not loosen the 2200 ms assertion without a cause.
-  Quarantined via test.fixme in HEAD; Next/react-dom patch discarded. Parked.
+  Quarantined via test.fixme in `58e6471`; Next/react-dom patch discarded. Parked.
 
 ## [COPY-POLISH-20261118] Thai UI copy, 49 strings — APPROVED 2026-11-18
 
