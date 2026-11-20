@@ -481,7 +481,7 @@ export default function PlanClient({ plans }: { plans: PlanRow[] }) {
                     key={p.id}
                     type="button"
                     onClick={() => setViewingPlanId(p.id)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-accent/50"
+                    className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2 text-left text-sm transition-colors hover:bg-accent/50"
                   >
                     <span>{new Date(p.created_at).toLocaleString('th-TH')}</span>
                     <Badge variant={verdict === 'no_trade' ? 'secondary' : 'default'} className="text-sm">
