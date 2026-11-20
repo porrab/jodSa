@@ -26,7 +26,7 @@ export default function HomeBudgetStrip({
 
   if (!budget || !status) {
     return (
-      <Link href="/budgets" className="flex h-full min-h-14 items-center justify-between gap-3 bg-secondary px-4 py-3 text-sm text-foreground">
+      <Link href="/budgets" className="flex min-h-14 items-center justify-between gap-3 bg-secondary px-4 py-3 text-sm text-foreground">
         <span>{t('noBudgetLine', { amount: formatTHB(monthExpense) })}</span>
         <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-honey-text" />
       </Link>
@@ -45,7 +45,7 @@ export default function HomeBudgetStrip({
   return (
     <Link
       href="/budgets"
-      className={`block h-full space-y-2 transition-colors ${status.over ? '-mx-5 -my-4 bg-blush px-5 py-4' : ''}`}
+      className={`block space-y-2 transition-colors ${status.over ? '-mx-5 -my-4 bg-blush px-5 py-4' : ''}`}
     >
       <div className="flex items-center justify-between gap-3 text-sm font-semibold">
         <span>{title}</span>
