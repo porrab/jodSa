@@ -47,15 +47,15 @@ export default function HomeBudgetStrip({
       href="/budgets"
       className={`block space-y-2 transition-colors ${status.over ? '-mx-5 -mt-4 -mb-2 bg-blush px-5 pt-4 pb-2 md:mx-0 md:my-0 md:p-0' : ''}`}
     >
-      <div className="flex items-center justify-between gap-3 text-sm font-semibold">
-        <span>{title}</span>
-        <span className="inline-flex items-center gap-1 font-normal text-muted-foreground">
+      <div className="flex min-w-0 items-center justify-between gap-3 text-sm font-semibold">
+        <span className="min-w-0 truncate">{title}</span>
+        <span className="inline-flex shrink-0 items-center gap-1 font-normal text-muted-foreground">
           {t('daysRemaining', { days: daysRemaining })}
           <ChevronRight aria-hidden="true" className="size-4" />
         </span>
       </div>
 
-      <div className="flex items-baseline gap-2">
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <p className={`text-base font-semibold tabular-nums ${status.over ? 'text-expense' : 'text-foreground'}`}>
           {status.over
             ? <span className="inline-flex items-center gap-1.5"><AlertTriangle aria-hidden="true" className="size-4" />{t('homeBudgetOver', { amount: formatWholeTHB(-status.remaining) })}</span>
