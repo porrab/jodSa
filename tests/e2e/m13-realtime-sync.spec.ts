@@ -6,7 +6,10 @@ import { findUserByEmail, testUserClient } from './helpers/admin'
 import { login } from './helpers/ui'
 import { formatMoney } from '@/lib/invest/money'
 
-test('RV-M13-4 invest overview refreshes with its permanent inline form', async ({ browser }) => {
+// Quarantined 2026-11-20 (RV-UX-4): intermittent on base a643b50 and later
+// (Overview total not refreshed within 2200ms). Pre-existing; root cause unproven. Do not patch
+// framework internals; re-enable when the refresh path is investigated.
+test.fixme('RV-M13-4 invest overview refreshes with its permanent inline form', async ({ browser }) => {
   const user = await findUserByEmail(env.userA.email)
   if (!user) throw new Error('Missing A')
   const db = await testUserClient(user.id)
