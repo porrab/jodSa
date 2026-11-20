@@ -29,6 +29,7 @@ export default function HomeMoneyHeader({
   const missing = holdings.length - valued.length
   const includesInvestments = !investmentsFailed && valued.length > 0
   const totalMinor = BigInt(cashTotal) + (includesInvestments ? investMinor : 0n)
+  const totalLabel = `${includesInvestments ? '≈ ' : ''}${formatMoney(totalMinor, 'THB', locale)}`
   const latest = valued.reduce<string | null>((max, holding) => !max || holding.updatedAt > max ? holding.updatedAt : max, null)
   const latestLabel = latest ? new Date(latest).toLocaleDateString(locale === 'th' ? 'th-TH' : 'en-GB', {
     day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok',
@@ -44,13 +45,13 @@ export default function HomeMoneyHeader({
   return (
     <div className="flex h-full flex-col rounded-[20px] bg-hero p-5 text-hero-foreground shadow-soft">
       <button type="button" onClick={() => show('top')} className="flex min-h-[76px] w-full items-center justify-between gap-3 text-left">
-        <span>
+        <span className="min-w-0 flex-1">
           <span className="block text-sm text-hero-muted">{includesInvestments ? t('moneyTotalLabel') : t('cashTotalLabel')}</span>
-          <span className="block text-4xl font-bold leading-tight text-hero-figure tabular-nums">
-            {includesInvestments && '≈ '}{formatMoney(totalMinor, 'THB', locale)}
+          <span className="block text-4xl font-bold leading-tight text-hero-figure tabular-nums" style={totalLabel.length > 12 ? { fontSize: 'clamp(1.5rem,7vw,2.25rem)' } : undefined}>
+            {totalLabel}
           </span>
         </span>
-        <ChevronRight className="size-4 text-hero-muted" />
+        <ChevronRight className="size-4 shrink-0 text-hero-muted" />
       </button>
 
       {holdings.length > 0 || investmentsFailed ? (
