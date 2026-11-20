@@ -73,8 +73,11 @@ export default function HomeMoneyHeader({
             <span className="min-w-0 flex-1">
               <span className="block">{t('investments')}</span>
               <span className="block truncate text-sm text-hero-muted">
-                {investmentsFailed ? t('investmentsLoadFailed') : latestLabel ? t('updated', { date: latestLabel }) : valued.length === 0 ? t('valueMissing') : null}
-                {stale && <> · {t('staleValue')}</>}{missing > 0 && <> · {t('missingValues', { count: missing })}</>}
+                {investmentsFailed ? t('investmentsLoadFailed') : valued.length === 0 ? t('missingValues', { count: missing }) : <>
+                  {latestLabel && t('updated', { date: latestLabel })}
+                  {stale && <> · {t('staleValue')}</>}
+                  {missing > 0 && <>{latestLabel && ' · '}{t('missingValues', { count: missing })}</>}
+                </>}
               </span>
             </span>
             <span className="shrink-0 text-right tabular-nums">{valued.length === 0 ? '—' : <>≈ {formatMoney(investMinor, 'THB', locale)}</>}</span>
