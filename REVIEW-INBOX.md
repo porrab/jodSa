@@ -15,6 +15,35 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
+## [HOME-BUDGET-20261120] Home budget strip breaks once a budget exists — OPEN, PARKED behind UX-ROUND · from owner (phone), triaged by Claude
+
+The owner reports that the Home budget area still looks broken. Every audit and after screenshot used test user A with
+**no budget**, so the budget-set branch was never captured. Diagnosis from code only. No screenshot of the
+owner's state yet, so which of these the owner sees is unconfirmed.
+
+- [ ] **HB-1 [H] Fixed section height.** `app/(app)/dashboard/page.tsx:153` sets `h-[134px]` on the mobile
+  `home-budget` section. The budget-set strip has 4 rows (title, remaining, progress bar, spent line). Any
+  wrap (long category name, 320px width, large amounts) overflows into "รายการวันนี้". In the no-budget
+  state the same fixed height plus `h-full` (`components/home-budget-strip.tsx:29`) stretches a one-line
+  link into a ~110px yellow band. Fix: drop the fixed height, size to content, keep `shrink-0`.
+- [ ] **HB-2 [H] Over-budget blush bleeds.** `home-budget-strip.tsx:48` uses `-mx-5 -my-4` to paint
+  `bg-blush` edge to edge, but the parent pads `pt-4 pb-2`, so the blush overruns the bottom border.
+  Fix: put the background on the section (or match the negative margins to the real padding).
+- [ ] **HB-3 [M] Remaining row cannot wrap.** `:58` keeps "เหลือ ฿x" and "จากงบ ฿y" on one row with no
+  wrap/min-w-0. Allow wrap or stack at narrow widths. The title row (`:50`) needs `min-w-0` and truncation for long
+  category names.
+- [ ] **HB-4 [L] Double chevron and arrow in copy.** `noBudgetLine` ends in "ตั้งงบ ›" and the link also
+  renders a ChevronRight. The Home investment row text also contains "›" and repeats itself before truncating
+  ("ยังไม่ได้กรอกมูลค่า › · ยังไม่กรอกมู…"). Remove arrows from copy and keep the icon only.
+- [ ] **HB-5 [M] Guard: data-state × width screenshots.** Extend the FB-3 mobile guard / capture job to seed
+  and capture Home (and Budgets) in these states: no budget, budget under, near limit, over budget,
+  category budget with a long name, million-baht amounts. Capture each at 320, 375 and 414px, light + dark. Add
+  assertions: no text overflow beyond its box, no section taller than its content by more than 24px, no
+  sibling sections overlapping. Claude reviews the images, not Codex.
+
+Acceptance: screenshots of every HB-5 state at all three widths, no overlap or bleed, and the existing Home
+tests are unchanged in strength.
+
 ## [UX-ROUND-20261118] FB-1..4 + DS-8..14 review — CHANGES 2026-11-19
 
 Codex `3e7ef35..8da0d34`. Claude re-derived: tsc 0; vitest 422/34; the after screenshots
@@ -47,6 +76,7 @@ assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; i
   first buy is only ฿100, which suggests it sees another holding. Check first for test-data leakage
   (the test's `accounts` insert is never deleted; earlier runs may leave holdings behind). Then check
   refresh coalescing. Do not loosen the 2200 ms assertion without a cause.
+  Quarantined via test.fixme in HEAD; Next/react-dom patch discarded. Parked.
 
 ## [COPY-POLISH-20261118] Thai UI copy, 49 strings — APPROVED 2026-11-18
 
