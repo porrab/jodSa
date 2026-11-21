@@ -29,7 +29,7 @@ Onboarding: `m9-onboarding` failed 1 of 3 runs for Claude as well (`toBeHidden` 
   amount shrink or move under the label below ~360px.
 - [ ] **HB-7 [M] Days remaining disagree and repeat.** Home counts today (`daysInMonth - day + 1`), Budgets does not
   (`lastDay - date`): on 2026-11-21 Home shows อีก 10 วัน and Budgets อีก 9 วัน. Each card also shows it twice (header + footer).
-  Owner decision pending; Claude recommends counting today on both, because the daily allowance can still be spent today,
+  **Owner decided 2026-11-21: count today on both** (`daysInMonth - day + 1`); daily allowance divides by that. Was: Claude recommended counting today on both, because the daily allowance can still be spent today,
   and showing it once (header only).
 - [ ] **HB-8 [M] Invest page title wraps at 320.** "การลงทุน" breaks into "การ / ลงทุน" beside the wide "เพิ่มสินทรัพย์"
   button. Keep the title on one line; at narrow widths use the icon with the short label "เพิ่ม" (same as other pages).
