@@ -1,34 +1,27 @@
 {
   "paramVersion": "2026.07-v1",
-  "source": "Resources/portfolio-risk-review/portfolio-risk-methodology.md — 'Simulation Assumptions' default annual volatilities and crisis-correlation notes, applied to JodSa Investments' MVP asset classes. These are illustrative proxy inputs, NOT fitted to a real historical return series — every consumer must tag values derived from this file [JUDG-PROXY].",
+  "source": "Resources/portfolio-risk-review/portfolio-risk-methodology.md — 'Simulation Assumptions' illustrative stress scenarios, applied to JodSa Investments' MVP asset classes. These are illustrative proxy inputs, NOT fitted to a real historical return series — every consumer must tag values derived from this file [JUDG-PROXY].",
   "classes": {
     "us_large_cap": {
-      "label": "US large-cap / broad market index (VOO/VTI-like, S&P 500 / total-market proxy)",
-      "annualVol": 0.16
+      "label": "US large-cap / broad market index (VOO/VTI-like, S&P 500 / total-market proxy)"
     },
     "us_tech_growth": {
-      "label": "US mega-cap growth / tech / Nasdaq-heavy (QQQ-like, or concentrated single-name growth)",
-      "annualVol": 0.30
+      "label": "US mega-cap growth / tech / Nasdaq-heavy (QQQ-like, or concentrated single-name growth)"
     },
     "thai_set": {
-      "label": "Thai SET single-names / broad Thai equity",
-      "annualVol": 0.18
+      "label": "Thai SET single-names / broad Thai equity"
     },
     "thai_fund_generic": {
-      "label": "Generic Thai mutual fund, equity-leaning, strategy not otherwise classified",
-      "annualVol": 0.18
+      "label": "Generic Thai mutual fund, equity-leaning, strategy not otherwise classified"
     },
     "gold": {
-      "label": "Gold",
-      "annualVol": 0.15
+      "label": "Gold"
     },
     "crypto": {
-      "label": "Crypto (BTC/ETH-like, high-vol)",
-      "annualVol": 0.65
+      "label": "Crypto (BTC/ETH-like, high-vol)"
     },
     "cash": {
-      "label": "Cash / stablecoin / money-market",
-      "annualVol": 0.01
+      "label": "Cash / stablecoin / money-market"
     }
   },
   "stressScenarios": {

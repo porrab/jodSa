@@ -1457,10 +1457,10 @@ applied live; deployed.
   A look-through-only concentrated row would get a silently mislabeled `assetClass`. Proved unreachable
   now (max table weight 0.09 vs the 25% flag). Becomes live only if the look-through table gains a >25%
   constituent. Fixed 2026-11-21: throw with the unmapped exposure key; removed the fallback import. New mocked-concentration invariant failed before the fix (did not throw), then passed; planner tests 29/29.
-- [ ] **`proxy-params.json` `annualVol` is dead config** — zero consumers (`stress.ts` reads only
+- [x] **`proxy-params.json` `annualVol` is dead config** — zero consumers (`stress.ts` reads only
   `stressScenarios`). It is exactly the input a VaR/vol calc would need, sitting unused, and M0's
   guardrail forbids that surface. Remove it, or annotate "intentionally unconsumed — see M0 guardrail"
-  so a future session doesn't read it as an invitation.
+  so a future session doesn't read it as an invitation. Fixed 2026-11-21: rg found only the seven config declarations and no consumers; removed all seven and corrected the source description. Planner suite 41/41.
 - ✅ *Forward note 1 (plans immutability untested) — RESOLVED by `c646e93`: `plans.Update` typed `never`
   + a live RLS assertion that the DB denies an owner's own update. RLS suite 34/34.*
 
