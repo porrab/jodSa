@@ -27,7 +27,7 @@ async function ready(page: Page) {
 }
 
 async function inspect(page: Page): Promise<Pick<Capture, 'failures' | 'ellipses'>> {
-  return page.evaluate(() => {
+  return page.evaluate((singleLineLabels) => {
     const failures: Finding[] = []
     const ellipses: Finding[] = []
     const selector = (el: Element): string => {
@@ -52,6 +52,10 @@ async function inspect(page: Page): Promise<Pick<Capture, 'failures' | 'ellipses
       range.selectNodeContents(el)
       if (!range.getClientRects().length) continue
       const text = el.textContent?.trim()
+      if (text && singleLineLabels.includes(text) && el.children.length === 0) {
+        const lines = new Set([...range.getClientRects()].map(rect => Math.round(rect.top)))
+        if (lines.size > 1) failures.push(finding('label-wrap', el, `${lines.size} lines`))
+      }
       if (text && el.scrollWidth > el.clientWidth + 1) {
         if (s.textOverflow === 'ellipsis') ellipses.push(finding('ellipsis', el, `${el.scrollWidth} > ${el.clientWidth}`))
         else if (s.overflowX === 'visible') failures.push(finding('text-overflow', el, `${el.scrollWidth} > ${el.clientWidth}`))
@@ -76,7 +80,7 @@ async function inspect(page: Page): Promise<Pick<Capture, 'failures' | 'ellipses
       }
     }
     return { failures, ellipses }
-  })
+  }, [th.dashboard.cashInAccounts, th.dashboard.investments, th.invest.title])
 }
 
 test('HB-5 populated signed-in responsive matrix', async ({ page }, testInfo) => {
@@ -93,7 +97,7 @@ test('HB-5 populated signed-in responsive matrix', async ({ page }, testInfo) =>
   let runError: unknown
 
   async function capture(name: string, state: string, navigate: () => Promise<void>) {
-    const light: { input: Buffer; left: number; top: number }[] = []
+    const light: { input: Buffer; left: number; top: number; height: number; background: { r: number; g: number; b: number; alpha: number } }[] = []
     let left = 0, maxHeight = 0
     for (const [theme, width] of [['light', 320], ['light', 375], ['light', 414], ['dark', 375]] as const) {
       await page.setViewportSize({ width, height: 812 })
@@ -110,7 +114,9 @@ test('HB-5 populated signed-in responsive matrix', async ({ page }, testInfo) =>
       let png: Buffer
       try {
         await main.evaluate(el => { el.style.height = `${el.scrollHeight}px`; el.style.overflowY = 'visible'; el.scrollTop = 0 })
-        png = await page.screenshot({ fullPage: true, animations: 'disabled' })
+        png = await page.screenshot({ fullPage: true, animations: 'disabled',
+          style: 'nav.fixed { visibility: hidden !important; }',
+        })
       } finally {
         await main.evaluate((el, style) => { if (style === null) el.removeAttribute('style'); else el.setAttribute('style', style) }, original)
       }
@@ -120,13 +126,27 @@ test('HB-5 populated signed-in responsive matrix', async ({ page }, testInfo) =>
         files.push(file)
       } else {
         const meta = await sharp(png).metadata()
-        light.push({ input: png, left, top: 0 })
+        const background = await page.evaluate(() => {
+          // Convert the app's OKLCH surface to sRGB for sharp's color parser.
+          const canvas = document.createElement('canvas')
+          canvas.width = canvas.height = 1
+          const ctx = canvas.getContext('2d')!
+          ctx.fillStyle = getComputedStyle(document.body).backgroundColor
+          ctx.fillRect(0, 0, 1, 1)
+          const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data
+          return { r, g, b, alpha: a / 255 }
+        })
+        light.push({ input: png, left, top: 0, height: meta.height!, background })
         left += meta.width!
         maxHeight = Math.max(maxHeight, meta.height!)
       }
     }
     const file = `${name}-${state}.png`
-    await sharp({ create: { width: left, height: maxHeight, channels: 4, background: '#ffffff' } }).composite(light).png().toFile(path.join(output, file))
+    // Fill shorter columns with the application surface instead of white gaps.
+    const columns = await Promise.all(light.map(async ({ input, left, top, height, background }) => ({
+      input: await sharp(input).extend({ bottom: maxHeight - height, background }).png().toBuffer(), left, top,
+    })))
+    await sharp({ create: { width: left, height: maxHeight, channels: 4, background: light[0].background } }).composite(columns).png().toFile(path.join(output, file))
     files.push(file)
     // Persist after each page so a navigation error cannot discard prior findings.
     await writeFile(path.join(output, 'rules.json'), JSON.stringify(captures, null, 2))
@@ -295,7 +315,7 @@ test('HB-5 populated signed-in responsive matrix', async ({ page }, testInfo) =>
     await writeFile(path.join(output, 'index.md'), [
       '# Populated responsive matrix — 2026-11-20', '',
       'Light contact sheets: left to right 320, 375, 414 × 812. Dark: 375 × 812. Screenshots were written only; no image was opened by Codex.',
-      'Rules inspect the real viewport before capture. Full-page export expands only main’s inner scrollport, then restores it. Group members are transactions in the current schema; the trip additionally has six named participants.', '',
+      'Rules inspect the real viewport before capture. Full-page export expands main’s inner scrollport, hides the fixed bottom navigation for capture only, then restores both. Shorter contact-sheet columns are extended with their application background. Group members are transactions in the current schema; the trip additionally has six named participants.', '',
       `Captures: ${captures.length}; rule failures: ${failures.length}; rendered ellipses: ${ellipses.length}.`,
       `Cleanup: ${deletion}.`, `Run error: ${runError ? String(runError) : 'none'}.`, '',
       '## Files', '', ...[...new Set([...files, ...await readdir(output), 'index.md'])].sort().map(file => `- [${file}](${file})`), '',
