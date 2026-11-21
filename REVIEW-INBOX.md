@@ -24,6 +24,12 @@ at 320. Not inspected by Claude: plan result, holding detail, recurring, setting
 Onboarding: `m9-onboarding` failed 1 of 3 runs for Claude as well (`toBeHidden` on a Radix sheet still in DOM with
 `data-state=closed`). No onboarding or sheet code changed in this round, so the flake is pre-existing (HB-9).
 
+**HB-6..HB-10 Claude re-check 2026-11-21 — APPROVED.** `4de73fe` `b652cc1` `5562ed3` `d020754` `e93b95c`. tsc 0;
+vitest 432/34; `daysRemainingInBangkokMonth` = daysInMonth - day + 1 in Asia/Bangkok, shared by Home and Budgets
+(both show อีก 10 วัน on 2026-11-21, once per card). Contact sheets home-over, budgets-over, invest-overview: labels
+on one line (the investment amount moves under its label at 320), the title การลงทุน stays on one line with "+ เพิ่ม", no nav repeat. Full E2E,
+the m9 repeat and the matrix are Codex's numbers (197/4/0, 25/25, 0 rule failures), not re-run by Claude.
+
 - [x] **HB-6 [M] Home money header labels break mid-word at 320.** In `components/home-money-header.tsx`, "เงินในบัญชี" and
   "เงินลงทุน" wrap to 2–3 lines next to 7-digit amounts. Keep labels on one line (`whitespace-nowrap`); let the
   amount shrink or move under the label below ~360px.
