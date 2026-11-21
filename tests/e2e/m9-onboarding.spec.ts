@@ -36,7 +36,7 @@ async function dismissFirstAccountSheet(page: Page): Promise<void> {
   const opened = await dialog.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
   if (opened) {
     await dialog.getByRole('button', { name: 'Close' }).click()
-    await expect(dialog).toBeHidden()
+    await expect(page.locator('[data-slot="sheet-content"][data-state="open"]')).toHaveCount(0)
   }
 }
 
@@ -73,21 +73,23 @@ test('M9-onboard-1 fresh user: FirstAccountSheet guides the first account, then 
   await page.locator('form').getByRole('combobox').first().click()
   await page.getByRole('option', { name: 'กสิกรไทย', exact: true }).click()
   await page.getByRole('button', { name: 'บันทึก', exact: true }).click()
-  await expect(page.getByText('สร้างบัญชีแรกของคุณ', { exact: true })).toBeHidden({ timeout: 15_000 })
+  await expect(page.locator('[data-slot="sheet-content"][data-state="open"]')).toHaveCount(0)
 
   // Log the first item via the Home FAB → global sheet. Account is no longer
   // an empty picker: it resolves to the just-created account, so the log saves.
   await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
-  const sheet = page.getByRole('dialog')
+  const sheet = page.getByRole('dialog').and(page.locator('[data-state="open"]'))
   await expect(sheet).toBeVisible()
   await sheet.getByLabel('จำนวนเงิน').fill('120')
   // account select already defaulted to the new account (fallback tier)
   await sheet.getByRole('button', { name: 'บันทึกรายการ' }).click()
-  await expect(sheet).toBeHidden({ timeout: 20_000 })
+  await expect(page.locator('[data-slot="sheet-content"][data-state="open"]')).toHaveCount(0)
 
   // The logged item shows on Home's today list — proves the end-to-end first log.
-  await expect(page.getByText('รายการวันนี้', { exact: true })).toBeVisible()
-  await expect(page.locator('body')).toContainText('120.00')
+  // Radix may retain aria-hidden on the background during its closed-state
+  // exit animation. Check rendered content without waiting on that animation.
+  await expect(page.locator('main h2').filter({ hasText: /^รายการวันนี้/ })).toBeVisible()
+  await expect(page.locator('button[data-testid^="home-transaction-"]')).toContainText('120.00')
 })
 
 test('M9-onboard-2 Home FAB sheet with zero accounts → inline "+ สร้างบัญชี" (expense picker AND transfer to-account), never a disabled dead end', async ({ page }) => {
@@ -98,7 +100,7 @@ test('M9-onboard-2 Home FAB sheet with zero accounts → inline "+ สร้า�
 
   // Open the global TransactionForm sheet from Home's sole add entry.
   await page.getByRole('button', { name: 'เพิ่มรายการ', exact: true }).click()
-  const sheet = page.getByRole('dialog')
+  const sheet = page.getByRole('dialog').and(page.locator('[data-state="open"]'))
   await expect(sheet).toBeVisible()
 
   // Expense (default) account slot: inline create present, hint present, and the
