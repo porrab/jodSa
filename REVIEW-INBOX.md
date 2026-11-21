@@ -1453,10 +1453,10 @@ applied live; deployed.
 - [x] **NO-TRADE regression coverage is the degenerate (exactly-on-target) case only.** Suggest a third
   fixture with real within-band drift (~±2–3pt) asserting `no_trade`, to pin `UNDERWEIGHT_THRESHOLD`
   against a future edit. Fixed 2026-11-21: Fixture C pins drifts [3,-3,2,-2,-2,2], no concentration, zero suggestions and no_trade with new money. Planner tests 28/28. Ref: `tests/unit/invest/planner/plan.test.ts:170`.
-- [ ] **`lib/invest/planner/plan.ts:130` `ASSET_CLASSES[0]` fallback — unreachable today, latent tomorrow.**
+- [x] **`lib/invest/planner/plan.ts:130` `ASSET_CLASSES[0]` fallback — unreachable today, latent tomorrow.**
   A look-through-only concentrated row would get a silently mislabeled `assetClass`. Proved unreachable
   now (max table weight 0.09 vs the 25% flag). Becomes live only if the look-through table gains a >25%
-  constituent. Worth an explicit `continue` or a comment.
+  constituent. Fixed 2026-11-21: throw with the unmapped exposure key; removed the fallback import. New mocked-concentration invariant failed before the fix (did not throw), then passed; planner tests 29/29.
 - [ ] **`proxy-params.json` `annualVol` is dead config** — zero consumers (`stress.ts` reads only
   `stressScenarios`). It is exactly the input a VaR/vol calc would need, sitting unused, and M0's
   guardrail forbids that surface. Remove it, or annotate "intentionally unconsumed — see M0 guardrail"

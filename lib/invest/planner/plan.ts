@@ -26,7 +26,6 @@
  *    threshold, nothing concentrated), suggestions is empty and verdict.ts
  *    renders NO-TRADE — never a manufactured finding.
  */
-import { ASSET_CLASSES } from '@/lib/validators/invest'
 import { computeAllocationDrift } from './allocation'
 import { computeConcentration } from './concentration'
 import { computeStress } from './stress'
@@ -127,7 +126,8 @@ export function buildPlan(input: BuildPlanInput): Plan {
     if (seenKeys.has(row.key)) continue
     seenKeys.add(row.key)
     const h = concentratedHoldingByKey.get(row.key)
-    const assetClass = h?.assetClass ?? ASSET_CLASSES[0]
+    if (!h) throw new Error(`Cannot map concentrated exposure ${row.key} to a holding`)
+    const assetClass = h.assetClass
     const directPct = concentration.direct.find((d) => d.key === row.key)?.pct ?? row.pct
     const classDrift = drift.rows.find((d) => d.assetClass === assetClass)?.driftPct ?? 0
 
