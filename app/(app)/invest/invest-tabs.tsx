@@ -41,8 +41,13 @@ export default function InvestTabs({
   return (
     <div className="space-y-4">
       <PageHeader
+        className="[&_h1]:whitespace-nowrap"
         title={t('title')}
-        action={<Button onClick={() => setAddOpen(true)}><Plus className="size-4" />{t('addHolding')}</Button>}
+        action={<Button className="shrink-0" aria-label={t('addHolding')} onClick={() => setAddOpen(true)}>
+          <Plus className="size-4" aria-hidden="true" />
+          <span className="min-[360px]:hidden">{t('addShort')}</span>
+          <span className="hidden min-[360px]:inline">{t('addHolding')}</span>
+        </Button>}
       />
       <PageTabs className="grid-cols-3">
         {(['holdings', 'overview', 'plan'] as const).map((tb) => (

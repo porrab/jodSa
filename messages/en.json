@@ -237,6 +237,7 @@
     "linkedCashWarning": "The linked cash transfer will remain — delete it separately on Transactions.",
     "title": "Investing",
     "addHolding": "Add Holding",
+    "addShort": "Add",
     "holdingSaved": "Holding saved",
     "noHoldings": "No holdings yet",
     "noHoldingsHint": "Add your first holding — a stock, fund, gold, or crypto position.",

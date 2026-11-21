@@ -33,8 +33,9 @@ Onboarding: `m9-onboarding` failed 1 of 3 runs for Claude as well (`toBeHidden` 
   **Owner decided 2026-11-21: count today on both** (`daysInMonth - day + 1`); daily allowance divides by that. Was: Claude recommended counting today on both, because the daily allowance can still be spent today,
   and showing it once (header only).
   Implementation 2026-11-21: both pages and their daily allowance use daysRemainingInBangkokMonth (includes today). Removed over-budget footer repetitions. Budget helper/render regressions: 17 passed, covering Nov 21/30, leap/non-leap February, Bangkok midnight, both cards and daily division. Awaiting independent re-check.
-- [ ] **HB-8 [M] Invest page title wraps at 320.** "การลงทุน" breaks into "การ / ลงทุน" beside the wide "เพิ่มสินทรัพย์"
+- [x] **HB-8 [M] Invest page title wraps at 320.** "การลงทุน" breaks into "การ / ลงทุน" beside the wide "เพิ่มสินทรัพย์"
   button. Keep the title on one line; at narrow widths use the icon with the short label "เพิ่ม" (same as other pages).
+  Implementation 2026-11-21: nowrap investment title; below 360px Add shows icon + localized short label, preserving the full accessible name. Populated production matrix: 0 rule failures, including single-line title checks at 320px. Awaiting Claude image review.
 - [ ] **HB-9 [L] Pre-existing flake: m9-onboarding sheet close.** Assert the closed state (`data-state=closed`/removed)
   or run with reducedMotion, instead of `toBeHidden` racing the exit animation. Do not raise timeouts.
 - [ ] **HB-10 [L] Matrix capture artifact.** Full-page shots repeat the fixed bottom nav mid-image, and stitched columns
