@@ -15,9 +15,11 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
-## [HOME-BUDGET-20261120] Home budget strip breaks once a budget exists — OPEN, PARKED behind UX-ROUND · from owner (phone), triaged by Claude
+## [HOME-BUDGET-20261120] Home budget strip breaks once a budget exists — IMPLEMENTED, awaiting Claude visual re-check · from owner (phone), triaged by Claude
 
-The owner reports that the Home budget area still looks broken. Every audit and after screenshot used test user A with
+Implementation 2026-11-20: HB-1 45ceba6, HB-2 a1365c6, HB-3 3346322, HB-4 05ceb81; HB-5 guard b325aa3 and page fixes Home f0d602f, Budgets f5c74cc, Transactions e061999, Plan 2128770. Final matrix: 112 captures / 0 rule failures / 1,152 report-only ellipses; disposable deletion verified Auth 404. TypeScript/build pass, Vitest 422/34 skipped, Honey 28/28 with updates disabled. E2E: original full invocation interrupted after 75 verified passes; remaining 126 continued with 121 passed / 4 skipped / 1 onboarding failure. Combined 196/4/1 of 201. Focused unchanged onboarding recheck 1/1 passed; original failure retained, cause unverified. No full rerun. See record for non-rule functional finding. Record: project/jodsa/docs/postmortems/2026-11-20-home-budget.md; evidence: design-studio/reviews/jodsa/2026-11-20-populated/index.md. No image opened by Codex; existing Home assertions unchanged. Sender checkboxes remain open for independent Claude re-check. Product decision: Home includes today in remaining days, Budgets excludes it.
+
+Original diagnosis: The owner reports that the Home budget area still looks broken. Every audit and after screenshot used test user A with
 **no budget**, so the budget-set branch was never captured. Diagnosis from code only. No screenshot of the
 owner's state yet, so which of these the owner sees is unconfirmed.
 
