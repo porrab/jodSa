@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { materializeOccurrences } from '@/lib/recurrence/materialize'
 import { currentMonthRange } from '@/lib/recurrence/range'
 import { buildLastAccountMap } from '@/lib/last-account'
-import { budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
+import { budgetStatus, daysRemainingInBangkokMonth, type BudgetRow, type ExpenseRow } from '@/lib/budget'
 import HomeTodayList from '@/components/home-today-list'
 import { holdingSymbolsForRows } from '@/lib/holding-symbols'
 import HomeBudgetStrip from '@/components/home-budget-strip'
@@ -131,9 +131,7 @@ export default async function DashboardPage() {
       .filter(({ budget }) => budget.scope === 'category')
       .sort((a, b) => b.status.ratio - a.status.ratio)[0]
     ?? null
-  const [year, monthNumber, day] = todayStr.split('-').map(Number)
-  const daysInMonth = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()
-  const daysRemaining = daysInMonth - day + 1
+  const daysRemaining = daysRemainingInBangkokMonth(now)
 
   const lastByCategory = buildLastAccountMap(monthTx ?? [])
   const globalLastAccountId = monthTx?.[0]?.account_id ?? null

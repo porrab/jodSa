@@ -22,6 +22,14 @@ function bangkokDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
 }
 
+/** Calendar days left in Bangkok's current month, including today. */
+export function daysRemainingInBangkokMonth(now: Date = new Date()): number {
+  const [year, month, day] = now.toLocaleDateString('en-CA', {
+    timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).split('-').map(Number)
+  return new Date(Date.UTC(year, month, 0)).getUTCDate() - day + 1
+}
+
 /** Total expense (satang) counting toward `budget` for the current period. */
 export function spentForBudget(
   budget: BudgetRow,

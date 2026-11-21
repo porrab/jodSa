@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { spentForBudget, budgetStatus, type BudgetRow, type ExpenseRow } from '@/lib/budget'
+import { spentForBudget, budgetStatus, daysRemainingInBangkokMonth, type BudgetRow, type ExpenseRow } from '@/lib/budget'
+
+describe('days remaining in the Bangkok month, including today', () => {
+  it.each([
+    ['2026-11-21T12:00:00+07:00', 10],
+    ['2026-11-30T12:00:00+07:00', 1],
+    ['2024-02-01T00:00:00+07:00', 29],
+    ['2026-02-01T00:00:00+07:00', 28],
+    ['2026-11-20T17:00:00Z', 10],
+    ['2026-11-30T17:00:00Z', 31],
+  ])('%s has %i days left', (iso, expected) => {
+    expect(daysRemainingInBangkokMonth(new Date(iso))).toBe(expected)
+  })
+})
 
 const NOW = new Date('2026-06-12T05:00:00Z') // 12:00 Bangkok on 2026-06-12
 

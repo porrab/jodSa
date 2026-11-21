@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl'
 import { formatTHB } from '@/lib/money'
 import { AlertTriangle } from 'lucide-react'
 import { CategoryLabel } from '@/lib/categories'
-import type { BudgetRow, BudgetStatus } from '@/lib/budget'
+import { daysRemainingInBangkokMonth, type BudgetRow, type BudgetStatus } from '@/lib/budget'
 
 function wholeTHB(satang: number): string {
   return `฿${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(satang / 100))}`
@@ -26,10 +26,9 @@ export default function BudgetBar({
       t('noCategory')
     )
 
-  const now = new Date()
   const daysRemaining = budget.period === 'day'
     ? 0
-    : new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()
+    : daysRemainingInBangkokMonth()
   const dailyAllowance = status.remaining > 0 && daysRemaining > 0 ? Math.round(status.remaining / daysRemaining / 100) * 100 : 0
 
   return (
@@ -64,7 +63,6 @@ export default function BudgetBar({
       <p className="text-sm text-muted-foreground">
         {t('spentCaption', { amount: wholeTHB(status.spent) })}
         {budget.period === 'month' && !status.over && dailyAllowance > 0 ? ` · ${td('dailyAllowance', { amount: wholeTHB(dailyAllowance) })}` : ''}
-        {status.over && budget.period === 'month' ? ` · ${td('daysRemaining', { days: daysRemaining })}` : ''}
       </p>
     </div>
   )

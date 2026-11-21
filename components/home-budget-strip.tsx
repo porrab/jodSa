@@ -86,7 +86,6 @@ export default function HomeBudgetStrip({
       <p className="text-sm text-muted-foreground">
         {t('spentThisMonth', { amount: formatWholeTHB(status.spent) })}
         {!status.over && dailyAllowance > 0 && <> · {t('dailyAllowance', { amount: formatWholeTHB(dailyAllowance) })}</>}
-        {status.over && <> · {t('daysRemaining', { days: daysRemaining })}</>}
       </p>
     </Link>
   )
