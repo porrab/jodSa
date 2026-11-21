@@ -55,21 +55,21 @@ Original diagnosis: The owner reports that the Home budget area still looks brok
 **no budget**, so the budget-set branch was never captured. Diagnosis from code only. No screenshot of the
 owner's state yet, so which of these the owner sees is unconfirmed.
 
-- [ ] **HB-1 [H] Fixed section height.** `app/(app)/dashboard/page.tsx:153` sets `h-[134px]` on the mobile
+- [x] **HB-1 [H] Fixed section height.** `app/(app)/dashboard/page.tsx:153` sets `h-[134px]` on the mobile
   `home-budget` section. The budget-set strip has 4 rows (title, remaining, progress bar, spent line). Any
   wrap (long category name, 320px width, large amounts) overflows into "รายการวันนี้". In the no-budget
   state the same fixed height plus `h-full` (`components/home-budget-strip.tsx:29`) stretches a one-line
   link into a ~110px yellow band. Fix: drop the fixed height, size to content, keep `shrink-0`.
-- [ ] **HB-2 [H] Over-budget blush bleeds.** `home-budget-strip.tsx:48` uses `-mx-5 -my-4` to paint
+- [x] **HB-2 [H] Over-budget blush bleeds.** `home-budget-strip.tsx:48` uses `-mx-5 -my-4` to paint
   `bg-blush` edge to edge, but the parent pads `pt-4 pb-2`, so the blush overruns the bottom border.
   Fix: put the background on the section (or match the negative margins to the real padding).
-- [ ] **HB-3 [M] Remaining row cannot wrap.** `:58` keeps "เหลือ ฿x" and "จากงบ ฿y" on one row with no
+- [x] **HB-3 [M] Remaining row cannot wrap.** `:58` keeps "เหลือ ฿x" and "จากงบ ฿y" on one row with no
   wrap/min-w-0. Allow wrap or stack at narrow widths. The title row (`:50`) needs `min-w-0` and truncation for long
   category names.
-- [ ] **HB-4 [L] Double chevron and arrow in copy.** `noBudgetLine` ends in "ตั้งงบ ›" and the link also
+- [x] **HB-4 [L] Double chevron and arrow in copy.** `noBudgetLine` ends in "ตั้งงบ ›" and the link also
   renders a ChevronRight. The Home investment row text also contains "›" and repeats itself before truncating
   ("ยังไม่ได้กรอกมูลค่า › · ยังไม่กรอกมู…"). Remove arrows from copy and keep the icon only.
-- [ ] **HB-5 [M] Guard: data-state × width screenshots.** Extend the FB-3 mobile guard / capture job to seed
+- [x] **HB-5 [M] Guard: data-state × width screenshots.** Extend the FB-3 mobile guard / capture job to seed
   and capture Home (and Budgets) in these states: no budget, budget under, near limit, over budget,
   category budget with a long name, million-baht amounts. Capture each at 320, 375 and 414px, light + dark. Add
   assertions: no text overflow beyond its box, no section taller than its content by more than 24px, no
@@ -1479,7 +1479,7 @@ acceptance) · `docs/02-architecture.md` §"Phase 2 subsystems" (the 🔴 cron s
 two non-goal reversals) · `docs/05-risks.md` §"Phase 2 additions". The frozen snapshot at
 `project/jodsa/docs/source-idea/` predates this phase — the live `idea-forge/ideas/jodsa/docs/` wins.
 
-- [ ] **M10 — Push Notifications (Web Push + Vercel Cron)** · L · deps M9 + M7-D. VAPID +
+- [x] **M10 — Push Notifications (Web Push + Vercel Cron)** · L · deps M9 + M7-D. VAPID +
   `push_subscriptions` (owner RLS) + Serwist `push`/`notificationclick`. Delivery via
   `app/api/cron/notify/route.ts` (`CRON_SECRET`-gated) using `web-push`; daily reminder 12:00/22:00 ICT
   (= 05:00/15:00 UTC) + recurring-due "จ่ายยัง?" confirm (Confirm keeps the row; Skip writes
@@ -1488,14 +1488,14 @@ two non-goal reversals) · `docs/05-risks.md` §"Phase 2 additions". The frozen 
   🔴 **The cron route is the ONE sanctioned server-side service-role path** (system trigger, no user
   input) — import the service-role client **only** under `app/api/cron/`; M10 acceptance includes a grep
   guard that nothing else does. iOS Web Push needs an installed PWA (16.4+) — say so in settings.
-- [ ] **M11 — CSV Export** · S · deps M9. Client-side only (no infra/schema): Settings → Export,
+- [x] **M11 — CSV Export** · S · deps M9. Client-side only (no infra/schema): Settings → Export,
   date+type filter → in-browser CSV Blob download; satang→baht at format time; **UTF-8 BOM** for Excel
   Thai; RLS-scoped to the signed-in user.
-- [ ] **M12 — BYO Vision Key** ⚠️ *reverses "no server AI vision"* · M · deps M2. Opt-in, default OFF; key
+- [x] **M12 — BYO Vision Key** ⚠️ *reverses "no server AI vision"* · M · deps M2. Opt-in, default OFF; key
   stored **only in the browser**, **browser calls Google Vision directly** — key never hits a JodSa
   origin. Only the OCR text source changes; `lib/slip/extract.ts` unchanged; any failure falls back to
   Tesseract. Mandatory one-time privacy acknowledge (image leaves device).
-- [ ] **M13 — Realtime Live-Sync** ⚠️ *reverses "sync-on-load only"* · L · deps M9. Supabase Realtime
+- [x] **M13 — Realtime Live-Sync** ⚠️ *reverses "sync-on-load only"* · L · deps M9. Supabase Realtime
   `postgres_changes` on the **authenticated** client (RLS filters the stream); lazy (not in first paint),
   subscribe-on-focus + reconnect-on-resume, patch TanStack Query cache. **Security-critical:** ship a
   2-user realtime-over-websocket isolation test (mirrors M4 anon-deny).
