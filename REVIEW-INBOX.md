@@ -121,6 +121,7 @@ assertion each time (expected ฿323.45, still ฿200.00). Tracked as RV-UX-4; i
   Quarantined via test.fixme in `58e6471`; Next/react-dom patch discarded. Parked.
   Timebox 2026-11-21: fresh disposable qa-* user pins the starting total to ฿100.00 without resetting A; finally deletes the user and verifies Auth 404 plus zero transactions/asset_transactions/holdings/accounts. Production isolation + sync --no-deps --repeat-each=5: 29 passed / 1 failed; RV-M13-4 4/5 (repeat3 stayed ฿100.00 instead of ฿223.45 at 2200ms). Restored test.fixme; framework and timeout unchanged.
   Final gates 2026-11-21: TypeScript exit 0; Vitest 434 passed / 34 skipped; production build exit 0 (sandbox EPERM on first attempt, elevated build passed); full production E2E run once, 197 passed / 4 skipped / 0 failed, including Honey 28/28 with --update-snapshots=none and no baseline changes. Separate JODSA_UX_MATRIX=1: 112 captures / 0 rule failures; disposable deletion verified Auth 404. DS-6 N2..N7 verified already fixed (cb7bb28, 791309f, d47e5ac, 7389703, 594ae71, 2d8ac64); SPEC-4 small fixes: 8472b34, 2e8e26e, 5a46aa9. RV-UX-4 remains quarantined; no images opened, migrations, workspace scripts, subagents or push.
+  **Claude review 2026-11-21 (`4d43a4a`):** fixture change read and accepted (qa-* user, cascade delete, filtered service-role checks only, 2200 ms unchanged). Re-ran tsc exit 0, vitest 434/34 skipped, build exit 0; E2E/matrix counts taken from Codex, not re-run. Stays open and parked: the flake survives a clean fixture (4/5), so leakage is ruled out and refresh timing is the remaining suspect.
 
 ## [COPY-POLISH-20261118] Thai UI copy, 49 strings — APPROVED 2026-11-18
 
@@ -1463,6 +1464,7 @@ applied live; deployed.
   `stressScenarios`). It is exactly the input a VaR/vol calc would need, sitting unused, and M0's
   guardrail forbids that surface. Remove it, or annotate "intentionally unconsumed — see M0 guardrail"
   so a future session doesn't read it as an invitation. Fixed 2026-11-21: rg found only the seven config declarations and no consumers; removed all seven and corrected the source description. Planner suite 41/41.
+- **Claude review 2026-11-21:** `8472b34`, `2e8e26e`, `5a46aa9` APPROVED. The new throw is unreachable from real data today (max look-through weight 0.09 < 25% flag), so it cannot break `/invest/plan`; DS-6 N2–N7 ticks (`cb7bb28`..`2d8ac64`) spot-checked against the cited lines.
 - ✅ *Forward note 1 (plans immutability untested) — RESOLVED by `c646e93`: `plans.Update` typed `never`
   + a live RLS assertion that the DB denies an owner's own update. RLS suite 34/34.*
 
