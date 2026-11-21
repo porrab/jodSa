@@ -24,9 +24,10 @@ at 320. Not inspected by Claude: plan result, holding detail, recurring, setting
 Onboarding: `m9-onboarding` failed 1 of 3 runs for Claude as well (`toBeHidden` on a Radix sheet still in DOM with
 `data-state=closed`). No onboarding or sheet code changed in this round, so the flake is pre-existing (HB-9).
 
-- [ ] **HB-6 [M] Home money header labels break mid-word at 320.** In `components/home-money-header.tsx`, "เงินในบัญชี" and
+- [x] **HB-6 [M] Home money header labels break mid-word at 320.** In `components/home-money-header.tsx`, "เงินในบัญชี" and
   "เงินลงทุน" wrap to 2–3 lines next to 7-digit amounts. Keep labels on one line (`whitespace-nowrap`); let the
   amount shrink or move under the label below ~360px.
+  Implementation 2026-11-21: nowrap labels; the amount scales and wraps beneath the label instead of squeezing it. Populated production matrix: 112 captures, 0 rule failures, including single-line label checks. Awaiting Claude image review; Codex opened no images.
 - [ ] **HB-7 [M] Days remaining disagree and repeat.** Home counts today (`daysInMonth - day + 1`), Budgets does not
   (`lastDay - date`): on 2026-11-21 Home shows อีก 10 วัน and Budgets อีก 9 วัน. Each card also shows it twice (header + footer).
   **Owner decided 2026-11-21: count today on both** (`daysInMonth - day + 1`); daily allowance divides by that. Was: Claude recommended counting today on both, because the daily allowance can still be spent today,

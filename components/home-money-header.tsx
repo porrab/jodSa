@@ -62,26 +62,30 @@ export default function HomeMoneyHeader({
           </div>
           <button type="button" onClick={() => show('cash')} className="flex min-h-14 w-full flex-1 items-center gap-3 border-b border-hero-inset text-left text-base">
             <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-hero-figure" />
-            <span className="min-w-0 flex-1">
-              <span className="block">{t('cashInAccounts')}</span>
-              <span className="block text-sm text-hero-muted">{t('accountsCount', { count: accounts.length })}</span>
+            <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="min-w-0 grow">
+                <span className="block whitespace-nowrap">{t('cashInAccounts')}</span>
+                <span className="block text-sm text-hero-muted">{t('accountsCount', { count: accounts.length })}</span>
+              </span>
+              <span className="shrink-0 whitespace-nowrap text-[clamp(0.875rem,4vw,1rem)] tabular-nums">{formatTHB(cashTotal)}</span>
             </span>
-            <span className="shrink-0 tabular-nums">{formatTHB(cashTotal)}</span>
             <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-hero-muted" />
           </button>
           <button type="button" onClick={() => show('invest')} className="flex min-h-14 w-full flex-1 items-center gap-3 text-left text-base">
             <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-invest-bar" />
-            <span className="min-w-0 flex-1">
-              <span className="block">{t('investments')}</span>
-              <span className="block truncate text-sm text-hero-muted">
-                {investmentsFailed ? t('investmentsLoadFailed') : valued.length === 0 ? t('missingValues', { count: missing }) : <>
-                  {latestLabel && t('updated', { date: latestLabel })}
-                  {stale && <> · {t('staleValue')}</>}
-                  {missing > 0 && <>{latestLabel && ' · '}{t('missingValues', { count: missing })}</>}
-                </>}
+            <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="min-w-0 grow basis-24">
+                <span className="block whitespace-nowrap">{t('investments')}</span>
+                <span className="block truncate text-sm text-hero-muted">
+                  {investmentsFailed ? t('investmentsLoadFailed') : valued.length === 0 ? t('missingValues', { count: missing }) : <>
+                    {latestLabel && t('updated', { date: latestLabel })}
+                    {stale && <> · {t('staleValue')}</>}
+                    {missing > 0 && <>{latestLabel && ' · '}{t('missingValues', { count: missing })}</>}
+                  </>}
+                </span>
               </span>
+              <span className="shrink-0 whitespace-nowrap text-[clamp(0.875rem,4vw,1rem)] tabular-nums">{valued.length === 0 ? '—' : <>≈ {formatMoney(investMinor, 'THB', locale)}</>}</span>
             </span>
-            <span className="shrink-0 text-right tabular-nums">{valued.length === 0 ? '—' : <>≈ {formatMoney(investMinor, 'THB', locale)}</>}</span>
             <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-hero-muted" />
           </button>
         </div>
