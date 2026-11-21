@@ -1450,9 +1450,9 @@ M0 gate PASS · M1 · M3 · M5 — all code+unit APPROVED **and** qa-lab GREEN; 
 applied live; deployed.
 
 ### Residual non-blocking notes (pm-desk `INVEST-M5`, forward notes — **not correction items**)
-- [ ] **NO-TRADE regression coverage is the degenerate (exactly-on-target) case only.** Suggest a third
+- [x] **NO-TRADE regression coverage is the degenerate (exactly-on-target) case only.** Suggest a third
   fixture with real within-band drift (~±2–3pt) asserting `no_trade`, to pin `UNDERWEIGHT_THRESHOLD`
-  against a future edit. Verified passing today. Ref: `tests/unit/invest/planner/plan.test.ts:170`.
+  against a future edit. Fixed 2026-11-21: Fixture C pins drifts [3,-3,2,-2,-2,2], no concentration, zero suggestions and no_trade with new money. Planner tests 28/28. Ref: `tests/unit/invest/planner/plan.test.ts:170`.
 - [ ] **`lib/invest/planner/plan.ts:130` `ASSET_CLASSES[0]` fallback — unreachable today, latent tomorrow.**
   A look-through-only concentrated row would get a silently mislabeled `assetClass`. Proved unreachable
   now (max table weight 0.09 vs the 25% flag). Becomes live only if the look-through table gains a >25%

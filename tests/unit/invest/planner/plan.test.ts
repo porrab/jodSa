@@ -207,6 +207,28 @@ describe('lib/invest/planner/plan — Fixture B: balanced portfolio → first-cl
   })
 })
 
+describe('lib/invest/planner/plan — Fixture C: real within-band drift', () => {
+  it('keeps NO-TRADE with nonzero ±2–3pt drift and new money available', () => {
+    const classes = ['us_equity', 'etf', 'thai_set', 'thai_fund', 'gold', 'crypto'] as const
+    const proxies = ['us_tech_growth', 'us_large_cap', 'thai_set', 'thai_fund_generic', 'gold', 'crypto'] as const
+    const weights = [23, 12, 17, 13, 18, 17]
+    const plan = buildPlan({
+      holdings: classes.map((assetClass, i) => holding({
+        holdingId: `c-h${i}`, assetId: `c-a${i}`, assetClass,
+        proxyClass: proxies[i], valueMinor: toMinor(weights[i] * 1000, 'THB'),
+      })),
+      targetAllocation: { us_equity: 20, etf: 15, thai_set: 15, thai_fund: 15, gold: 20, crypto: 15 },
+      newMoneyMinor: toMinor(3000, 'THB'), newMoneyCurrency: 'THB', displayCurrency: 'THB',
+      createdAt: '2026-11-21T00:00:00.000Z',
+    })
+    expect(plan.allocationDrift.map(row => row.driftPct)).toEqual([3, -3, 2, -2, -2, 2])
+    expect(plan.concentration.anyConcentrated).toBe(false)
+    expect(plan.suggestions).toEqual([])
+    expect(plan.verdict).toBe('no_trade')
+    expect(plan.headline).toMatch(/NO-TRADE/)
+  })
+})
+
 describe('lib/invest/planner/plan — determinism (M5 acceptance)', () => {
   it('same inputs + same param_version + same createdAt ⇒ deep-equal Plan', () => {
     const a = buildFixtureAPlan('2026-07-16T00:00:00.000Z')
