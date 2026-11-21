@@ -15,7 +15,28 @@ re-check (qa-lab re-tests `QA-*` items; pm-desk re-reviews the rest).
 
 # OPEN
 
-## [HOME-BUDGET-20261120] Home budget strip breaks once a budget exists — IMPLEMENTED, awaiting Claude visual re-check · from owner (phone), triaged by Claude
+## [HOME-BUDGET-20261120] Home budget strip breaks once a budget exists — APPROVED 2026-11-21 with follow-ups HB-6..HB-10 · from owner (phone), triaged by Claude
+
+**Claude re-check 2026-11-21:** HB-1..4 `45ceba6` `a1365c6` `3346322` `05ceb81`, HB-5 `b325aa3`..`e8f4fb7`. tsc 0; vitest
+422/34; build 0. Contact sheets inspected: home-over, home-category-long, budgets-over, transactions, accounts,
+invest-overview, session-detail, group-detail. The budget strip now sizes to its content, with no bleed or overlap, and wraps correctly
+at 320. Not inspected by Claude: plan result, holding detail, recurring, settings, more, import, sheets, dark sheets.
+Onboarding: `m9-onboarding` failed 1 of 3 runs for Claude as well (`toBeHidden` on a Radix sheet still in DOM with
+`data-state=closed`). No onboarding or sheet code changed in this round, so the flake is pre-existing (HB-9).
+
+- [ ] **HB-6 [M] Home money header labels break mid-word at 320.** In `components/home-money-header.tsx`, "เงินในบัญชี" and
+  "เงินลงทุน" wrap to 2–3 lines next to 7-digit amounts. Keep labels on one line (`whitespace-nowrap`); let the
+  amount shrink or move under the label below ~360px.
+- [ ] **HB-7 [M] Days remaining disagree and repeat.** Home counts today (`daysInMonth - day + 1`), Budgets does not
+  (`lastDay - date`): on 2026-11-21 Home shows อีก 10 วัน and Budgets อีก 9 วัน. Each card also shows it twice (header + footer).
+  Owner decision pending; Claude recommends counting today on both, because the daily allowance can still be spent today,
+  and showing it once (header only).
+- [ ] **HB-8 [M] Invest page title wraps at 320.** "การลงทุน" breaks into "การ / ลงทุน" beside the wide "เพิ่มสินทรัพย์"
+  button. Keep the title on one line; at narrow widths use the icon with the short label "เพิ่ม" (same as other pages).
+- [ ] **HB-9 [L] Pre-existing flake: m9-onboarding sheet close.** Assert the closed state (`data-state=closed`/removed)
+  or run with reducedMotion, instead of `toBeHidden` racing the exit animation. Do not raise timeouts.
+- [ ] **HB-10 [L] Matrix capture artifact.** Full-page shots repeat the fixed bottom nav mid-image, and stitched columns
+  leave white blocks. Hide fixed nav during full-page capture (or capture per viewport) so reviews are not misleading.
 
 Implementation 2026-11-20: HB-1 45ceba6, HB-2 a1365c6, HB-3 3346322, HB-4 05ceb81; HB-5 guard b325aa3 and page fixes Home f0d602f, Budgets f5c74cc, Transactions e061999, Plan 2128770. Final matrix: 112 captures / 0 rule failures / 1,152 report-only ellipses; disposable deletion verified Auth 404. TypeScript/build pass, Vitest 422/34 skipped, Honey 28/28 with updates disabled. E2E: original full invocation interrupted after 75 verified passes; remaining 126 continued with 121 passed / 4 skipped / 1 onboarding failure. Combined 196/4/1 of 201. Focused unchanged onboarding recheck 1/1 passed; original failure retained, cause unverified. No full rerun. See record for non-rule functional finding. Record: project/jodsa/docs/postmortems/2026-11-20-home-budget.md; evidence: design-studio/reviews/jodsa/2026-11-20-populated/index.md. No image opened by Codex; existing Home assertions unchanged. Sender checkboxes remain open for independent Claude re-check. Product decision: Home includes today in remaining days, Budgets excludes it.
 
